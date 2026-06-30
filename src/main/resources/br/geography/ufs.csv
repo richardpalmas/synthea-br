@@ -1,0 +1,32 @@
+# Fonte: IBGE — malha territorial simplificada (bounding boxes aproximados por UF).
+# Cobertura MVP: 27 UFs com limites lat/lon para validação de coordenadas (Story 3.2 AC #2).
+# Não substitui malha municipal completa (5.570 municípios — fora de escopo MVP).
+#
+sigla,nome,regiao,lat_min,lat_max,lon_min,lon_max
+AC,Acre,Norte,-11.15,-7.10,-73.99,-66.62
+AL,Alagoas,Nordeste,-10.50,-8.80,-38.24,-35.15
+AP,Amapá,Norte,0.00,4.44,-54.88,-49.87
+AM,Amazonas,Norte,-9.82,2.25,-73.79,-56.10
+BA,Bahia,Nordeste,-18.36,-8.53,-46.62,-37.34
+CE,Ceará,Nordeste,-7.86,-2.78,-41.42,-37.24
+DF,Distrito Federal,Centro-Oeste,-16.05,-15.50,-48.28,-47.60
+ES,Espírito Santo,Sudeste,-21.30,-17.89,-41.88,-39.67
+GO,Goiás,Centro-Oeste,-19.49,-12.39,-53.25,-45.90
+MA,Maranhão,Nordeste,-10.26,-1.04,-48.76,-41.80
+MT,Mato Grosso,Centro-Oeste,-18.04,-7.35,-61.63,-50.22
+MS,Mato Grosso do Sul,Centro-Oeste,-24.07,-17.17,-58.16,-51.07
+MG,Minas Gerais,Sudeste,-22.92,-14.23,-51.08,-39.86
+PA,Pará,Norte,-9.84,2.59,-58.90,-46.06
+PB,Paraíba,Nordeste,-8.30,-6.02,-38.77,-34.79
+PR,Paraná,Sul,-26.72,-22.52,-54.62,-48.02
+PE,Pernambuco,Nordeste,-9.48,-7.15,-41.36,-34.86
+PI,Piauí,Nordeste,-10.93,-2.74,-45.99,-40.37
+RJ,Rio de Janeiro,Sudeste,-23.37,-20.76,-44.98,-40.95
+RN,Rio Grande do Norte,Nordeste,-6.98,-4.83,-38.58,-34.97
+RS,Rio Grande do Sul,Sul,-33.75,-27.08,-57.65,-49.69
+RO,Rondônia,Norte,-13.70,-7.97,-66.81,-59.77
+RR,Roraima,Norte,0.05,5.27,-64.82,-59.15
+SC,Santa Catarina,Sul,-29.35,-25.95,-53.84,-48.35
+SP,São Paulo,Sudeste,-25.31,-19.77,-53.11,-44.16
+SE,Sergipe,Nordeste,-11.57,-9.51,-38.24,-36.40
+TO,Tocantins,Norte,-13.47,-5.17,-50.73,-45.70

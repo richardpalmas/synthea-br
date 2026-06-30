@@ -1,0 +1,80 @@
+# generated: 2026-06-30
+# last_updated: 2026-06-30 (Story 3.3 done)
+# project: synthea
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-06-30
+last_updated: 2026-06-30 (Story 3.3 done)
+project: synthea
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: done
+  1-1-spike-de-viabilidade-ia-vs-regras-puras: done
+  1-2-template-de-experimento-reproduzivel: done
+  1-3-registro-de-decisoes-arquiteturais-adrs: done
+  1-4-manifest-de-rastreabilidade-de-execucao: done
+  1-5-guia-academico-de-contribuicao-pt-br: done
+  epic-1-retrospective: optional
+
+  epic-2: done
+  2-1-configuracao-de-condicao-clinica-alvo: done
+  2-2-modulo-gmf-cancer-de-mama-piloto: done
+  2-3-gate-de-cohort-com-condicao-garantida: done
+  epic-2-retrospective: optional
+
+  epic-3: in-progress
+  3-1-perfil-demografico-brasileiro-ibge: done
+  3-2-geografia-brasileira: done
+  3-3-nomenclatura-clinica-br-cid-10-subset-piloto: done
+  3-4-providers-do-contexto-assistencial-br: done
+  epic-3-retrospective: optional
+
+  epic-4: in-progress
+  4-1-catalogo-de-regras-de-plausibilidade: ready-for-dev
+  4-2-relatorio-de-validacao-pos-geracao: ready-for-dev
+  epic-4-retrospective: optional
+
+  epic-5: in-progress
+  5-1-preservar-export-fhir-r4-para-cohorts-direcionadas: ready-for-dev
+  5-2-metadados-de-proveniencia-no-export: ready-for-dev
+  epic-5-retrospective: optional

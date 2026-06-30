@@ -26,6 +26,12 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.mitre.synthea.br.condition.GateEvaluator;
+import org.mitre.synthea.br.condition.TargetConditionIntegration;
+import org.mitre.synthea.br.demographics.BrDemographicsLoader;
+import org.mitre.synthea.br.geography.BrGeographyResolver;
+import org.mitre.synthea.br.profile.BrProfile;
+import org.mitre.synthea.br.providers.BrProviderLoader;
 import org.mitre.synthea.editors.GrowthDataErrorsEditor;
 import org.mitre.synthea.export.CDWExporter;
 import org.mitre.synthea.export.Exporter;
@@ -103,6 +109,7 @@ public class Generator {
   private boolean onlyVeterans;
   private Module keepPatientsModule;
   private Long maxAttemptsToKeepPatient;
+  private TargetConditionIntegration targetConditionIntegration;
   /** The state to default to */
   public static String DEFAULT_STATE = "Massachusetts";
   private Exporter.ExporterRuntimeOptions exporterRuntimeOptions;
@@ -316,8 +323,12 @@ public class Generator {
     stats.put("alive", new AtomicInteger(0));
     stats.put("dead", new AtomicInteger(0));
 
-    // initialize hospitals
-    Provider.loadProviders(location, this.clinicianRandom);
+    // initialize hospitals — Story 3.4: BR dataset when br.profile=br (BrProviderLoader)
+    if (BrProfile.isActive()) {
+      BrProviderLoader.load(location, this.clinicianRandom);
+    } else {
+      Provider.loadProviders(location, this.clinicianRandom);
+    }
     // Initialize Payers
     PayerManager.loadPayers(location);
     // ensure modules load early
@@ -326,6 +337,12 @@ public class Generator {
     }
     List<String> coreModuleNames = getModuleNames(Module.getModules(path -> false));
     List<String> moduleNames = getModuleNames(Module.getModules(modulePredicate));
+
+    try {
+      this.targetConditionIntegration = TargetConditionIntegration.tryInitialize(this.options);
+    } catch (RuntimeException e) {
+      throw new ExceptionInInitializerError(e);
+    }
 
     if (options.keepPatientsModulePath != null) {
       try {
@@ -404,6 +421,12 @@ public class Generator {
 
     ExecutorService threadPool = Executors.newFixedThreadPool(threadPoolSize);
 
+    // Tracks how many generation attempts are actually made in this run, which can differ
+    // from options.population when a single fixed seed or a population snapshot is used.
+    // Used by targetConditionIntegration.logSummary() so the exclude-mode gate summary
+    // reports a "requested" count that matches what was actually attempted.
+    int effectiveRequestedPopulation = this.options.population;
+
     if (options.initialPopulationSnapshotPath != null) {
       FileInputStream fis = null;
       List<Person> initialPopulation = null;
@@ -442,6 +465,7 @@ public class Generator {
       }
     } else {
       // we have a single fixed seed to generate, don't bother with threadpool
+      effectiveRequestedPopulation = 1;
       generatePerson(0, this.options.singlePersonSeed);
     }
 
@@ -470,6 +494,10 @@ public class Generator {
     }
     Exporter.runPostCompletionExports(this, exporterRuntimeOptions);
 
+    if (this.targetConditionIntegration != null) {
+      this.targetConditionIntegration.logSummary(effectiveRequestedPopulation);
+    }
+
     System.out.printf("Records: total=%d, alive=%d, dead=%d\n", totalGeneratedPopulation.get(),
             stats.get("alive").get(), stats.get("dead").get());
     System.out.printf("RNG=%d\n", this.populationRandom.getCount());
@@ -487,6 +515,16 @@ public class Generator {
             FORMATTED_DONATION_LINK,
             ANSI_RESET,
             DONATION_LINK);
+  }
+
+  /**
+   * @return excluded patient count when exclude gate mode is active, otherwise 0
+   */
+  public int getTargetConditionExcludedCount() {
+    if (targetConditionIntegration == null) {
+      return 0;
+    }
+    return targetConditionIntegration.getExcludedCount();
   }
 
   /**
@@ -578,6 +616,15 @@ public class Generator {
             // note that this skips ahead to the while check
             // also note, this may run forever if the requested criteria are impossible to meet
           }
+        }
+
+        if (this.targetConditionIntegration != null
+            && this.targetConditionIntegration.isExcludeMode()
+            && !this.targetConditionIntegration.patientMatchesGate(person, finishTime)) {
+          this.targetConditionIntegration.recordExcluded();
+          patientMeetsCriteria = true;
+          wasExported = false;
+          break;
         }
 
         recordPerson(person, index);
@@ -689,9 +736,8 @@ public class Generator {
     if (this.keepPatientsModule != null) {
       // this one might be slow to process, so only do it if the other things are true
       if (!check.isAliveButDeadRequired && !check.isDeadButAliveRequired) {
-        this.keepPatientsModule.process(person, finishTime, false);
-        State terminal = person.history.get(0);
-        check.failedKeepModule = !terminal.name.equals("Keep");
+        check.failedKeepModule =
+            !GateEvaluator.matchesCondition(person, this.keepPatientsModule, finishTime);
       }
     }
 
@@ -762,12 +808,20 @@ public class Generator {
         // Check to see if the seed has changed
         if (! currentSeed.getSeedId().equals(person.attributes.get(Person.IDENTIFIER_SEED_ID))) {
           person.attributes.putAll(currentSeed.demographicAttributesForPerson());
-          String state = currentSeed.getState();
-          if (state.length() == 2) {
-            state = Location.getStateName(state);
+          if (BrProfile.isActive()) {
+            try {
+              BrGeographyResolver.load().completePersonGeography(person, false);
+            } catch (IOException e) {
+              throw new IllegalStateException("Failed to load BR geography data pack", e);
+            }
+          } else {
+            String state = currentSeed.getState();
+            if (state.length() == 2) {
+              state = Location.getStateName(state);
+            }
+            Location newLocation = new Location(state, currentSeed.getCity());
+            newLocation.assignPoint(person, currentSeed.getCity());
           }
-          Location newLocation = new Location(state, currentSeed.getCity());
-          newLocation.assignPoint(person, currentSeed.getCity());
 
         }
       }
@@ -886,17 +940,41 @@ public class Generator {
     // Output map of the generated demographc data.
     Map<String, Object> demographicsOutput = new HashMap<>();
 
+    // Story 3.1: when br.profile=br, use IBGE national age/gender/race distributions on a
+    // non-shared Demographics picker (city selection unchanged). Story 3.2 reuses the same
+    // BrProfile.isActive() branch pattern for geography overrides.
+    Demographics demoPicker = city;
+    if (BrProfile.isActive()) {
+      try {
+        demoPicker = BrDemographicsLoader.createPickerForLocation(city);
+      } catch (IOException e) {
+        throw new IllegalStateException("Failed to load BR national demographics data pack", e);
+      }
+    }
+
     // Pull the person's location data.
-    demographicsOutput.put(Person.CITY, city.city);
-    demographicsOutput.put(Person.STATE, city.state);
-    demographicsOutput.put(Person.COUNTY, city.county);
+    if (BrProfile.isActive()) {
+      try {
+        BrGeographyResolver geography = BrGeographyResolver.load();
+        BrGeographyResolver.MunicipioSelection selection = geography.selectMunicipio(random);
+        demographicsOutput.put(Person.CITY, selection.getNome());
+        demographicsOutput.put(Person.STATE, selection.getUfNome());
+        demographicsOutput.put(Person.COUNTY, selection.getUfSigla());
+      } catch (IOException e) {
+        throw new IllegalStateException("Failed to load BR geography data pack", e);
+      }
+    } else {
+      demographicsOutput.put(Person.CITY, city.city);
+      demographicsOutput.put(Person.STATE, city.state);
+      demographicsOutput.put(Person.COUNTY, city.county);
+    }
 
     // Generate the person's race data based on their location.
-    String race = city.pickRace(random);
+    String race = demoPicker.pickRace(random);
     demographicsOutput.put(Person.RACE, race);
-    String ethnicity = city.pickEthnicity(random);
+    String ethnicity = demoPicker.pickEthnicity(random);
     demographicsOutput.put(Person.ETHNICITY, ethnicity);
-    String language = city.languageFromRaceAndEthnicity(race, ethnicity, random);
+    String language = demoPicker.languageFromRaceAndEthnicity(race, ethnicity, random);
     demographicsOutput.put(Person.FIRST_LANGUAGE, language);
 
     // Generate the person's gender based on their location.
@@ -904,7 +982,7 @@ public class Generator {
     if (options.gender != null) {
       gender = options.gender;
     } else {
-      gender = city.pickGender(random);
+      gender = demoPicker.pickGender(random);
       if (gender.equalsIgnoreCase("male") || gender.equalsIgnoreCase("M")) {
         gender = "M";
       } else {
@@ -914,24 +992,25 @@ public class Generator {
     demographicsOutput.put(Person.GENDER, gender);
 
     // Pick the person's socioeconomic variables of education/income/occupation based on location.
-    String education = city.pickEducation(random);
+    String education = demoPicker.pickEducation(random);
     demographicsOutput.put(Person.EDUCATION, education);
-    double educationLevel = city.educationLevel(education, random);
+    double educationLevel = demoPicker.educationLevel(education, random);
     demographicsOutput.put(Person.EDUCATION_LEVEL, educationLevel);
 
-    int income = city.pickIncome(random);
+    int income = demoPicker.pickIncome(random);
     demographicsOutput.put(Person.INCOME, income);
-    double incomeLevel = city.incomeLevel(income);
+    double incomeLevel = demoPicker.incomeLevel(income);
     demographicsOutput.put(Person.INCOME_LEVEL, incomeLevel);
-    double povertyRatio = city.povertyRatio(income);
+    double povertyRatio = demoPicker.povertyRatio(income);
     demographicsOutput.put(Person.POVERTY_RATIO, povertyRatio);
 
     double occupation = random.rand();
     demographicsOutput.put(Person.OCCUPATION_LEVEL, occupation);
 
-    double sesScore = city.socioeconomicScore(incomeLevel, educationLevel, occupation);
+    double sesScore = demoPicker.socioeconomicScore(incomeLevel, educationLevel, occupation);
     demographicsOutput.put(Person.SOCIOECONOMIC_SCORE, sesScore);
-    demographicsOutput.put(Person.SOCIOECONOMIC_CATEGORY, city.socioeconomicCategory(sesScore));
+    demographicsOutput.put(Person.SOCIOECONOMIC_CATEGORY,
+        demoPicker.socioeconomicCategory(sesScore));
 
     if (this.onlyVeterans) {
       demographicsOutput.put("veteran_population_override", Boolean.TRUE);
@@ -943,7 +1022,7 @@ public class Generator {
       targetAge =
           (int) (options.minAge + ((options.maxAge - options.minAge) * random.rand()));
     } else {
-      targetAge = city.pickAge(random);
+      targetAge = demoPicker.pickAge(random);
     }
     demographicsOutput.put(TARGET_AGE, targetAge);
 

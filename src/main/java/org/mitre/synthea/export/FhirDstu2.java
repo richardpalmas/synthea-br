@@ -99,6 +99,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.mitre.synthea.br.profile.BrProfile;
 import org.mitre.synthea.engine.Components;
 import org.mitre.synthea.engine.Components.Attachment;
 import org.mitre.synthea.helpers.Config;
@@ -142,7 +143,9 @@ public class FhirDstu2 {
   protected static boolean TRANSACTION_BUNDLE =
       Config.getAsBoolean("exporter.fhir.transaction_bundle");
 
-  private static final String COUNTRY_CODE = Config.get("generate.geography.country_code");
+  private static String countryCode() {
+    return BrProfile.getEffectiveCountryCode();
+  }
 
   @SuppressWarnings("rawtypes")
   private static Map loadRaceEthnicityCodes() {
@@ -432,8 +435,8 @@ public class FhirDstu2 {
         .setCity((String) person.attributes.get(Person.CITY))
         .setPostalCode((String) person.attributes.get(Person.ZIP))
         .setState(state);
-    if (COUNTRY_CODE != null) {
-      addrResource.setCountry(COUNTRY_CODE);
+    if (countryCode() != null) {
+      addrResource.setCountry(countryCode());
     }
 
     Point2D.Double coord = person.getLonLat();
@@ -1620,8 +1623,8 @@ public class FhirDstu2 {
         .setCity(provider.city)
         .setPostalCode(provider.zip)
         .setState(provider.state);
-    if (COUNTRY_CODE != null) {
-      address.setCountry(COUNTRY_CODE);
+    if (countryCode() != null) {
+      address.setCountry(countryCode());
     }
     organizationResource.addAddress(address);
 
@@ -1658,8 +1661,8 @@ public class FhirDstu2 {
         .setCity((String) clinician.attributes.get(Clinician.CITY))
         .setPostalCode((String) clinician.attributes.get(Clinician.ZIP))
         .setState((String) clinician.attributes.get(Clinician.STATE));
-    if (COUNTRY_CODE != null) {
-      address.setCountry(COUNTRY_CODE);
+    if (countryCode() != null) {
+      address.setCountry(countryCode());
     }
     practitionerResource.addAddress(address);
 

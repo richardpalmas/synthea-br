@@ -19,6 +19,7 @@ lib/custom/*.jar
 
 # don't commit the autobuilt version file
 src/main/resources/version.txt
+src/main/resources/commit_sha.txt
 
 # don't commit the code maps
 src/main/resources/export/cdt_code_map.json

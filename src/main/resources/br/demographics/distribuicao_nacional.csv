@@ -1,0 +1,38 @@
+# Fonte: IBGE, Censo Demográfico 2022 — população residente, Brasil (nacional, não municipal).
+# Tabela 2629 (cor ou raça) e agregados de sexo e idade (grupos quinquenais).
+# Ano de referência: 2022. Granularidade MVP: nacional (Story 3.1).
+#
+# Mapeamento IBGE raça/cor → categorias internas Synthea (US Census keys):
+#   branca   → white
+#   preta    → black
+#   amarela  → asian
+#   indigena → native
+#   parda    → SEM equivalente 1:1 (maior categoria ~45%); split interim ADR-003 (Proposto):
+#              40% da fração parda → black, 60% → other (ver BrRaceMapper.java)
+#
+section,category,fraction
+age,0..4,0.0604
+age,5..9,0.0635
+age,10..14,0.0674
+age,15..19,0.0706
+age,20..24,0.0763
+age,25..29,0.0791
+age,30..34,0.0782
+age,35..39,0.0734
+age,40..44,0.0706
+age,45..49,0.0677
+age,50..54,0.0629
+age,55..59,0.0563
+age,60..64,0.0477
+age,65..69,0.0391
+age,70..74,0.0287
+age,75..79,0.0210
+age,80..84,0.0144
+age,85..110,0.0227
+gender,male,0.4846
+gender,female,0.5154
+race_ibge,branca,0.4350
+race_ibge,preta,0.1020
+race_ibge,parda,0.4530
+race_ibge,amarela,0.0042
+race_ibge,indigena,0.0058

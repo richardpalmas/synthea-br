@@ -506,31 +506,32 @@ public class Provider implements QuadTreeElement, Serializable {
         servicesProvided.add(EncounterType.INPATIENT);
 
         String hospitalFile = Config.get("generate.providers.hospitals.default_file");
-        loadProviders(location, hospitalFile, ProviderType.HOSPITAL, servicesProvided,
-            random, false);
+        loadProvidersInternal(location, hospitalFile, ProviderType.HOSPITAL, servicesProvided,
+            random, false, false);
 
         String ihsHospitalFile = Config.get("generate.providers.ihs.hospitals.default_file");
-        loadProviders(location, ihsHospitalFile, ProviderType.IHS, servicesProvided,
-            random, true);
+        loadProvidersInternal(location, ihsHospitalFile, ProviderType.IHS, servicesProvided,
+            random, true, false);
 
         servicesProvided.add(EncounterType.WELLNESS);
         String vaFile = Config.get("generate.providers.veterans.default_file");
-        loadProviders(location, vaFile, ProviderType.VETERAN, servicesProvided, random,
-                false);
+        loadProvidersInternal(location, vaFile, ProviderType.VETERAN, servicesProvided, random,
+            false, false);
 
         servicesProvided.clear();
         servicesProvided.add(EncounterType.WELLNESS);
         String primaryCareFile = Config.get("generate.providers.primarycare.default_file");
-        loadProviders(location, primaryCareFile, ProviderType.PRIMARY, servicesProvided,
-            random, false);
+        loadProvidersInternal(location, primaryCareFile, ProviderType.PRIMARY, servicesProvided,
+            random, false, false);
         String ihsPCFile = Config.get("generate.providers.ihs.primarycare.default_file");
-        loadProviders(location, ihsPCFile, ProviderType.IHS, servicesProvided, random, true);
+        loadProvidersInternal(location, ihsPCFile, ProviderType.IHS, servicesProvided, random,
+            true, false);
 
         servicesProvided.clear();
         servicesProvided.add(EncounterType.URGENTCARE);
         String urgentcareFile = Config.get("generate.providers.urgentcare.default_file");
-        loadProviders(location, urgentcareFile, ProviderType.URGENT, servicesProvided,
-            random, false);
+        loadProvidersInternal(location, urgentcareFile, ProviderType.URGENT, servicesProvided,
+            random, false, false);
 
         statesLoaded.add(location.state);
         statesLoaded.add(Location.getAbbreviation(location.state));
@@ -546,24 +547,62 @@ public class Provider implements QuadTreeElement, Serializable {
         servicesProvided.clear();
         servicesProvided.add(EncounterType.HOME);
         String homeHealthFile = Config.get("generate.providers.homehealth.default_file");
-        loadProviders(location, homeHealthFile, ProviderType.HOME_HEALTH, servicesProvided,
-            random, true);
+        loadProvidersInternal(location, homeHealthFile, ProviderType.HOME_HEALTH, servicesProvided,
+            random, true, false);
 
         servicesProvided.clear();
         servicesProvided.add(EncounterType.HOSPICE);
         String hospiceFile = Config.get("generate.providers.hospice.default_file");
-        loadProviders(location, hospiceFile, ProviderType.HOSPICE, servicesProvided,
-            random, true);
+        loadProvidersInternal(location, hospiceFile, ProviderType.HOSPICE, servicesProvided,
+            random, true, false);
 
         servicesProvided.clear();
         servicesProvided.add(EncounterType.SNF);
         String nursingFile = Config.get("generate.providers.nursing.default_file");
-        loadProviders(location, nursingFile, ProviderType.NURSING, servicesProvided,
-            random, true);
+        loadProvidersInternal(location, nursingFile, ProviderType.NURSING, servicesProvided,
+            random, true, false);
       } catch (IOException e) {
         System.err.println("WARNING: unable to load optional providers in: " + location.state);
       }
     }
+  }
+
+  /**
+   * Read providers from a CSV file, importing every row (BR profile — no state filter).
+   *
+   * @param location location context attached to loaded providers
+   * @param filename resource path under {@code src/main/resources}
+   * @param providerType provider category
+   * @param servicesProvided encounter types supported
+   * @param random random source for clinician generation
+   * @param optional if true, ignore missing filenames
+   * @throws IOException if the file cannot be read
+   */
+  public static void loadAllProvidersFromFile(Location location, String filename,
+      ProviderType providerType, Set<EncounterType> servicesProvided, RandomNumberGenerator random,
+      boolean optional)
+      throws IOException {
+    loadProvidersInternal(location, filename, providerType, servicesProvided, random, optional,
+        true);
+  }
+
+  /**
+   * Whether providers were already loaded for the given state key (test / BR loader helper).
+   *
+   * @param state state name or marker
+   * @return true if already loaded
+   */
+  public static boolean isProvidersLoadedForState(String state) {
+    return statesLoaded.contains(state);
+  }
+
+  /**
+   * Mark a state as loaded to prevent duplicate provider imports.
+   *
+   * @param state state name or marker
+   */
+  public static void markProvidersLoadedForState(String state) {
+    statesLoaded.add(state);
   }
 
   /**
@@ -582,11 +621,20 @@ public class Provider implements QuadTreeElement, Serializable {
       ProviderType providerType, Set<EncounterType> servicesProvided, RandomNumberGenerator random,
       boolean optional)
       throws IOException {
+    loadProvidersInternal(location, filename, providerType, servicesProvided, random, optional,
+        false);
+  }
+
+  private static void loadProvidersInternal(Location location, String filename,
+      ProviderType providerType, Set<EncounterType> servicesProvided, RandomNumberGenerator random,
+      boolean optional, boolean ignoreStateFilter)
+      throws IOException {
     if (optional && (filename == null || filename.length() == 0)) {
       return;
     }
 
     String resource = Utilities.readResource(filename, true, true);
+    resource = stripCsvCommentLines(resource);
     Iterator<? extends Map<String,String>> csv = SimpleCSV.parseLineByLine(resource);
 
     while (csv.hasNext()) {
@@ -594,10 +642,12 @@ public class Provider implements QuadTreeElement, Serializable {
       String currState = row.get("state");
       String abbreviation = Location.getAbbreviation(location.state);
 
-      // for now, only allow one state at a time
-      if ((location.state == null)
+      boolean stateMatches = ignoreStateFilter
+          || (location.state == null)
           || (location.state != null && location.state.equalsIgnoreCase(currState))
-          || (abbreviation != null && abbreviation.equalsIgnoreCase(currState))) {
+          || (abbreviation != null && abbreviation.equalsIgnoreCase(currState));
+
+      if (stateMatches) {
 
         Provider parsed = csvLineToProvider(row);
         parsed.type = providerType;
@@ -643,6 +693,16 @@ public class Provider implements QuadTreeElement, Serializable {
         insertIntoProviderMap(parsed);
       }
     }
+  }
+
+  private static String stripCsvCommentLines(String raw) {
+    StringBuilder builder = new StringBuilder();
+    for (String line : raw.split("\\R")) {
+      if (!line.trim().startsWith("#")) {
+        builder.append(line).append('\n');
+      }
+    }
+    return builder.toString();
   }
 
   private static void insertIntoProviderMap(Provider provider) {
