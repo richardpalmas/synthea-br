@@ -1,1 +1,2 @@
 org.mitre.synthea.br.research.ResearchManifestWriter
+org.mitre.synthea.br.terminology.BrUnmappedCodeReporter

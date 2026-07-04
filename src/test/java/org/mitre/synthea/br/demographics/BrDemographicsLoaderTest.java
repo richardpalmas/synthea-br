@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import org.mitre.synthea.TestHelper;
 import org.mitre.synthea.br.demographics.BrDemographicsLoader.BrDemographicsData;
+import org.mitre.synthea.helpers.DefaultRandomNumberGenerator;
 import org.mitre.synthea.helpers.Utilities;
 
 public class BrDemographicsLoaderTest {
@@ -67,12 +68,43 @@ public class BrDemographicsLoaderTest {
     assertFractionsSumToOne(data.getGender(), "gender");
     assertFractionsSumToOne(data.getRaceIbge(), "race_ibge");
     assertFractionsSumToOne(data.getRace(), "internal race");
+    assertFractionsSumToOne(data.getLanguage(), "language");
+    assertFractionsSumToOne(data.getEducation(), "education");
+    assertFractionsSumToOne(data.getIncome(), "income");
 
     for (String ageGroup : AGE_GROUPS) {
       assertTrue("Missing age group " + ageGroup, data.getAges().containsKey(ageGroup));
     }
     assertEquals(2, data.getGender().size());
     assertEquals(5, data.getRaceIbge().size());
+    assertTrue("Portuguese must be dominant language",
+        data.getLanguage().get("portuguese") > 0.9);
+  }
+
+  @Test
+  public void testRaceMapperSingleCategoryMapping() {
+    DefaultRandomNumberGenerator random = new DefaultRandomNumberGenerator(42L);
+    assertEquals("white", BrRaceMapper.toInternalRace("branca", random));
+    assertEquals("black", BrRaceMapper.toInternalRace("preta", random));
+    assertEquals("asian", BrRaceMapper.toInternalRace("amarela", random));
+    assertEquals("native", BrRaceMapper.toInternalRace("indigena", random));
+  }
+
+  @Test
+  public void testRaceMapperBrazilianDisplayTranslation() {
+    assertEquals("branca", BrRaceMapper.toBrazilianDisplayRace("white"));
+    assertEquals("preta", BrRaceMapper.toBrazilianDisplayRace("black"));
+    assertEquals("amarela", BrRaceMapper.toBrazilianDisplayRace("asian"));
+    assertEquals("indigena", BrRaceMapper.toBrazilianDisplayRace("native"));
+    assertEquals("outro", BrRaceMapper.toBrazilianDisplayRace("other"));
+    assertEquals("hawaiana", BrRaceMapper.toBrazilianDisplayRace("hawaiian"));
+  }
+
+  @Test
+  public void testRaceMapperInternalKeyRoundTrip() {
+    assertEquals("white", BrRaceMapper.toInternalRaceKey("branca"));
+    assertEquals("other", BrRaceMapper.toInternalRaceKey("outro"));
+    assertEquals("black", BrRaceMapper.toInternalRaceKey("black"));
   }
 
   @Test

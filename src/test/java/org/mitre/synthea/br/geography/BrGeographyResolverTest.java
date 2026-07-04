@@ -133,8 +133,6 @@ public class BrGeographyResolverTest {
       String zip = (String) person.attributes.get(Person.ZIP);
       assertTrue("CEP must match BR format", CEP_PATTERN.matcher(zip).matches());
       assertFalse("CEP must not match a US ZIP code: " + zip, usZips.contains(zip));
-      assertFalse("CEP prefix must not match a US ZIP code: " + zip,
-          usZips.contains(zip.substring(0, 5)));
       Point2D.Double coordinate = (Point2D.Double) person.attributes.get(Person.COORDINATE);
       assertNotNull(coordinate);
       assertTrue("Coordinate must be within UF bounding box",

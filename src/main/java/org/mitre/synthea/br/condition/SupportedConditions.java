@@ -32,7 +32,9 @@ public final class SupportedConditions {
    * Immutable definition of a supported target condition.
    */
   public static final class ConditionDefinition {
-    /** Config key value (e.g. {@code breast_cancer}). */
+    /**
+     * Config key value (e.g. {@code breast_cancer}).
+     */
     public final String conditionKey;
     /**
      * Relative GMF disease module path without {@code .json} (e.g. {@code breast_cancer}).
@@ -97,6 +99,8 @@ public final class SupportedConditions {
   }
 
   /**
+   * Returns the unmodifiable set of supported condition keys for error messages.
+   *
    * @return unmodifiable set of supported condition keys for error messages
    */
   public static Set<String> supportedKeys() {

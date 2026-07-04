@@ -73,7 +73,7 @@ public class GateModeIntegrationTest {
   }
 
   @Test
-  public void testExcludeModeSkipsNonConformingExports() throws Exception {
+  public void testExcludeModeProducesFullyConformingCohort() throws Exception {
     Config.set("br.target_condition", "breast_cancer");
     Config.set("br.target_condition.gate_mode", "exclude");
 
@@ -86,9 +86,49 @@ public class GateModeIntegrationTest {
       }
     }
 
-    assertTrue("Expected some excluded patients in exclude mode", conforming < 30);
-    assertTrue("Expected at least one conforming patient", conforming > 0);
-    assertEquals(30 - conforming, generator.getTargetConditionExcludedCount());
+    assertEquals("All slots must produce conforming patients in exclude mode", 30, conforming);
+    assertTrue("Expected some excluded attempts in exclude mode",
+        generator.getTargetConditionExcludedCount() > 0);
+    assertEquals(30, generator.getTargetConditionExportedCount());
+  }
+
+  @Test
+  public void testExcludeModeIsReproducible() throws Exception {
+    Config.set("br.target_condition", "breast_cancer");
+    Config.set("br.target_condition.gate_mode", "exclude");
+
+    Generator generatorRun1 = buildGenerator(15, 9999L);
+    runExcludePopulation(generatorRun1, 15, 9999L);
+    int exportedRun1 = generatorRun1.getTargetConditionExportedCount();
+    int excludedRun1 = generatorRun1.getTargetConditionExcludedCount();
+
+    Provider.clear();
+    PayerManager.clear();
+
+    Generator generatorRun2 = buildGenerator(15, 9999L);
+    runExcludePopulation(generatorRun2, 15, 9999L);
+    int exportedRun2 = generatorRun2.getTargetConditionExportedCount();
+    int excludedRun2 = generatorRun2.getTargetConditionExcludedCount();
+
+    assertEquals(15, exportedRun1);
+    assertEquals(exportedRun1, exportedRun2);
+    assertEquals(excludedRun1, excludedRun2);
+  }
+
+  @Test
+  public void testExcludeModeFailsWhenMaxAttemptsExceeded() throws Exception {
+    Config.set("br.target_condition", "breast_cancer");
+    Config.set("br.target_condition.gate_mode", "exclude");
+    Config.set("generate.max_attempts_to_keep_patient", "1");
+
+    Generator generator = buildGenerator(1, 1111L);
+
+    try {
+      generator.generatePerson(0, 1111L);
+      fail("Expected RuntimeException when max attempts exceeded in exclude mode");
+    } catch (RuntimeException e) {
+      assertTrue(e.getMessage().contains("Failed to produce a matching patient after"));
+    }
   }
 
   @Test
@@ -132,5 +172,12 @@ public class GateModeIntegrationTest {
       }
     }
     return conforming;
+  }
+
+  private void runExcludePopulation(Generator generator, int population, long seedBase)
+      throws Exception {
+    for (int i = 0; i < population; i++) {
+      generator.generatePerson(i, seedBase + i);
+    }
   }
 }

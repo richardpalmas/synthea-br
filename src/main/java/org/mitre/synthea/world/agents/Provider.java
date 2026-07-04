@@ -568,6 +568,26 @@ public class Provider implements QuadTreeElement, Serializable {
   }
 
   /**
+   * Read the providers from the given resource file, only importing the ones for the given state.
+   * THIS method is for loading providers and generating clinicians with specific specialties
+   *
+   * @param location the state being loaded
+   * @param filename Location of the file
+   * @param providerType ProviderType
+   * @param servicesProvided Set of services provided by these facilities
+   * @param random Source of randomness for provider generation
+   * @param optional if true the function will silently ignore a null or empty filename
+   * @throws IOException if the file cannot be read
+   */
+  public static void loadProviders(Location location, String filename,
+      ProviderType providerType, Set<EncounterType> servicesProvided, RandomNumberGenerator random,
+      boolean optional)
+      throws IOException {
+    loadProvidersInternal(location, filename, providerType, servicesProvided, random, optional,
+        false);
+  }
+
+  /**
    * Read providers from a CSV file, importing every row (BR profile — no state filter).
    *
    * @param location location context attached to loaded providers
@@ -603,26 +623,6 @@ public class Provider implements QuadTreeElement, Serializable {
    */
   public static void markProvidersLoadedForState(String state) {
     statesLoaded.add(state);
-  }
-
-  /**
-   * Read the providers from the given resource file, only importing the ones for the given state.
-   * THIS method is for loading providers and generating clinicians with specific specialties
-   *
-   * @param location the state being loaded
-   * @param filename Location of the file
-   * @param providerType ProviderType
-   * @param servicesProvided Set of services provided by these facilities
-   * @param random Source of randomness for provider generation
-   * @param optional if true the function will silently ignore a null or empty filename
-   * @throws IOException if the file cannot be read
-   */
-  public static void loadProviders(Location location, String filename,
-      ProviderType providerType, Set<EncounterType> servicesProvided, RandomNumberGenerator random,
-      boolean optional)
-      throws IOException {
-    loadProvidersInternal(location, filename, providerType, servicesProvided, random, optional,
-        false);
   }
 
   private static void loadProvidersInternal(Location location, String filename,

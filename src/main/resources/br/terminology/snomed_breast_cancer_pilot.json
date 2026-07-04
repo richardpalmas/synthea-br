@@ -1,0 +1,99 @@
+{
+  "_meta": {
+    "domain": "breast_cancer_pilot",
+    "version": "2026-07-02",
+    "source": "Curadoria manual — módulo breast_cancer + CID-10 WHO PT"
+  },
+  "254837009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Neoplasia maligna da mama"
+  },
+  "241055006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Mamografia — sintomática"
+  },
+  "1571000087109": {
+    "system": "SNOMED-CT",
+    "display_pt": "Ultrassonografia bilateral das mamas"
+  },
+  "185345009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Atendimento por sintoma"
+  },
+  "241615005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Ressonância magnética da mama"
+  },
+  "71651007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Mamografia"
+  },
+  "410410006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Vigilância de rastreamento"
+  },
+  "35025007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Exame pélvico manual"
+  },
+  "90226004": {
+    "system": "SNOMED-CT",
+    "display_pt": "Citopatologia — esfregaço de origem genital"
+  },
+  "312681000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Densitometria óssea"
+  },
+  "310061009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Serviço de ginecologia"
+  },
+  "258228008": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio 4"
+  },
+  "258224005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio 3"
+  },
+  "258215001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio 1"
+  },
+  "258219007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio 2"
+  },
+  "1222805004": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio clínico AJCC IIIB"
+  },
+  "1222802001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio clínico AJCC IIIA"
+  },
+  "1222806003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio clínico AJCC IIIC"
+  },
+  "1222769001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio clínico AJCC IIB"
+  },
+  "1222766008": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio clínico AJCC IIA"
+  },
+  "1222724007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio clínico AJCC IA"
+  },
+  "1222728005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estádio clínico AJCC IB"
+  },
+  "21908-9": {
+    "system": "LOINC",
+    "display_pt": "Estádio clínico do câncer"
+  }
+}

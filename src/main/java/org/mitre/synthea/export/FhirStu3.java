@@ -155,7 +155,9 @@ public class FhirStu3 {
   private static String countryCode() {
     return BrProfile.getEffectiveCountryCode();
   }
-  private static final String PASSPORT_URI = Config.get("generate.geography.passport_uri", "http://hl7.org/fhir/sid/passport-USA");
+
+  private static final String PASSPORT_URI = Config.get("generate.geography.passport_uri",
+      "http://hl7.org/fhir/sid/passport-USA");
 
   @SuppressWarnings("rawtypes")
   private static Map loadRaceEthnicityCodes() {

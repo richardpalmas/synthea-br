@@ -400,6 +400,17 @@ run {
   }
 }
 
+tasks.register('runWeb', JavaExec) {
+  group = 'application'
+  description = 'Start Synthea-br web UI for cohort generation (localhost)'
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = 'App'
+  args '--web'
+  if (System.getenv("MAX_HEAP_SIZE") != null) {
+    maxHeapSize = System.getenv("MAX_HEAP_SIZE")
+  }
+}
+
 def mavenGroup = 'org.mitre.synthea'
 def mavenVersion = '4.0.1-SNAPSHOT'
 

@@ -83,6 +83,7 @@ FR13: Epic 1 — Manifest de rastreabilidade (seed/hash/commit/checksum)
 FR14: Epic 1 — Guia acadêmico PT-BR com disclaimer ético
 FR15: Epic 5 — Export FHIR R4 preservado para cohorts direcionadas
 FR16: Epic 5 — Metadados de proveniência no export
+FR17: Epic 6 — Export HTML narrativo da cohort (Cohort Narrative Viewer)
 
 ## Epic List
 
@@ -105,6 +106,10 @@ Pesquisadores auditam a qualidade clínica dos dados gerados: catálogo de regra
 ### Epic 5: Export FHIR R4 com Proveniência Publicável
 Pesquisadores exportam datasets em FHIR R4 com metadados de proveniência (fork Synthea-br, perfil, condição, versão) que permitem citação direta em artigos e conferências.
 **FRs cobertos:** FR15, FR16
+
+### Epic 6: Visualizador Narrativo HTML da Cohort
+Pesquisadores validam casos clínicos com orientadores via HTML estático offline — timeline e seções aninhadas por paciente, complementando FHIR/CSV.
+**FRs cobertos:** FR17
 
 ## Epic 1: Infraestrutura Acadêmica e Rastreabilidade
 
@@ -361,3 +366,42 @@ para citar o fork, perfil, condição e versão no artigo.
 **And** campos estáveis estão documentados para citação em paper
 **And** metadados são gerados automaticamente ou via script integrado ao pipeline de export
 **And** sidecar JSON segue convenção de manifest (AD-6) quando aplicável
+
+---
+
+## Epic 6: Visualizador Narrativo HTML da Cohort
+
+Pesquisadores validam casos clínicos sintéticos com orientadores via HTML estático offline — narrativa por paciente com timeline e seções aninhadas, complementando FHIR/CSV sem join manual de planilhas.
+
+**Origem:** SPEC `spec-cohort-narrative-viewer` (brainstorm export-html-narrativa-clinica 2026-07-01)
+
+### Story 6.1: Cohort Narrative Viewer — Export HTML MVP
+
+Como pesquisador ou estudante,
+quero gerar um `index.html` narrativo por cohort via flag `exporter.html.export=true`,
+para apresentar casos ao orientador com timeline e seções clínicas estruturadas sem cruzar CSVs.
+
+**Acceptance Criteria:**
+
+**Given** o Synthea-br está instalado e Epic 2/3 implementados (cohort direcionada + perfil BR)
+**When** o pesquisador define `exporter.html.export=true` e gera cohort n=10
+**Then** `output/html/index.html` é produzido, válido HTML5, abrível offline no browser
+**And** flag `false` ou ausente não gera pasta/arquivo HTML
+
+**Given** `index.html` gerado
+**When** o pesquisador abre a página
+**Then** cada paciente aparece como accordion colapsável com cabeçalho de triagem: idade, sexo, condição principal, último evento
+
+**Given** accordion expandido
+**When** o pesquisador percorre o conteúdo
+**Then** timeline cronológica contém ≥1 evento por paciente
+**And** seções aninhadas presentes e populadas quando dados existem: demografia, condições, medicamentos, exames, procedimentos, encounters, cobertura
+
+**Given** perfil `br` ativo
+**When** condições piloto são exibidas
+**Then** labels de seção/UI estão em PT-BR e CID-10 BR quando mapping disponível (Story 3.3)
+
+**Given** exportadores existentes
+**When** HTML export roda
+**Then** implementação é read-only sobre `HealthRecord` (AD-2) e usa FreeMarker em `resources/templates/html/` (padrão CCDA)
+**And** `./gradlew check` passa incluindo testes novos de `HtmlExporter`

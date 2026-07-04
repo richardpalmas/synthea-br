@@ -1,0 +1,87 @@
+{
+  "_meta": {
+    "domain": "snomed_dental_extended",
+    "version": "2026-07-03",
+    "source": "Curadoria manual — dental_and_oral_examination.json"
+  },
+  "18718003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Doença gengival"
+  },
+  "1260010008": {
+    "system": "SNOMED-CT",
+    "display_pt": "Remoção de placa e cálculo subgengival de todos os dentes"
+  },
+  "241046008": {
+    "system": "SNOMED-CT",
+    "display_pt": "Radiografia interproximal (bite-wing) dental"
+  },
+  "64544008": {
+    "system": "SNOMED-CT",
+    "display_pt": "Gengivectomia ou gengivoplastia, por dente"
+  },
+  "3802001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Aplicação de medicamento dessensibilizante dental"
+  },
+  "456191000124101": {
+    "system": "SNOMED-CT",
+    "display_pt": "Cuidados pós-operatórios de procedimento odontológico"
+  },
+  "81733005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Procedimento cirúrgico odontológico"
+  },
+  "34043003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Consulta odontológica e laudo"
+  },
+  "225362009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Cuidado odontológico"
+  },
+  "103697008": {
+    "system": "SNOMED-CT",
+    "display_pt": "Encaminhamento para atendimento odontológico"
+  },
+  "185349003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Consulta de acompanhamento"
+  },
+  "243085009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Orientação em saúde bucal"
+  },
+  "68071007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Aplicação tópica de flúor dental"
+  },
+  "173291009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Extração simples de dente"
+  },
+  "427898007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Infecção de dente"
+  },
+  "Gingival disease (disorder)": {
+    "system": "LABEL",
+    "display_pt": "Doença gengival"
+  },
+  "Removal of subgingival plaque and calculus from all teeth using dental instrument (procedure)": {
+    "system": "LABEL",
+    "display_pt": "Remoção de placa e cálculo subgengival de todos os dentes"
+  },
+  "Dental plain X-ray bitewing (procedure)": {
+    "system": "LABEL",
+    "display_pt": "Radiografia interproximal (bite-wing) dental"
+  },
+  "Gingivectomy or gingivoplasty, per tooth (procedure)": {
+    "system": "LABEL",
+    "display_pt": "Gengivectomia ou gengivoplastia, por dente"
+  },
+  "Postoperative care for dental procedure (regime/therapy)": {
+    "system": "LABEL",
+    "display_pt": "Cuidados pós-operatórios de procedimento odontológico"
+  }
+}

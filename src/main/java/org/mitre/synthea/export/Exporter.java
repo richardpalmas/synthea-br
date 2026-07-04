@@ -399,6 +399,9 @@ public abstract class Exporter {
         e.printStackTrace();
       }
     }
+    if (Config.getAsBoolean("exporter.html.export")) {
+      HtmlExporter.getInstance().appendPatient(person, stopTime);
+    }
     if (Config.getAsBoolean("exporter.text.per_encounter_export")) {
       try {
         TextExporter.exportEncounter(person, stopTime);
@@ -667,6 +670,14 @@ public abstract class Exporter {
             && postCompletionExporters != null && !postCompletionExporters.isEmpty()) {
       for (PostCompletionExporter postCompletionExporter : postCompletionExporters) {
         postCompletionExporter.export(generator, options);
+      }
+    }
+
+    if (Config.getAsBoolean("exporter.html.export")) {
+      try {
+        HtmlExporter.getInstance().writeIndex();
+      } catch (IOException e) {
+        e.printStackTrace();
       }
     }
 

@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "domain": "snomed_sdoh_extended",
+    "version": "2026-07-03",
+    "source": "Curadoria manual — SDOH/HRSN complementar a snomed_wellness_common.json"
+  },
+  "473461003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Escolaridade até ensino médio"
+  },
+  "266948004": {
+    "system": "SNOMED-CT",
+    "display_pt": "Possui antecedente criminal"
+  },
+  "741062008": {
+    "system": "SNOMED-CT",
+    "display_pt": "Fora da força de trabalho"
+  },
+  "422650009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Isolamento social"
+  },
+  "224299000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Ensino superior completo"
+  },
+  "73438004": {
+    "system": "SNOMED-CT",
+    "display_pt": "Desemprego"
+  },
+  "32911000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Situação de rua"
+  },
+  "105531004": {
+    "system": "SNOMED-CT",
+    "display_pt": "Moradia insatisfatória"
+  },
+  "160903007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Emprego em tempo integral"
+  },
+  "160904001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Emprego em meio período"
+  },
+  "224406003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Escolaridade superior incompleta"
+  },
+  "Educated to high school level (finding)": {
+    "system": "LABEL",
+    "display_pt": "Escolaridade até ensino médio"
+  },
+  "Has a criminal record (finding)": {
+    "system": "LABEL",
+    "display_pt": "Possui antecedente criminal"
+  },
+  "Social isolation (finding)": {
+    "system": "LABEL",
+    "display_pt": "Isolamento social"
+  }
+}

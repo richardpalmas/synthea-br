@@ -22,6 +22,8 @@ public enum GateMode {
   }
 
   /**
+   * Returns the property value for {@code br.target_condition.gate_mode}.
+   *
    * @return property value written to {@code br.target_condition.gate_mode}
    */
   public String getConfigValue() {
@@ -34,7 +36,16 @@ public enum GateMode {
    * @return parsed gate mode, defaulting to {@link #RETRY}
    */
   public static GateMode fromConfig() {
-    String raw = Config.get("br.target_condition.gate_mode", RETRY.configValue);
+    return fromConfigValue(Config.get("br.target_condition.gate_mode", RETRY.configValue));
+  }
+
+  /**
+   * Parse a gate mode string from user input or configuration.
+   *
+   * @param raw config or form value
+   * @return parsed gate mode
+   */
+  public static GateMode fromConfigValue(String raw) {
     if (raw == null || raw.isBlank()) {
       return RETRY;
     }

@@ -40,7 +40,7 @@ flowchart LR
 
 - **Binds:** FR-1, FR-2, FR-4, FR-5, FR-7, FR-8, FR-9, FR-10, FR-15, FR-16
 - **Prevents:** dividir core e validação em serviços separados com contratos instáveis no MVP
-- **Rule:** toda execução do `Synthea-br` ocorre em processo Java único; qualquer avaliação de IA fica documental (sem pipeline de runtime) até ADR futuro.
+- **Rule:** toda execução do `Synthea-br` ocorre em processo Java único; pipeline de IA opcional (ADR-007) roda in-process após geração quando `br.ai.enrichment.enabled=true`.
 
 ### AD-2 — Ownership de Mutação Clínica
 

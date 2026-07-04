@@ -36,3 +36,25 @@ race_ibge,preta,0.1020
 race_ibge,parda,0.4530
 race_ibge,amarela,0.0042
 race_ibge,indigena,0.0058
+# Idioma domiciliar (PNAD Contínua 2019, IBGE — língua mais frequentemente falada)
+language,portuguese,0.9820
+language,spanish,0.0020
+language,indigenous,0.0060
+language,english,0.0050
+language,other,0.0050
+# Escolaridade 25+ anos (PNAD Contínua 2022, IBGE → chaves Synthea)
+education,less_than_hs,0.4140
+education,hs_degree,0.2970
+education,some_college,0.1830
+education,bs_degree,0.1060
+# Renda domiciliar per capita anual (PNAD 2022, IBGE → faixas em milhares, calibradas ao mercado BR)
+income,00..10,0.2800
+income,10..15,0.1800
+income,15..25,0.2200
+income,25..35,0.1200
+income,35..50,0.0800
+income,50..75,0.0600
+income,75..100,0.0300
+income,100..150,0.0200
+income,150..200,0.0060
+income,200..999,0.0040

@@ -20,6 +20,8 @@
 | ADR-003 | Mapeamento raça/cor IBGE → categorias internas | Proposto | 2026-06-30 | [ADR-003-mapeamento-raca-cor-ibge.md](./ADR-003-mapeamento-raca-cor-ibge.md) |
 | ADR-004 | Semântica do gate — condição ativa vs. resolvida | Proposto | 2026-06-30 | [ADR-004-semantica-do-gate-condicao-ativa-vs-resolvida.md](./ADR-004-semantica-do-gate-condicao-ativa-vs-resolvida.md) |
 | ADR-005 | Fonte de CID-10 BR para nomenclatura clínica (decisão provisória) | Proposto | 2026-06-30 | [ADR-005-fonte-cid10-br.md](./ADR-005-fonte-cid10-br.md) |
+| ADR-006 | Interface Web Local para Geração de Cohort (MVP) | Aceito | 2026-07-01 | [ADR-006-interface-web-localhost-mvp.md](./ADR-006-interface-web-localhost-mvp.md) |
+| ADR-007 | Enriquecimento Clínico por IA (MAI-DxO) | Aceito | 2026-07-03 | [ADR-007-ai-enrichment-maidxo.md](./ADR-007-ai-enrichment-maidxo.md) |
 
 ## Como adicionar um novo ADR
 

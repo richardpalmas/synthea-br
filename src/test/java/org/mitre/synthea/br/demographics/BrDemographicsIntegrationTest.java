@@ -3,6 +3,8 @@ package org.mitre.synthea.br.demographics;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.common.collect.Table;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,8 +25,6 @@ import org.mitre.synthea.helpers.DefaultRandomNumberGenerator;
 import org.mitre.synthea.helpers.RandomNumberGenerator;
 import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.geography.Demographics;
-
-import com.google.common.collect.Table;
 
 /**
  * Statistical and regression tests for BR national demographics (Story 3.1 AC #2, #6, #7).
@@ -151,6 +151,83 @@ public class BrDemographicsIntegrationTest {
 
     assertTrue("BR profile should produce different demographics than upstream default",
         !upstream.equals(brSample));
+  }
+
+  @Test
+  public void testBrProfileSocioeconomicAndLanguageFromDataPack() throws Exception {
+    Config.set("br.profile", "br");
+    BrDemographicsData reference = BrDemographicsLoader.load();
+    Generator generator = new Generator(new GeneratorOptions());
+
+    Map<String, Integer> languageCounts = initCounts(
+        Arrays.asList("portuguese", "spanish", "indigenous", "english", "other"));
+    Map<String, Integer> educationCounts = initCounts(
+        Arrays.asList("less_than_hs", "hs_degree", "some_college", "bs_degree"));
+    Map<String, Integer> raceIbgeCounts = initCounts(
+        Arrays.asList("branca", "preta", "parda", "amarela", "indigena"));
+    int portugueseCount = 0;
+
+    RandomNumberGenerator random = new DefaultRandomNumberGenerator(FIXED_SEED);
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+      Map<String, Object> demo = generator.randomDemographics(random);
+      languageCounts.merge((String) demo.get(Person.FIRST_LANGUAGE), 1, Integer::sum);
+      educationCounts.merge((String) demo.get(Person.EDUCATION), 1, Integer::sum);
+      raceIbgeCounts.merge((String) demo.get(Person.RACE_IBGE), 1, Integer::sum);
+      assertEquals("ETHNICITY must match IBGE raça/cor when br.profile=br",
+          demo.get(Person.RACE_IBGE), demo.get(Person.ETHNICITY));
+      if ("portuguese".equals(demo.get(Person.FIRST_LANGUAGE))) {
+        portugueseCount++;
+      }
+    }
+
+    assertTrue("Portuguese should dominate first language in BR profile",
+        portugueseCount > SAMPLE_SIZE * 0.85);
+    assertProportionsWithinThreshold(languageCounts, reference.getLanguage(), "language");
+    assertProportionsWithinThreshold(educationCounts, reference.getEducation(), "education");
+    assertProportionsWithinThreshold(raceIbgeCounts, reference.getRaceIbge(), "race_ibge");
+  }
+
+  @Test
+  public void testBrProfileEthnicityIsNotUsOmbAxis() throws Exception {
+    Config.set("br.profile", "br");
+    Generator generator = new Generator(new GeneratorOptions());
+    RandomNumberGenerator random = new DefaultRandomNumberGenerator(FIXED_SEED);
+
+    for (int i = 0; i < 100; i++) {
+      Map<String, Object> demo = generator.randomDemographics(random);
+      String ethnicity = (String) demo.get(Person.ETHNICITY);
+      assertTrue("BR ethnicity must be IBGE category, not US OMB value: " + ethnicity,
+          Arrays.asList("branca", "preta", "parda", "amarela", "indigena").contains(ethnicity));
+    }
+  }
+
+  @Test
+  public void testBrProfileIncomeDistributionDiffersFromUsCity() throws Exception {
+    Config.set("br.profile", "");
+    Generator upstreamGenerator = new Generator(new GeneratorOptions());
+    RandomNumberGenerator random = new DefaultRandomNumberGenerator(FIXED_SEED);
+    long upstreamLowIncome = 0;
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+      Map<String, Object> demo = upstreamGenerator.randomDemographics(random);
+      if ((Integer) demo.get(Person.INCOME) < 25000) {
+        upstreamLowIncome++;
+      }
+    }
+
+    Config.set("br.profile", "br");
+    BrDemographicsLoader.resetCacheForTest();
+    Generator brGenerator = new Generator(new GeneratorOptions());
+    random = new DefaultRandomNumberGenerator(FIXED_SEED);
+    long brLowIncome = 0;
+    for (int i = 0; i < SAMPLE_SIZE; i++) {
+      Map<String, Object> demo = brGenerator.randomDemographics(random);
+      if ((Integer) demo.get(Person.INCOME) < 25000) {
+        brLowIncome++;
+      }
+    }
+
+    assertTrue("BR profile should skew income lower than default US city demographics",
+        brLowIncome > upstreamLowIncome);
   }
 
   private List<String> sampleDemographicSignature(String profileValue) throws Exception {

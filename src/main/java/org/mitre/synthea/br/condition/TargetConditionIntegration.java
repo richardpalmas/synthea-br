@@ -15,6 +15,7 @@ public final class TargetConditionIntegration {
   private final TargetConditionConfig.ResolvedTargetCondition resolved;
   private final Module excludeGateModule;
   private final AtomicInteger excludedCount = new AtomicInteger();
+  private final AtomicInteger exportedCount = new AtomicInteger();
 
   private TargetConditionIntegration(GateMode gateMode,
       TargetConditionConfig.ResolvedTargetCondition resolved, Module excludeGateModule) {
@@ -53,6 +54,8 @@ public final class TargetConditionIntegration {
   }
 
   /**
+   * Returns true when export filtering is active instead of native retry.
+   *
    * @return true when export filtering is active instead of native retry
    */
   public boolean isExcludeMode() {
@@ -78,6 +81,13 @@ public final class TargetConditionIntegration {
   }
 
   /**
+   * Record one conforming export in exclude mode.
+   */
+  public void recordExported() {
+    exportedCount.incrementAndGet();
+  }
+
+  /**
    * Log cohort gate summary after generation completes.
    *
    * @param requestedPopulation population size requested by the user
@@ -88,7 +98,7 @@ public final class TargetConditionIntegration {
     }
 
     int excluded = excludedCount.get();
-    int exported = requestedPopulation - excluded;
+    int exported = exportedCount.get();
     double conformingPercent = requestedPopulation == 0
         ? 0.0
         : (exported * 100.0) / requestedPopulation;
@@ -102,6 +112,8 @@ public final class TargetConditionIntegration {
   }
 
   /**
+   * Returns the number of patients excluded in exclude mode.
+   *
    * @return number of patients excluded in exclude mode
    */
   public int getExcludedCount() {
@@ -109,6 +121,17 @@ public final class TargetConditionIntegration {
   }
 
   /**
+   * Returns the number of conforming patients exported in exclude mode.
+   *
+   * @return number of conforming patients exported in exclude mode
+   */
+  public int getExportedCount() {
+    return exportedCount.get();
+  }
+
+  /**
+   * Returns the configured condition key.
+   *
    * @return configured condition key
    */
   public String getConditionKey() {

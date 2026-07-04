@@ -21,6 +21,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import org.mitre.synthea.br.ai.AiEnrichmentConfig;
+import org.mitre.synthea.br.ai.AiEnrichmentService;
+import org.mitre.synthea.br.ai.CohortEnrichmentLog;
 import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.export.ExportHelper;
 import org.mitre.synthea.export.Exporter.ExporterRuntimeOptions;
@@ -53,7 +56,9 @@ public class ResearchManifestWriter implements PostCompletionExporter {
    */
   private static final Set<String> CONFIG_HASH_EXCLUDED_KEYS =
       Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-          "exporter.baseDirectory")));
+          "exporter.baseDirectory",
+          "br.ai.api_key",
+          "br.ai.api_key_file")));
 
   @Override
   public void export(Generator generator, ExporterRuntimeOptions options) {
@@ -92,6 +97,20 @@ public class ResearchManifestWriter implements PostCompletionExporter {
     manifest.put("output_checksum", computeOutputChecksum(outputBase));
     manifest.put("generated_at_iso8601",
         ExportHelper.iso8601Timestamp(System.currentTimeMillis()));
+
+    if (AiEnrichmentConfig.isEnabled()) {
+      Map<String, Object> aiSection = new LinkedHashMap<>();
+      aiSection.put("enabled", true);
+      aiSection.put("provider", AiEnrichmentConfig.getProvider());
+      aiSection.put("model", AiEnrichmentConfig.getModel());
+      aiSection.put("deterministic", false);
+      aiSection.put("log_present", AiEnrichmentService.isLogPresent());
+      CohortEnrichmentLog enrichmentLog = AiEnrichmentService.getLastLog();
+      if (enrichmentLog != null) {
+        aiSection.put("patients_enriched", enrichmentLog.getPatients().size());
+      }
+      manifest.put("ai_enrichment", aiSection);
+    }
 
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     String json = gson.toJson(manifest);

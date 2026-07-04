@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
+import org.mitre.synthea.br.lifecycle.BrDeathCertification;
 import org.mitre.synthea.helpers.Attributes;
 import org.mitre.synthea.helpers.Attributes.Inventory;
 import org.mitre.synthea.world.agents.Person;
@@ -49,16 +50,20 @@ public class DeathModule {
       Code causeOfDeath = (Code) person.attributes.get(Person.CAUSE_OF_DEATH);
 
       person.releaseCurrentEncounter(time, "DeathModule");
+      Code deathCertification = BrDeathCertification.deathCertification();
+      Code causeOfDeathField = BrDeathCertification.causeOfDeathCode();
+      Code deathCertificate = BrDeathCertification.deathCertificate();
+
       Encounter encounter = EncounterModule.createEncounter(person, time, EncounterType.WELLNESS,
-          ClinicianSpecialty.GENERAL_PRACTICE, DEATH_CERTIFICATION, "DeathModule");
+          ClinicianSpecialty.GENERAL_PRACTICE, deathCertification, "DeathModule");
       encounter.reason = causeOfDeath;
 
-      Observation codObs = person.record.observation(time, CAUSE_OF_DEATH_CODE.code, causeOfDeath);
-      codObs.codes.add(CAUSE_OF_DEATH_CODE);
+      Observation codObs = person.record.observation(time, causeOfDeathField.code, causeOfDeath);
+      codObs.codes.add(causeOfDeathField);
       codObs.category = "exam";
 
-      Report deathCert = person.record.report(time, DEATH_CERTIFICATE.code, 1);
-      deathCert.codes.add(DEATH_CERTIFICATE);
+      Report deathCert = person.record.report(time, deathCertificate.code, 1);
+      deathCert.codes.add(deathCertificate);
 
       person.record.encounterEnd(time, EncounterType.WELLNESS);
       // Do NOT release the DeathModule encounter, because no one should

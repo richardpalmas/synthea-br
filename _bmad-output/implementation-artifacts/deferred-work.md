@@ -49,3 +49,14 @@ Itens identificados em code reviews, válidos mas não bloqueantes para a story 
 ## Deferred from: code review of 3-4-providers-do-contexto-assistencial-br (2026-06-30) — P7
 
 - Sem teste FHIR export AC #1 (`Organization`/`Encounter.serviceProvider` no bundle R4 com `br.profile=br`) — defer Epic 5 / story export; wiring `Generator` → `BrProviderLoader` validado por testes de registry.
+
+## Deferred from: code review of 7-1-interface-web-geracao-sintetica-mvp (2026-07-02)
+
+- Sem proteção CSRF/Origin no endpoint `/api/generate` — aceito como limite documentado do MVP local sem autenticação (ADR-006); revisitar se o servidor passar a ser exposto além de `127.0.0.1`.
+- Sem limite de tamanho no corpo da requisição POST (`exchange.getRequestBody().readAllBytes()` sem cap) — risco de exaustão de memória apenas relevante se a porta for exposta além do localhost.
+- Aviso contra `br.web.bind=0.0.0.0` existe só como comentário em `synthea.properties`, sem guarda em runtime que impeça ou alerte o operador.
+- Sem isolamento de diretório de saída entre jobs — `manifestPresent`/`htmlIndexPath` apenas checam existência de arquivo em `exporter.baseDirectory`, podendo refletir uma execução anterior em cenário de falha parcial. Baixo risco dado que só um job roda por vez.
+- Sem interrupção real da thread de geração (`daemon thread`) no shutdown do servidor via `WebServerLauncher` — aceitável para uso local de curta duração em lab.
+- `WebServer.contentTypeFor` só reconhece `.css`/`.js`, com fallback para `text/html` — sem impacto com os assets atuais (`index.html`, `app.css`, `app.js`), mas frágil para tipos futuros (SVG, JSON, fontes).
+- AC5 (reprodutibilidade via checksum do `manifest.json`) não é verificada por nenhum teste automatizado no caminho web — `GenerationServiceTest` só confere `totalGeneratedPopulation >= 1` e existência do manifest, sem comparar checksum entre duas execuções com a mesma seed.
+- Argumentos de CLI extras passados junto de `--web` (ex.: `--web -p 500`) são silenciosamente ignorados sem aviso ao usuário.

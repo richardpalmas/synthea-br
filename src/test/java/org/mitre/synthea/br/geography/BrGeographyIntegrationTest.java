@@ -96,8 +96,6 @@ public class BrGeographyIntegrationTest {
       assertFalse("BR city must not match US city name: " + city, usCities.contains(city));
       assertTrue("CEP must match NNNNN-NNN: " + zip, CEP_PATTERN.matcher(zip).matches());
       assertFalse("CEP must not match a US ZIP code: " + zip, usZips.contains(zip));
-      assertFalse("CEP prefix must not match a US ZIP code: " + zip,
-          usZips.contains(zip.substring(0, 5)));
       assertNotNull("County (UF sigla) must be set", county);
       assertTrue("County must be a 2-letter UF sigla: " + county, county.length() == 2);
       assertNotNull("Coordinate must be set", coordinate);

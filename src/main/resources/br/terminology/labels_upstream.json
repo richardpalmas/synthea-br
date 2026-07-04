@@ -1,0 +1,75 @@
+{
+  "_meta": {
+    "domain": "upstream_labels",
+    "version": "2026-07-02",
+    "source": "Curadoria manual — chaves upstream Synthea (payers, educação, renda, emprego)"
+  },
+  "NO_INSURANCE": {
+    "system": "PAYER",
+    "display_pt": "Sem cobertura"
+  },
+  "Medicare": {
+    "system": "PAYER",
+    "display_pt": "Medicare (EUA — legado upstream)"
+  },
+  "Medicaid": {
+    "system": "PAYER",
+    "display_pt": "Medicaid (EUA — legado upstream)"
+  },
+  "Dual": {
+    "system": "PAYER",
+    "display_pt": "Cobertura dupla (EUA — legado upstream)"
+  },
+  "less_than_hs": {
+    "system": "SOCIOECONOMIC",
+    "display_pt": "Ensino fundamental incompleto"
+  },
+  "hs_degree": {
+    "system": "SOCIOECONOMIC",
+    "display_pt": "Ensino médio completo"
+  },
+  "some_college": {
+    "system": "SOCIOECONOMIC",
+    "display_pt": "Ensino superior incompleto"
+  },
+  "bachelors_degree": {
+    "system": "SOCIOECONOMIC",
+    "display_pt": "Graduação completa"
+  },
+  "masters_degree": {
+    "system": "SOCIOECONOMIC",
+    "display_pt": "Pós-graduação (mestrado)"
+  },
+  "doctorate_degree": {
+    "system": "SOCIOECONOMIC",
+    "display_pt": "Doutorado"
+  },
+  "Low": {
+    "system": "SOCIOECONOMIC",
+    "display_pt": "Renda baixa"
+  },
+  "Middle": {
+    "system": "SOCIOECONOMIC",
+    "display_pt": "Renda média"
+  },
+  "High": {
+    "system": "SOCIOECONOMIC",
+    "display_pt": "Renda alta"
+  },
+  "Full-time employment (finding)": {
+    "system": "LABEL",
+    "display_pt": "Emprego em tempo integral"
+  },
+  "Part-time employment (finding)": {
+    "system": "LABEL",
+    "display_pt": "Emprego em meio período"
+  },
+  "Unemployed (finding)": {
+    "system": "LABEL",
+    "display_pt": "Desemprego"
+  },
+  "Not in labor force (finding)": {
+    "system": "LABEL",
+    "display_pt": "Fora da força de trabalho"
+  }
+}

@@ -139,7 +139,9 @@ import org.hl7.fhir.utilities.xhtml.XhtmlNode;
 
 import org.mitre.synthea.br.coding.BrCodeMapper;
 import org.mitre.synthea.br.coding.BrCodeMapper.Cid10Mapping;
+import org.mitre.synthea.br.demographics.BrRaceMapper;
 import org.mitre.synthea.br.profile.BrProfile;
+import org.mitre.synthea.br.terminology.BrTerminologyResolver;
 import org.mitre.synthea.engine.Components;
 import org.mitre.synthea.engine.Components.Attachment;
 import org.mitre.synthea.export.rif.CodeMapper;
@@ -250,7 +252,9 @@ public class FhirR4 {
   private static String countryCode() {
     return BrProfile.getEffectiveCountryCode();
   }
-  private static final String PASSPORT_URI = Config.get("generate.geography.passport_uri", "http://hl7.org/fhir/sid/passport-USA");
+
+  private static final String PASSPORT_URI = Config.get("generate.geography.passport_uri",
+      "http://hl7.org/fhir/sid/passport-USA");
 
   private static final HashSet<Class<? extends Resource>> includedResources = new HashSet<>();
   private static final HashSet<Class<? extends Resource>> excludedResources = new HashSet<>();
@@ -629,6 +633,7 @@ public class FhirR4 {
       Extension raceExtension = new Extension(
           "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race");
       String race = (String) person.attributes.get(Person.RACE);
+      race = BrRaceMapper.toInternalRaceKey(race);
 
       String raceDisplay;
       switch (race) {
@@ -679,7 +684,9 @@ public class FhirR4 {
       String ethnicity = (String) person.attributes.get(Person.ETHNICITY);
 
       String ethnicityDisplay;
-      if (ethnicity.equals("hispanic")) {
+      if (BrProfile.isActive()) {
+        ethnicityDisplay = BrRaceMapper.getIbgeDisplayName(ethnicity);
+      } else if (ethnicity.equals("hispanic")) {
         ethnicity = "hispanic";
         ethnicityDisplay = "Hispanic or Latino";
       } else {
@@ -687,16 +694,18 @@ public class FhirR4 {
         ethnicityDisplay = "Not Hispanic or Latino";
       }
 
-      String ethnicityNum = (String) raceEthnicityCodes.get(ethnicity);
+      if (!BrProfile.isActive()) {
+        String ethnicityNum = (String) raceEthnicityCodes.get(ethnicity);
 
-      Extension ethnicityCodingExtension = new Extension("ombCategory");
-      Coding ethnicityCoding = new Coding();
-      ethnicityCoding.setSystem("urn:oid:2.16.840.1.113883.6.238");
-      ethnicityCoding.setCode(ethnicityNum);
-      ethnicityCoding.setDisplay(ethnicityDisplay);
-      ethnicityCodingExtension.setValue(ethnicityCoding);
+        Extension ethnicityCodingExtension = new Extension("ombCategory");
+        Coding ethnicityCoding = new Coding();
+        ethnicityCoding.setSystem("urn:oid:2.16.840.1.113883.6.238");
+        ethnicityCoding.setCode(ethnicityNum);
+        ethnicityCoding.setDisplay(ethnicityDisplay);
+        ethnicityCodingExtension.setValue(ethnicityCoding);
 
-      ethnicityExtension.addExtension(ethnicityCodingExtension);
+        ethnicityExtension.addExtension(ethnicityCodingExtension);
+      }
       Extension ethnicityTextExtension = new Extension("text");
       ethnicityTextExtension.setValue(new StringType(ethnicityDisplay));
       ethnicityExtension.addExtension(ethnicityTextExtension);
@@ -3441,16 +3450,17 @@ public class FhirR4 {
    */
   public static CodeableConcept mapCodeToCodeableConcept(Code from, String system) {
     CodeableConcept to = new CodeableConcept();
+    String exportDisplay = BrTerminologyResolver.resolveDisplay(from);
     system = system == null ? null : ExportHelper.getSystemURI(system);
     from.system = ExportHelper.getSystemURI(from.system);
 
-    if (from.display != null) {
-      to.setText(from.display);
+    if (exportDisplay != null) {
+      to.setText(exportDisplay);
     }
 
     Coding coding = new Coding();
     coding.setCode(from.code);
-    coding.setDisplay(from.display);
+    coding.setDisplay(exportDisplay);
     if (from.system == null) {
       coding.setSystem(system);
     } else {

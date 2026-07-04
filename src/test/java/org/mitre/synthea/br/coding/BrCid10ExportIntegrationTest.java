@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import org.mitre.synthea.TestHelper;
 import org.mitre.synthea.br.profile.BrProfile;
+import org.mitre.synthea.br.terminology.BrTerminologyResolver;
 import org.mitre.synthea.export.ExportHelper;
 import org.mitre.synthea.export.FhirR4;
 import org.mitre.synthea.export.ValidationResources;
@@ -56,6 +57,7 @@ public class BrCid10ExportIntegrationTest {
   public void setUp() throws Exception {
     TestHelper.loadTestProperties();
     BrCodeMapper.resetCacheForTest();
+    BrTerminologyResolver.resetCacheForTest();
     Config.set("br.profile", "");
     PayerManager.clear();
     PayerManager.loadNoInsurance();
@@ -70,6 +72,7 @@ public class BrCid10ExportIntegrationTest {
   public void tearDown() {
     Config.set("br.profile", "");
     BrCodeMapper.resetCacheForTest();
+    BrTerminologyResolver.resetCacheForTest();
     if (previousUseUsCore != null) {
       Config.set("exporter.fhir.use_us_core_ig", previousUseUsCore);
     }
@@ -88,6 +91,8 @@ public class BrCid10ExportIntegrationTest {
     assertTrue(hasCoding(code, SNOMED_URI, BREAST_CANCER_SNOMED));
     assertTrue(hasCoding(code, CID10_URI, "C50.9"));
     assertFalse(hasCodingWithSystem(code, ICD10_CM_URI));
+    assertEquals("Neoplasia maligna da mama", code.getText());
+    assertEquals("Neoplasia maligna da mama", code.getCodingFirstRep().getDisplay());
 
     validateCondition(condition);
   }

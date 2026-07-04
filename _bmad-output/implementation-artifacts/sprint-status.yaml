@@ -1,5 +1,5 @@
 # generated: 2026-06-30
-# last_updated: 2026-06-30 (Story 3.3 done)
+# last_updated: 2026-07-02 (Story 7.1 code review — done)
 # project: synthea
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-30
-last_updated: 2026-06-30 (Story 3.3 done)
+last_updated: 2026-07-02 (Story 7.1 code review — done)
 project: synthea
 project_key: NOKEY
 tracking_system: file-system
@@ -62,7 +62,7 @@ development_status:
   2-3-gate-de-cohort-com-condicao-garantida: done
   epic-2-retrospective: optional
 
-  epic-3: in-progress
+  epic-3: done
   3-1-perfil-demografico-brasileiro-ibge: done
   3-2-geografia-brasileira: done
   3-3-nomenclatura-clinica-br-cid-10-subset-piloto: done
@@ -78,3 +78,11 @@ development_status:
   5-1-preservar-export-fhir-r4-para-cohorts-direcionadas: ready-for-dev
   5-2-metadados-de-proveniencia-no-export: ready-for-dev
   epic-5-retrospective: optional
+
+  epic-6: in-progress
+  6-1-cohort-narrative-viewer-export-html-mvp: review
+  epic-6-retrospective: optional
+
+  epic-7: in-progress
+  7-1-interface-web-geracao-sintetica-mvp: done
+  epic-7-retrospective: optional

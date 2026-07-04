@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.mitre.synthea.helpers.RandomCollection;
+import org.mitre.synthea.helpers.RandomNumberGenerator;
 import org.mitre.synthea.helpers.SimpleCSV;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.geography.Demographics;
@@ -23,6 +25,13 @@ public final class BrDemographicsLoader {
   private static final Set<String> REQUIRED_RACE_IBGE_CATEGORIES = Collections.unmodifiableSet(
       new HashSet<>(Arrays.asList("branca", "preta", "parda", "amarela", "indigena")));
 
+  private static final List<String> REQUIRED_EDUCATION_KEYS = Arrays.asList(
+      "less_than_hs", "hs_degree", "some_college", "bs_degree");
+
+  private static final List<String> REQUIRED_INCOME_KEYS = Arrays.asList(
+      "00..10", "10..15", "15..25", "25..35", "35..50",
+      "50..75", "75..100", "100..150", "150..200", "200..999");
+
   private static volatile BrDemographicsData cached;
 
   private BrDemographicsLoader() {
@@ -36,13 +45,21 @@ public final class BrDemographicsLoader {
     private final Map<String, Double> gender;
     private final Map<String, Double> race;
     private final Map<String, Double> raceIbge;
+    private final Map<String, Double> language;
+    private final Map<String, Double> education;
+    private final Map<String, Double> income;
 
     BrDemographicsData(Map<String, Double> ages, Map<String, Double> gender,
-        Map<String, Double> race, Map<String, Double> raceIbge) {
+        Map<String, Double> race, Map<String, Double> raceIbge,
+        Map<String, Double> language,
+        Map<String, Double> education, Map<String, Double> income) {
       this.ages = Collections.unmodifiableMap(ages);
       this.gender = Collections.unmodifiableMap(gender);
       this.race = Collections.unmodifiableMap(race);
       this.raceIbge = Collections.unmodifiableMap(raceIbge);
+      this.language = Collections.unmodifiableMap(language);
+      this.education = Collections.unmodifiableMap(education);
+      this.income = Collections.unmodifiableMap(income);
     }
 
     /**
@@ -80,6 +97,33 @@ public final class BrDemographicsLoader {
     public Map<String, Double> getRaceIbge() {
       return raceIbge;
     }
+
+    /**
+     * First-language distribution (e.g. {@code portuguese}).
+     *
+     * @return unmodifiable map of language key → fraction
+     */
+    public Map<String, Double> getLanguage() {
+      return language;
+    }
+
+    /**
+     * Education level distribution (Synthea keys).
+     *
+     * @return unmodifiable map of education key → fraction
+     */
+    public Map<String, Double> getEducation() {
+      return education;
+    }
+
+    /**
+     * Income bracket distribution (Synthea keys, thousands per year).
+     *
+     * @return unmodifiable map of income bracket → fraction
+     */
+    public Map<String, Double> getIncome() {
+      return income;
+    }
   }
 
   /**
@@ -109,19 +153,41 @@ public final class BrDemographicsLoader {
   }
 
   /**
-   * Build a non-shared {@link Demographics} picker for age/gender/race using BR national data,
-   * while preserving location-specific fields (city, income, education) from {@code location}.
+   * Pick an IBGE raça/cor category from the national distribution.
+   *
+   * @param random source of randomness
+   * @return IBGE category (e.g. {@code parda})
+   * @throws IOException if the data pack cannot be loaded
+   */
+  public static String pickRaceIbge(RandomNumberGenerator random) throws IOException {
+    return pickFromMap(load().getRaceIbge(), random);
+  }
+
+  /**
+   * Pick a first language from the national BR distribution.
+   *
+   * @param random source of randomness
+   * @return language key (e.g. {@code portuguese})
+   * @throws IOException if the data pack cannot be loaded
+   */
+  public static String pickLanguage(RandomNumberGenerator random) throws IOException {
+    return pickFromMap(load().getLanguage(), random);
+  }
+
+  /**
+   * Build a non-shared {@link Demographics} picker for age/gender/race/SES using BR national data,
+   * while preserving location-specific identifiers from {@code location}.
+   *
+   * <p>Etnia IBGE ({@link Person#ETHNICITY}) is assigned separately in {@code Generator} from the
+   * same {@code race_ibge} distribution — not via {@link Demographics#pickEthnicity}.
    *
    * <p>Story 3.1 integration point: {@code Generator.pickDemographics} uses this when
    * {@code BrProfile.isActive()} without mutating shared {@link Demographics} instances in
    * {@code Location}. Story 3.2 (geografia) reuses the same {@code BrProfile.isActive()} branch
    * pattern for geography overrides.
    *
-   * <p>Etnia, idioma e variáveis socioeconômicas permanecem da cidade US até Story 3.x (decisão
-   * de review 2026-06-30).
-   *
    * @param location demographics for the selected US city (location context only)
-   * @return new demographics instance for picking age/gender/race
+   * @return new demographics instance for picking age/gender/race/SES
    * @throws IOException if the BR data pack cannot be loaded
    */
   public static Demographics createPickerForLocation(Demographics location) throws IOException {
@@ -135,10 +201,17 @@ public final class BrDemographicsLoader {
     picker.ages = new HashMap<>(data.getAges());
     picker.gender = new HashMap<>(data.getGender());
     picker.race = new HashMap<>(data.getRace());
-    picker.income = location.income;
-    picker.education = location.education;
-    picker.ethnicity = location.ethnicity;
+    picker.income = new HashMap<>(data.getIncome());
+    picker.education = new HashMap<>(data.getEducation());
     return picker;
+  }
+
+  private static String pickFromMap(Map<String, Double> fractions, RandomNumberGenerator random) {
+    RandomCollection<String> collection = new RandomCollection<>();
+    for (Map.Entry<String, Double> entry : fractions.entrySet()) {
+      collection.add(entry.getValue(), entry.getKey());
+    }
+    return collection.next(random);
   }
 
   private static BrDemographicsData parseFromResource() throws IOException {
@@ -154,6 +227,9 @@ public final class BrDemographicsLoader {
     Map<String, Double> ages = new HashMap<>();
     Map<String, Double> gender = new HashMap<>();
     Map<String, Double> raceIbge = new HashMap<>();
+    Map<String, Double> language = new HashMap<>();
+    Map<String, Double> education = new HashMap<>();
+    Map<String, Double> income = new HashMap<>();
 
     for (Map<String, String> row : rows) {
       String section = row.get("section");
@@ -176,20 +252,39 @@ public final class BrDemographicsLoader {
         case "race_ibge":
           raceIbge.put(category, fraction);
           break;
+        case "language":
+          language.put(category, fraction);
+          break;
+        case "education":
+          education.put(category, fraction);
+          break;
+        case "income":
+          income.put(category, fraction);
+          break;
         default:
           throw new IOException("Unknown section in BR demographics CSV: " + section);
       }
     }
 
     validateRequiredRaceIbgeCategories(raceIbge);
+    validateRequiredKeys(education, REQUIRED_EDUCATION_KEYS, "education");
+    validateRequiredKeys(income, REQUIRED_INCOME_KEYS, "income");
+    if (language.isEmpty()) {
+      throw new IOException("Language section is missing from BR demographics CSV");
+    }
+
     normalizeToUnitSum(ages, "age");
     normalizeToUnitSum(gender, "gender");
     normalizeToUnitSum(raceIbge, "race_ibge");
+    normalizeToUnitSum(language, "language");
+    normalizeToUnitSum(education, "education");
+    normalizeToUnitSum(income, "income");
 
     Map<String, Double> race = BrRaceMapper.toInternalRaceDistribution(raceIbge);
     normalizeToUnitSum(race, "internal race");
 
-    return new BrDemographicsData(ages, gender, race, raceIbge);
+    return new BrDemographicsData(ages, gender, race, raceIbge,
+        language, education, income);
   }
 
   private static void validateRequiredRaceIbgeCategories(Map<String, Double> raceIbge)
@@ -197,6 +292,15 @@ public final class BrDemographicsLoader {
     for (String required : REQUIRED_RACE_IBGE_CATEGORIES) {
       if (!raceIbge.containsKey(required)) {
         throw new IOException("Missing required IBGE race category in data pack: " + required);
+      }
+    }
+  }
+
+  private static void validateRequiredKeys(Map<String, Double> map, List<String> required,
+      String label) throws IOException {
+    for (String key : required) {
+      if (!map.containsKey(key)) {
+        throw new IOException("Missing required " + label + " category in data pack: " + key);
       }
     }
   }

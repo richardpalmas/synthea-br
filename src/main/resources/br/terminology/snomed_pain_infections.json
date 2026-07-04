@@ -1,0 +1,99 @@
+{
+  "_meta": {
+    "domain": "snomed_pain_infections",
+    "version": "2026-07-03",
+    "source": "Curadoria manual — dor crônica, UTI, sinusite e encontros comuns do cohort"
+  },
+  "82423001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Dor crônica"
+  },
+  "278860009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Dor lombar crônica"
+  },
+  "1121000119107": {
+    "system": "SNOMED-CT",
+    "display_pt": "Dor cervical crônica"
+  },
+  "307426000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Cistite infecciosa aguda"
+  },
+  "197927001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Infecção urinária recorrente"
+  },
+  "40055000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Sinusite crônica"
+  },
+  "36971009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Sinusite"
+  },
+  "444814009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Sinusite viral"
+  },
+  "88275009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Sinusite bacteriana aguda"
+  },
+  "75498004": {
+    "system": "SNOMED-CT",
+    "display_pt": "Sinusite bacteriana aguda"
+  },
+  "185349003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Consulta de acompanhamento"
+  },
+  "268547008": {
+    "system": "SNOMED-CT",
+    "display_pt": "Rastreamento de neoplasia maligna da mama"
+  },
+  "185347001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Consulta por problema de saúde"
+  },
+  "50849002": {
+    "system": "SNOMED-CT",
+    "display_pt": "Admissão em pronto-socorro"
+  },
+  "Chronic pain (finding)": {
+    "system": "LABEL",
+    "display_pt": "Dor crônica"
+  },
+  "Chronic low back pain (finding)": {
+    "system": "LABEL",
+    "display_pt": "Dor lombar crônica"
+  },
+  "Chronic neck pain (finding)": {
+    "system": "LABEL",
+    "display_pt": "Dor cervical crônica"
+  },
+  "Acute infective cystitis (disorder)": {
+    "system": "LABEL",
+    "display_pt": "Cistite infecciosa aguda"
+  },
+  "Recurrent urinary tract infection (disorder)": {
+    "system": "LABEL",
+    "display_pt": "Infecção urinária recorrente"
+  },
+  "Chronic sinusitis (disorder)": {
+    "system": "LABEL",
+    "display_pt": "Sinusite crônica"
+  },
+  "Sinusitis (disorder)": {
+    "system": "LABEL",
+    "display_pt": "Sinusite"
+  },
+  "Encounter for check up (procedure)": {
+    "system": "LABEL",
+    "display_pt": "Consulta de acompanhamento"
+  },
+  "Screening for malignant neoplasm of breast (procedure)": {
+    "system": "LABEL",
+    "display_pt": "Rastreamento de neoplasia maligna da mama"
+  }
+}

@@ -24,7 +24,9 @@ import org.mitre.synthea.world.agents.Person;
  */
 public final class BrGeographyResolver {
 
-  /** Coordinate perturbation magnitude (degrees), same order as {@code Location.assignPoint}. */
+  /**
+   * Coordinate perturbation magnitude (degrees), same order as {@code Location.assignPoint}.
+   */
   public static final double COORDINATE_PERTURBATION = 0.05;
 
   /**
@@ -142,7 +144,8 @@ public final class BrGeographyResolver {
   }
 
   /**
-   * Complete ZIP, coordinates, and birthplace for a person already assigned city/state (BR profile).
+   * Complete ZIP, coordinates, and birthplace for a person already assigned city/state
+   * (BR profile).
    *
    * @param person person with {@link Person#CITY} and {@link Person#STATE} set
    */
