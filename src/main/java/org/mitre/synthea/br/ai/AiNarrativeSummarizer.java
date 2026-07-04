@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,9 @@ public final class AiNarrativeSummarizer {
   public static String summarizePatient(LlmClient client, PatientEnrichmentResult result) {
     if (result.getAppliedOperations().isEmpty() && result.getFlags().isEmpty()) {
       return "Nenhuma inconsistência clínica, regional ou de perfil exigiu correção neste paciente.";
+    }
+    if (result.getAppliedOperations().isEmpty()) {
+      return fallbackPatientSummary(result);
     }
     String userPrompt = "Paciente: " + result.getPatientId() + "\n"
         + "Correções aplicadas: " + GSON.toJson(result.getAppliedOperations()) + "\n"
@@ -63,6 +67,10 @@ public final class AiNarrativeSummarizer {
       flagTotal += intValue(row.get("flagCount"));
     }
 
+    if (appliedTotal == 0) {
+      return fallbackCohortSummary(log, appliedTotal, flagTotal);
+    }
+
     String userPrompt = "Metadados: " + GSON.toJson(log.getMetadata()) + "\n"
         + "Pacientes enriquecidos: " + patients.size() + "\n"
         + "Total de correções aplicadas: " + appliedTotal + "\n"
@@ -92,15 +100,49 @@ public final class AiNarrativeSummarizer {
     if (!result.isFinalized()) {
       sb.append(" O painel não concluiu a revisão dentro do limite de iterações.");
     }
+    List<String> reasons = extractFlagReasons(result.getFlags());
+    if (!reasons.isEmpty()) {
+      sb.append(" Limitações: ").append(String.join("; ", reasons)).append('.');
+    }
     return sb.toString();
   }
 
   private static String fallbackCohortSummary(CohortEnrichmentLog log, int appliedTotal,
       int flagTotal) {
     int patientCount = log.getPatients().size();
+    int patientsWithCorrections = 0;
+    int patientsWithFlags = 0;
+    int patientsWithoutIssues = 0;
+    for (Map<String, Object> row : log.getPatients()) {
+      int applied = intValue(row.get("appliedCount"));
+      int flags = intValue(row.get("flagCount"));
+      if (applied > 0) {
+        patientsWithCorrections++;
+      }
+      if (flags > 0) {
+        patientsWithFlags++;
+      }
+      if (applied == 0 && flags == 0) {
+        patientsWithoutIssues++;
+      }
+    }
     return "A cohort teve " + patientCount + " paciente(s) revisado(s) por IA (MAI-DxO), "
         + "com " + appliedTotal + " correção(ões) aplicada(s) e " + flagTotal
-        + " limitação(ões) sinalizada(s) como não corrigíveis.";
+        + " limitação(ões) sinalizada(s) como não corrigíveis. "
+        + patientsWithCorrections + " paciente(s) recebeu(ram) correções, "
+        + patientsWithFlags + " paciente(s) com limitações e "
+        + patientsWithoutIssues + " paciente(s) sem inconsistências detectadas.";
+  }
+
+  private static List<String> extractFlagReasons(List<Map<String, Object>> flags) {
+    List<String> reasons = new ArrayList<>();
+    for (Map<String, Object> flag : flags) {
+      Object reason = flag.get("reason");
+      if (reason != null && !reason.toString().trim().isEmpty()) {
+        reasons.add(reason.toString().trim());
+      }
+    }
+    return reasons;
   }
 
   private static String sanitizeNarrative(String raw, String fallback) {

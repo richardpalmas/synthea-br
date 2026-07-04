@@ -59,8 +59,38 @@
   .triage-meta { color: var(--muted); font-size: 0.92rem; }
   .primary-highlight { color: var(--accent); font-weight: 600; }
   .patient-body { padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--border); }
-  section { margin-top: 1.25rem; }
-  section h2, section h3 {
+  .patient-body > section { margin-top: 1.25rem; }
+  .section-accordion {
+    margin-top: 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fafbfc;
+  }
+  .section-header {
+    cursor: pointer;
+    padding: 0.65rem 0.85rem;
+    list-style: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .section-header::-webkit-details-marker { display: none; }
+  .section-header::before {
+    content: "▸";
+    display: inline-block;
+    font-size: 0.85rem;
+    transition: transform 0.15s ease;
+  }
+  .section-accordion[open] > .section-header::before {
+    transform: rotate(90deg);
+  }
+  .section-body { padding: 0 0.85rem 0.85rem; }
+  section h2 {
     margin: 0 0 0.5rem;
     font-size: 1rem;
     color: var(--accent);

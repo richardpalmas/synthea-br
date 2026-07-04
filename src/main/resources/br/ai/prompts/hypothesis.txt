@@ -3,4 +3,5 @@ Analise o prontuário sintético e proponha hipóteses de incoerência clínica 
 Responda SOMENTE em JSON válido:
 {"action":"AskQuestion|RequestRecordSlice|ProposeCorrection|FinalizePatient","query":"...","rationale":"...","operations":[]}
 Use ProposeCorrection apenas com operações estruturadas (op: add_observation, fix_encounter_date, set_person_attribute, add_procedure, flag_unfixable).
+Para flag_unfixable, inclua reason obrigatório: {"op":"flag_unfixable","reason":"descrição objetiva da limitação"}.
 Não invente dados não suportados pelo prontuário — solicite ao Gatekeeper via AskQuestion ou RequestRecordSlice.

@@ -41,6 +41,7 @@ public final class CohortEnrichmentLog {
     row.put("finalized", result.isFinalized());
     row.put("appliedOperations", result.getAppliedOperations());
     row.put("flags", result.getFlags());
+    row.put("debateLog", result.getDebateLog());
     if (result.getNarrativeSummary() != null) {
       row.put("narrativeSummary", result.getNarrativeSummary());
     }

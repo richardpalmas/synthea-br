@@ -47,6 +47,19 @@ public class CorrectionApplicatorTest {
   }
 
   @Test
+  public void testFlagUnfixableRequiresReason() {
+    Person person = newPerson();
+    Map<String, Object> op = new HashMap<>();
+    op.put("op", "flag_unfixable");
+
+    List<Map<String, Object>> audit = CorrectionApplicator.apply(
+        person, new CorrectionProposal(Arrays.asList(op)));
+
+    assertEquals("skipped", audit.get(0).get("status"));
+    assertEquals("missing_reason", audit.get(0).get("reason"));
+  }
+
+  @Test
   public void testFlagUnfixable() {
     Person person = newPerson();
     Map<String, Object> op = new HashMap<>();

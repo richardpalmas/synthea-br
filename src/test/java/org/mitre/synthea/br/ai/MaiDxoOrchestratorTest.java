@@ -40,6 +40,33 @@ public class MaiDxoOrchestratorTest {
   }
 
   @Test
+  public void testOrchestratorMergesProposalsFromMultiplePersonas() {
+    MockLlmClient mock = new MockLlmClient(
+        "{\"action\":\"ProposeCorrection\",\"operations\":["
+            + "{\"op\":\"set_person_attribute\",\"key\":\"STATE\",\"value\":\"PR\"}"
+            + "]}",
+        "{\"action\":\"AskQuestion\",\"query\":\"idade\"}",
+        "{\"action\":\"AskQuestion\",\"query\":\"municipio\"}",
+        "{\"action\":\"AskQuestion\",\"query\":\"exames\"}",
+        "{\"action\":\"ProposeCorrection\",\"operations\":["
+            + "{\"op\":\"flag_unfixable\",\"reason\":\"sequência temporal irreconciliável\"}"
+            + "]}",
+        "{\"action\":\"FinalizePatient\"}");
+
+    Person person = new Person(42L);
+    person.attributes.put(Person.ID, "merge-test");
+    person.record = new HealthRecord(person);
+
+    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1);
+    PatientEnrichmentResult result = orchestrator.enrichPatient(person);
+
+    assertEquals("PR", person.attributes.get("STATE"));
+    assertEquals(1, result.getAppliedOperations().size());
+    assertEquals(1, result.getFlags().size());
+    assertEquals("sequência temporal irreconciliável", result.getFlags().get(0).get("reason"));
+  }
+
+  @Test
   public void testOrchestratorRespectsMaxIterations() {
     MockLlmClient mock = new MockLlmClient(
         "{\"action\":\"AskQuestion\",\"query\":\"idade\"}");

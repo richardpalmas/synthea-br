@@ -1,3 +1,4 @@
+<#import "section-accordion.ftl" as section>
 <details class="patient-accordion">
   <summary class="triage-header">
     <span class="patient-name">${patient.displayName!""}</span>
@@ -16,8 +17,7 @@
       </section>
     </#if>
 
-    <section class="timeline-section">
-      <h2>Linha do tempo</h2>
+    <@section.accordion "Linha do tempo">
       <#if patient.timeline?has_content>
         <ol class="timeline">
           <#list patient.timeline as event>
@@ -31,14 +31,34 @@
       <#else>
         <p class="empty">Sem registros</p>
       </#if>
-    </section>
+    </@section.accordion>
 
-    <#include "sections/demographics.ftl">
-    <#include "sections/conditions.ftl">
-    <#include "sections/medications.ftl">
-    <#include "sections/exams.ftl">
-    <#include "sections/procedures.ftl">
-    <#include "sections/encounters.ftl">
-    <#include "sections/coverage.ftl">
+    <@section.accordion "Demografia">
+      <#include "sections/demographics.ftl">
+    </@section.accordion>
+
+    <@section.accordion "Condições">
+      <#include "sections/conditions.ftl">
+    </@section.accordion>
+
+    <@section.accordion "Medicamentos">
+      <#include "sections/medications.ftl">
+    </@section.accordion>
+
+    <@section.accordion "Exames">
+      <#include "sections/exams.ftl">
+    </@section.accordion>
+
+    <@section.accordion "Procedimentos">
+      <#include "sections/procedures.ftl">
+    </@section.accordion>
+
+    <@section.accordion "Encontros">
+      <#include "sections/encounters.ftl">
+    </@section.accordion>
+
+    <@section.accordion "Cobertura">
+      <#include "sections/coverage.ftl">
+    </@section.accordion>
   </div>
 </details>

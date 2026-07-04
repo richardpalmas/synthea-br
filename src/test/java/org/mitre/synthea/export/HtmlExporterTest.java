@@ -69,6 +69,10 @@ public class HtmlExporterTest {
     String html = Files.readString(htmlIndex.toPath(), StandardCharsets.UTF_8);
     assertTrue(html.contains("<!DOCTYPE html>"));
     assertTrue(html.contains("<details"));
+    assertTrue(html.contains("class=\"section-accordion\""));
+    int sectionAccordionCount = html.split("class=\"section-accordion\"").length - 1;
+    assertTrue("Expected 8 section accordions per patient",
+        sectionAccordionCount >= 8 * patientCount);
     assertTrue(html.contains("Linha do tempo"));
     assertTrue(html.contains("Demografia"));
     assertTrue(html.contains("Condições"));

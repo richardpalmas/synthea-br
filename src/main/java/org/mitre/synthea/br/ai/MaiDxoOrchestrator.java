@@ -58,7 +58,7 @@ public final class MaiDxoOrchestrator {
 
     for (int iteration = 0; iteration < maxIterations && !finalized; iteration++) {
       debateLog.append("\n--- Iteração ").append(iteration + 1).append(" ---\n");
-      CorrectionProposal iterationProposal = new CorrectionProposal(new ArrayList<>());
+      List<Map<String, Object>> mergedOps = new ArrayList<>();
 
       for (String persona : PERSONA_CHAIN) {
         String response;
@@ -85,7 +85,7 @@ public final class MaiDxoOrchestrator {
             break;
           case "PROPOSECORRECTION":
             if (decision.operations != null && !decision.operations.isEmpty()) {
-              iterationProposal = new CorrectionProposal(decision.operations);
+              mergedOps.addAll(decision.operations);
             }
             break;
           case "FINALIZEPATIENT":
@@ -99,6 +99,7 @@ public final class MaiDxoOrchestrator {
         }
       }
 
+      CorrectionProposal iterationProposal = new CorrectionProposal(mergedOps);
       if (iterationProposal.hasOperations()) {
         List<Map<String, Object>> audit = CorrectionApplicator.apply(person, iterationProposal);
         for (Map<String, Object> row : audit) {
@@ -124,7 +125,8 @@ public final class MaiDxoOrchestrator {
     return "Contexto do debate:\n" + context + "\n\nPersona ativa: " + persona
         + "\nAnalise o caso e responda em JSON com: "
         + "{\"action\":\"...\",\"query\":\"...\",\"rationale\":\"...\","
-        + "\"operations\":[{\"op\":\"...\", ...}]}";
+        + "\"operations\":[{\"op\":\"...\", ...}]}\n"
+        + "Para flag_unfixable, inclua reason obrigatório descrevendo a limitação.";
   }
 
   private static PersonaDecision parseDecision(String raw) {

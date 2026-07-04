@@ -81,6 +81,7 @@ public class AiEnrichmentIntegrationTest {
     assertTrue(content.contains("integ-1"));
     assertTrue(content.contains("narrativeSummary"));
     assertTrue(content.contains("cohortNarrativeSummary"));
+    assertTrue(content.contains("debateLog"));
     assertEquals(Boolean.TRUE, person.attributes.get("ENRICHED"));
   }
 }

@@ -35,7 +35,30 @@ public class AiNarrativeSummarizerTest {
   }
 
   @Test
-  public void testFallbackCohortSummary() {
+  public void testFallbackCohortSummaryWhenNoCorrectionsApplied() {
+    CohortEnrichmentLog log = new CohortEnrichmentLog();
+    log.setMetadata("openai", "gpt-4o-mini", false);
+    Map<String, Object> flag = new LinkedHashMap<>();
+    flag.put("op", "flag_unfixable");
+    flag.put("reason", "lacuna temporal");
+    log.addPatient(new PatientEnrichmentResult(
+        "p1", new ArrayList<>(), List.of(flag), "", false));
+    log.addPatient(new PatientEnrichmentResult(
+        "p2", new ArrayList<>(), new ArrayList<>(), "", true));
+    log.addPatient(new PatientEnrichmentResult(
+        "p3", new ArrayList<>(), List.of(flag), "", false));
+
+    String summary = AiNarrativeSummarizer.summarizeCohort(
+        new MockLlmClient("10 pacientes com inconsistências"), log);
+    assertTrue(summary.contains("3 paciente(s) revisado(s)"));
+    assertTrue(summary.contains("0 correção(ões) aplicada(s)"));
+    assertTrue(summary.contains("2 paciente(s) com limitações"));
+    assertTrue(summary.contains("1 paciente(s) sem inconsistências"));
+    assertTrue(!summary.contains("10 pacientes com inconsistências"));
+  }
+
+  @Test
+  public void testFallbackCohortSummaryWhenCorrectionsApplied() {
     CohortEnrichmentLog log = new CohortEnrichmentLog();
     log.setMetadata("openai", "gpt-4o-mini", false);
     Map<String, Object> op1 = new LinkedHashMap<>();
@@ -44,6 +67,7 @@ public class AiNarrativeSummarizerTest {
     op2.put("op", "add_observation");
     Map<String, Object> flag = new LinkedHashMap<>();
     flag.put("op", "flag_unfixable");
+    flag.put("reason", "lacuna temporal");
     log.addPatient(new PatientEnrichmentResult(
         "p1", List.of(op1, op2), List.of(flag), "", true, "Resumo paciente."));
 
@@ -51,5 +75,20 @@ public class AiNarrativeSummarizerTest {
         new MockLlmClient("{\"invalid\":true}"), log);
     assertTrue(summary.contains("1 paciente"));
     assertTrue(summary.contains("2 correção"));
+  }
+
+  @Test
+  public void testFallbackPatientSummaryListsFlagReasons() {
+    Map<String, Object> flag = new LinkedHashMap<>();
+    flag.put("op", "flag_unfixable");
+    flag.put("reason", "sequência temporal irreconciliável");
+    PatientEnrichmentResult result = new PatientEnrichmentResult(
+        "p3", new ArrayList<>(), List.of(flag), "", false);
+
+    String summary = AiNarrativeSummarizer.summarizePatient(
+        new MockLlmClient("resumo inventado pelo LLM"), result);
+    assertTrue(summary.contains("0 correção(ões)"));
+    assertTrue(summary.contains("sequência temporal irreconciliável"));
+    assertTrue(!summary.contains("resumo inventado"));
   }
 }

@@ -16,7 +16,7 @@
       </section>
     </#if>
     <p class="meta">${patientCount} paciente<#if patientCount != 1>s</#if> · gerado em ${generatedDate}</p>
-    <p class="hint">Expanda um paciente para ver timeline e seções clínicas estruturadas.</p>
+    <p class="hint">Expanda um paciente e, em seguida, cada seção clínica.</p>
   </header>
 
   <main>

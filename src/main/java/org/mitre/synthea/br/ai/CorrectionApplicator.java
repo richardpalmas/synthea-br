@@ -59,6 +59,13 @@ public final class CorrectionApplicator {
             entry.put("status", "applied");
             break;
           case "flag_unfixable":
+            String flagReason = stringField(op, "reason");
+            if (flagReason == null || flagReason.isEmpty()) {
+              entry.put("status", "skipped");
+              entry.put("reason", "missing_reason");
+              audit.add(entry);
+              continue;
+            }
             entry.put("status", "flagged");
             break;
           default:
