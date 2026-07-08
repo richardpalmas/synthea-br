@@ -1,5 +1,5 @@
 # generated: 2026-06-30
-# last_updated: 2026-07-02 (Story 7.1 code review — done)
+# last_updated: 2026-07-08 (Story 5-1 dev-story — in-progress)
 # project: synthea
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-30
-last_updated: 2026-07-02 (Story 7.1 code review — done)
+last_updated: 2026-07-08 (Story 5-1 dev-story — in-progress)
 project: synthea
 project_key: NOKEY
 tracking_system: file-system
@@ -75,7 +75,7 @@ development_status:
   epic-4-retrospective: optional
 
   epic-5: in-progress
-  5-1-preservar-export-fhir-r4-para-cohorts-direcionadas: ready-for-dev
+  5-1-preservar-export-fhir-r4-para-cohorts-direcionadas: in-progress
   5-2-metadados-de-proveniencia-no-export: ready-for-dev
   epic-5-retrospective: optional
 
@@ -86,3 +86,14 @@ development_status:
   epic-7: in-progress
   7-1-interface-web-geracao-sintetica-mvp: done
   epic-7-retrospective: optional
+
+  epic-9: in-progress
+  9-1-spike-referencias-trajetoria-longitudinal-adr-008: review
+  9-2-catalogo-fases-trajetoria-clinica: backlog
+  9-3-export-focado-trajetoria-abordagem-c: backlog
+  9-4-html-narrativo-por-fase-modo-orientador: backlog
+  9-5-perfil-geracao-enxuto-abordagem-d: backlog
+  9-6-janela-temporal-simulacao-abordagem-d: backlog
+  9-7-modulo-gmf-trajetoria-episodica-abordagem-e: backlog
+  9-8-calibracao-timings-referencias-externas: backlog
+  epic-9-retrospective: optional

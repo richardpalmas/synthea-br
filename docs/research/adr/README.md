@@ -22,6 +22,7 @@
 | ADR-005 | Fonte de CID-10 BR para nomenclatura clínica (decisão provisória) | Proposto | 2026-06-30 | [ADR-005-fonte-cid10-br.md](./ADR-005-fonte-cid10-br.md) |
 | ADR-006 | Interface Web Local para Geração de Cohort (MVP) | Aceito | 2026-07-01 | [ADR-006-interface-web-localhost-mvp.md](./ADR-006-interface-web-localhost-mvp.md) |
 | ADR-007 | Enriquecimento Clínico por IA (MAI-DxO) | Aceito | 2026-07-03 | [ADR-007-ai-enrichment-maidxo.md](./ADR-007-ai-enrichment-maidxo.md) |
+| ADR-008 | Trajetória Clínica Focada (Epic 9) | Aceito | 2026-07-08 | [ADR-008-trajetoria-clinica-focada.md](./ADR-008-trajetoria-clinica-focada.md) |
 
 ## Como adicionar um novo ADR
 
