@@ -3,7 +3,12 @@
   <summary class="triage-header">
     <span class="patient-name">${patient.displayName!""}</span>
     <span class="triage-meta">
-      ${patient.ageYears} anos · ${patient.sexLabel!""} · ${patient.primaryCondition!""}
+      ${patient.ageYears} anos · ${patient.sexLabel!""} ·
+      <#if patient.primaryConditionHighlight!false>
+        <span class="primary-highlight">${patient.primaryCondition!""}</span>
+      <#else>
+        ${patient.primaryCondition!""}
+      </#if>
       · último: ${patient.lastEventDate!""} — ${patient.lastEventLabel!""}
     </span>
   </summary>
@@ -18,19 +23,7 @@
     </#if>
 
     <@section.accordion "Linha do tempo">
-      <#if patient.timeline?has_content>
-        <ol class="timeline">
-          <#list patient.timeline as event>
-            <li>
-              <time>${event.date!""}</time>
-              <span class="event-type">${event.type!""}</span>
-              <span class="event-label">${event.label!""}</span>
-            </li>
-          </#list>
-        </ol>
-      <#else>
-        <p class="empty">Sem registros</p>
-      </#if>
+      <#include "sections/pathway-phases.ftl">
     </@section.accordion>
 
     <@section.accordion "Demografia">

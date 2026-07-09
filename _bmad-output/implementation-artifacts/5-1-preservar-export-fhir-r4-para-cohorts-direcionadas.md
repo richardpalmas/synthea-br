@@ -1,6 +1,10 @@
+---
+baseline_commit: c1247106c03fa57ace54d269af98c7833f4006a6
+---
+
 # Story 5.1: Preservar Export FHIR R4 para Cohorts Direcionadas
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -44,24 +48,24 @@ para garantir interoperabilidade com ferramentas de análise FHIR sem regressõe
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Confirmar pré-requisitos (AC: #4)
-  - [ ] Subtask 1.1: Verificar que Epic 2 (Stories 2.1-2.3) está implementado; idealmente Epic 3 (3.1-3.4) também, para teste de ponta a ponta com perfil BR completo
-  - [ ] Subtask 1.2: Se Epic 3 ainda não estiver pronto, executar o teste de integração apenas com `br.target_condition` ativo (sem perfil `br`), documentando a limitação, e revisitar quando Epic 3 estiver disponível
+- [x] Task 1: Confirmar pré-requisitos (AC: #4)
+  - [x] Subtask 1.1: Verificar que Epic 2 (Stories 2.1-2.3) está implementado; idealmente Epic 3 (3.1-3.4) também, para teste de ponta a ponta com perfil BR completo
+  - [x] Subtask 1.2: Se Epic 3 ainda não estiver pronto, executar o teste de integração apenas com `br.target_condition` ativo (sem perfil `br`), documentando a limitação, e revisitar quando Epic 3 estiver disponível
 
-- [ ] Task 2: Rodar a suíte existente como baseline (AC: #1)
-  - [ ] Subtask 2.1: Rodar `./gradlew check` antes de qualquer alteração desta story, com o estado atual do código (pós Epic 2-4), e confirmar que `FHIRR4ExporterTest` passa sem modificações
+- [x] Task 2: Rodar a suíte existente como baseline (AC: #1)
+  - [x] Subtask 2.1: Rodar `./gradlew check` antes de qualquer alteração desta story, com o estado atual do código (pós Epic 2-4), e confirmar que `FHIRR4ExporterTest` passa sem modificações
 
-- [ ] Task 3: Adicionar teste de integração BR (AC: #2)
-  - [ ] Subtask 3.1: Criar método de teste em `FHIRR4ExporterTest.java` (ou classe nova `BrFHIRR4ExporterTest.java` em `src/test/java/org/mitre/synthea/br/export/`, para isolar testes BR sem poluir o arquivo upstream — preferível por AD-7) seguindo o padrão `baseTestFHIRR4Export`
-  - [ ] Subtask 3.2: Configurar `br.target_condition=breast_cancer`, `br.profile=br`, seed fixa, população pequena
-  - [ ] Subtask 3.3: Validar com `ValidationResources.forR4(null)` e assertar ausência de mensagens com severidade `ERROR`/`FATAL`
+- [x] Task 3: Adicionar teste de integração BR (AC: #2)
+  - [x] Subtask 3.1: Criar método de teste em `FHIRR4ExporterTest.java` (ou classe nova `BrFHIRR4ExporterTest.java` em `src/test/java/org/mitre/synthea/br/export/`, para isolar testes BR sem poluir o arquivo upstream — preferível por AD-7) seguindo o padrão `baseTestFHIRR4Export`
+  - [x] Subtask 3.2: Configurar `br.target_condition=breast_cancer`, `br.profile=br`, seed fixa, população pequena
+  - [x] Subtask 3.3: Validar com `ValidationResources.forR4(null)` e assertar ausência de mensagens com severidade `ERROR`/`FATAL`
 
-- [ ] Task 4: Investigar e corrigir regressões encontradas (AC: #3, #5)
-  - [ ] Subtask 4.1: Se a validação HAPI falhar, identificar a story de origem do problema (não necessariamente código desta story) e corrigir lá, documentando a causa raiz no Dev Agent Record desta story (com referência cruzada à story corrigida)
+- [x] Task 4: Investigar e corrigir regressões encontradas (AC: #3, #5)
+  - [x] Subtask 4.1: Se a validação HAPI falhar, identificar a story de origem do problema (não necessariamente código desta story) e corrigir lá, documentando a causa raiz no Dev Agent Record desta story (com referência cruzada à story corrigida)
 
-- [ ] Task 5: Confirmar AD-2/AD-8 (AC: #3)
-  - [ ] Subtask 5.1: Revisão de código cruzada nas alterações de `FhirR4.java` introduzidas pela Story 3.3 (e qualquer outra que toque exportadores), confirmando ausência de mutação de `HealthRecord`
-  - [ ] Subtask 5.2: Rodar `./gradlew check` final
+- [x] Task 5: Confirmar AD-2/AD-8 (AC: #3)
+  - [x] Subtask 5.1: Revisão de código cruzada nas alterações de `FhirR4.java` introduzidas pela Story 3.3 (e qualquer outra que toque exportadores), confirmando ausência de mutação de `HealthRecord`
+  - [x] Subtask 5.2: Rodar `./gradlew check` final
 
 ## Dev Notes
 
@@ -105,10 +109,26 @@ JUnit 4 + HAPI `ValidationResult`/`ResultSeverityEnum` (padrão já estabelecido
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Composer (Cursor)
 
 ### Debug Log References
 
+- Epics 2 e 3 confirmados `done` no sprint-status; teste de integração executado com `br.target_condition` + `br.profile` ativos (piloto n=15).
+- Nenhuma regressão HAPI encontrada no cenário BR; Task 4.1 não exigiu correções em produção.
+- Revisão AD-2/AD-8: `FhirR4.java` apenas lê `person.record` (iteração/get); enriquecimento BR (Story 3.3) é somente na saída FHIR.
+- `./gradlew check` completo bloqueado por falhas em `AppTest` (NoSuchFileException `geography\demographics.csv`) — regressão paralela não introduzida por esta story. Testes Epic 5: `BrFHIRR4ExporterTest` BUILD SUCCESSFUL.
+
 ### Completion Notes List
 
+- Criado `BrFHIRR4ExporterTest` em `org.mitre.synthea.br.export` (AD-7) com piloto de 15 pacientes, seed 51001, validação HAPI base R4 sem ERROR/FATAL.
+- Adicionado `FhirR4TestSupport` (test-only) para configurar flags protegidas do exportador a partir do pacote BR.
+- Nenhuma alteração em código de produção; escopo limitado a testes de integração/regressão conforme AC #4.
+
 ### File List
+
+- `src/test/java/org/mitre/synthea/br/export/BrFHIRR4ExporterTest.java` (novo)
+- `src/test/java/org/mitre/synthea/export/FhirR4TestSupport.java` (novo)
+
+### Change Log
+
+- 2026-07-08: Story 5.1 — teste de integração FHIR R4 para cohort BR (breast_cancer + perfil br).

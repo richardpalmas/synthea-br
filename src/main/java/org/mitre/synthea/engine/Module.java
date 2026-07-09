@@ -270,7 +270,7 @@ public class Module implements Cloneable, Serializable {
     modules.forEach((k, v) -> {
       if (v.submodule) {
         v.get(); // ensure submodules get loaded
-      } else if (v.core || pathPredicate.test(v.path)) {
+      } else if (pathPredicate.test(v.path)) {
         list.add(v.get());
       }
     });

@@ -24,6 +24,12 @@ import java.util.stream.Stream;
 import org.mitre.synthea.br.ai.AiEnrichmentConfig;
 import org.mitre.synthea.br.ai.AiEnrichmentService;
 import org.mitre.synthea.br.ai.CohortEnrichmentLog;
+import org.mitre.synthea.br.condition.TargetConditionConfig;
+import org.mitre.synthea.br.pathway.PathwayCatalog;
+import org.mitre.synthea.br.pathway.PathwayFocusConfig;
+import org.mitre.synthea.br.pathway.generation.ModuleProfileConfig;
+import org.mitre.synthea.br.pathway.generation.SimulationWindowConfig;
+import org.mitre.synthea.br.profile.BrProfile;
 import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.export.ExportHelper;
 import org.mitre.synthea.export.Exporter.ExporterRuntimeOptions;
@@ -47,6 +53,7 @@ public class ResearchManifestWriter implements PostCompletionExporter {
 
   private static final String MANIFEST_FILENAME = "manifest.json";
   private static final String METADATA_FOLDER = "metadata";
+  private static final String FORK_NAME = "Synthea-br";
 
   /**
    * Config keys excluded from {@link #computeConfigHash()} because their values are specific to
@@ -97,6 +104,12 @@ public class ResearchManifestWriter implements PostCompletionExporter {
     manifest.put("output_checksum", computeOutputChecksum(outputBase));
     manifest.put("generated_at_iso8601",
         ExportHelper.iso8601Timestamp(System.currentTimeMillis()));
+    manifest.put("forkName", FORK_NAME);
+    manifest.put("version", Utilities.SYNTHEA_VERSION);
+    manifest.put("profile", resolveProfileField());
+    manifest.put("targetCondition", resolveTargetConditionField());
+    appendPathwayFields(manifest);
+    appendGenerationFields(manifest, generator);
 
     if (AiEnrichmentConfig.isEnabled()) {
       Map<String, Object> aiSection = new LinkedHashMap<>();
@@ -112,11 +125,51 @@ public class ResearchManifestWriter implements PostCompletionExporter {
       manifest.put("ai_enrichment", aiSection);
     }
 
-    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    Gson gson = new GsonBuilder().serializeNulls().setPrettyPrinting().create();
     String json = gson.toJson(manifest);
 
     Path manifestPath = outputBase.toPath().resolve(MANIFEST_FILENAME);
     Files.write(manifestPath, json.getBytes(StandardCharsets.UTF_8));
+  }
+
+  /**
+   * Active geographic profile for provenance citation, or {@code null} when upstream defaults
+   * apply.
+   *
+   * @return {@code "br"} when {@link BrProfile#isActive()}, otherwise {@code null}
+   */
+  static String resolveProfileField() {
+    return BrProfile.isActive() ? "br" : null;
+  }
+
+  /**
+   * Configured target clinical condition key, or {@code null} when unset.
+   *
+   * @return condition key from {@link TargetConditionConfig#resolveConfigured()}, or {@code null}
+   */
+  static String resolveTargetConditionField() {
+    TargetConditionConfig.ResolvedTargetCondition resolved =
+        TargetConditionConfig.resolveConfigured();
+    return resolved != null ? resolved.definition.conditionKey : null;
+  }
+
+  private static void appendPathwayFields(Map<String, Object> manifest) {
+    boolean focusEnabled = PathwayFocusConfig.isEnabled();
+    manifest.put("pathway_focus", focusEnabled);
+    if (!focusEnabled) {
+      return;
+    }
+    PathwayCatalog catalog = PathwayCatalog.loadForConfiguredCondition();
+    manifest.put("pathway_catalog_version", catalog.getCatalogVersion());
+    manifest.put("pathway_condition", catalog.getCondition());
+  }
+
+  private static void appendGenerationFields(Map<String, Object> manifest, Generator generator) {
+    manifest.put("module_profile", ModuleProfileConfig.getActiveProfileKey());
+    manifest.put("simulation_window", SimulationWindowConfig.getEffectiveValue());
+    if (generator.generationDurationMs > 0) {
+      manifest.put("generation_duration_ms", generator.generationDurationMs);
+    }
   }
 
   /**

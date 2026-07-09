@@ -60,3 +60,10 @@ Itens identificados em code reviews, válidos mas não bloqueantes para a story 
 - `WebServer.contentTypeFor` só reconhece `.css`/`.js`, com fallback para `text/html` — sem impacto com os assets atuais (`index.html`, `app.css`, `app.js`), mas frágil para tipos futuros (SVG, JSON, fontes).
 - AC5 (reprodutibilidade via checksum do `manifest.json`) não é verificada por nenhum teste automatizado no caminho web — `GenerationServiceTest` só confere `totalGeneratedPopulation >= 1` e existência do manifest, sem comparar checksum entre duas execuções com a mesma seed.
 - Argumentos de CLI extras passados junto de `--web` (ex.: `--web -p 500`) são silenciosamente ignorados sem aviso ao usuário.
+
+## Deferred from: code review of 6-1-cohort-narrative-viewer-export-html-mvp (2026-07-08)
+
+- `aggregateClinicalData` assume encounters ordenados (break em `start > stopTime`) — mesmo padrão de `CCDAExporter.java:83-96`; encounters inseridos cronologicamente no engine. [HtmlExporter.java:214-224]
+- `printStackTrace` em falha de `writeIndex` — consistente com ~20 outros exportadores em `Exporter.java`. [Exporter.java:676-681]
+- `RuntimeException` de FreeMarker não capturada em `Exporter` — mesmo risco em `CCDAExporter.renderTemplate`; fora do escopo desta story. [HtmlExporter.java:126-128]
+- Integração AI enrichment opcional (guarded) — feature aditiva pós-MVP com teste dedicado `HtmlExporterAiSectionTest`; não viola ACs do MVP. [HtmlExporter.java, index.ftl]

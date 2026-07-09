@@ -34,6 +34,9 @@ import org.mitre.synthea.br.condition.TargetConditionIntegration;
 import org.mitre.synthea.br.demographics.BrDemographicsLoader;
 import org.mitre.synthea.br.demographics.BrRaceMapper;
 import org.mitre.synthea.br.geography.BrGeographyResolver;
+import org.mitre.synthea.br.pathway.TrajectoryModeConfig;
+import org.mitre.synthea.br.pathway.generation.ModuleProfileConfig;
+import org.mitre.synthea.br.pathway.generation.SimulationWindowConfig;
 import org.mitre.synthea.br.profile.BrProfile;
 import org.mitre.synthea.br.providers.BrProviderLoader;
 import org.mitre.synthea.editors.GrowthDataErrorsEditor;
@@ -92,6 +95,9 @@ public class Generator {
    * The reference time for the simulation, in milliseconds since epoch.
    */
   public long referenceTime;
+
+  /** Wall-clock duration of the last {@link #run()} in milliseconds (Story 9.6 manifest). */
+  public long generationDurationMs;
 
   /**
    * Statistics about the generated population, such as counts of alive and dead individuals.
@@ -348,6 +354,8 @@ public class Generator {
       throw new ExceptionInInitializerError(e);
     }
 
+    SimulationWindowConfig.validateForGeneration(this.options);
+
     if (options.keepPatientsModulePath != null) {
       try {
         this.keepPatientsModule =
@@ -403,6 +411,8 @@ public class Generator {
   @SuppressWarnings("LineLength")
   public void run() {
 
+    long wallClockStartMs = System.currentTimeMillis();
+
     // Import the fixed patient demographics records file, if a file path is given.
     if (this.options.fixedRecordPath != null) {
       try {
@@ -424,6 +434,8 @@ public class Generator {
     }
 
     ExecutorService threadPool = Executors.newFixedThreadPool(threadPoolSize);
+
+    Exporter.prepareHtmlCohortExport();
 
     // Tracks how many generation attempts are actually made in this run, which can differ
     // from options.population when a single fixed seed or a population snapshot is used.
@@ -499,6 +511,7 @@ public class Generator {
     if (AiEnrichmentConfig.isEnabled()) {
       AiEnrichmentService.enrichCohort(this);
     }
+    this.generationDurationMs = System.currentTimeMillis() - wallClockStartMs;
     Exporter.runPostCompletionExports(this, exporterRuntimeOptions);
 
     if (this.targetConditionIntegration != null) {
@@ -820,10 +833,26 @@ public class Generator {
     person.populationSeed = this.options.seed;
     person.attributes.putAll(demoAttributes);
     person.attributes.put(Person.LOCATION, this.location);
-    person.lastUpdated = (long) demoAttributes.get(Person.BIRTHDATE);
+    long birthdate = (long) demoAttributes.get(Person.BIRTHDATE);
+    person.lastUpdated = birthdate;
+    if (SimulationWindowConfig.isActive() && demoAttributes.containsKey(TARGET_AGE)) {
+      int targetAge = ((Number) demoAttributes.get(TARGET_AGE)).intValue();
+      person.lastUpdated = SimulationWindowConfig.simulationStartTime(birthdate, targetAge);
+    }
     location.setSocialDeterminants(person);
 
-    LifecycleModule.birth(person, person.lastUpdated);
+    LifecycleModule.birth(person, birthdate);
+
+    if (SimulationWindowConfig.isActive()) {
+      person.coverage.setPlanToNoInsurance(birthdate);
+      long coverageThrough = this.stop + this.timestep + 1L;
+      person.coverage.getLastPlanRecord().updateStopTime(coverageThrough);
+      person.coverage.deferEnrollmentUntil(coverageThrough);
+    }
+
+    if (SimulationWindowConfig.isActive() && person.lastUpdated > birthdate) {
+      bootstrapLifecycleUntilWindowStart(person, birthdate, person.lastUpdated);
+    }
 
     person.currentModules = Module.getModules(modulePredicate);
 
@@ -833,6 +862,15 @@ public class Generator {
     return person;
   }
 
+
+  private void bootstrapLifecycleUntilWindowStart(Person person, long birthdate, long windowStart) {
+    LifecycleModule lifecycleModule = new LifecycleModule();
+    long time = birthdate;
+    while (time < windowStart) {
+      lifecycleModule.process(person, time);
+      time += this.timestep;
+    }
+  }
 
   /**
    * Update a previously created person from the time they were last updated until Generator.stop or
@@ -1172,12 +1210,17 @@ public class Generator {
   }
 
   private Predicate<String> getModulePredicate() {
+    Predicate<String> cliFilter;
     if (options.enabledModules == null) {
-      return path -> true;
+      cliFilter = path -> true;
+    } else {
+      FilenameFilter filenameFilter = new WildcardFileFilter(options.enabledModules,
+          IOCase.INSENSITIVE);
+      cliFilter = path -> filenameFilter.accept(null, path);
     }
-    FilenameFilter filenameFilter = new WildcardFileFilter(options.enabledModules,
-        IOCase.INSENSITIVE);
-    return path -> filenameFilter.accept(null, path);
+    Predicate<String> profileFilter = ModuleProfileConfig.buildPathPredicate();
+    Predicate<String> trajectoryFilter = TrajectoryModeConfig.buildPathPredicate();
+    return path -> cliFilter.test(path) && profileFilter.test(path) && trajectoryFilter.test(path);
   }
 
   /**

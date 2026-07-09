@@ -35,6 +35,15 @@ FR13: Gerar manifest de rastreabilidade (seed, config hash, commit, checksum).
 FR14: Disponibilizar guia acadêmico PT-BR para contribuição e uso ético.
 FR15: Preservar exportação FHIR R4 funcional para cohorts direcionadas.
 FR16: Incluir metadados de proveniência (Synthea-br, perfil, condição, versão) no output.
+FR17: Export HTML narrativo da cohort (Cohort Narrative Viewer).
+FR18: Documentar e selecionar referências de trajetórias longitudinais (OncoSynth, Coogee, linhas SUS/DATASUS) para ancoragem clínica.
+FR19: Manter catálogo versionado de fases de trajetória clínica por condição-alvo (allowlists de códigos e ordem canônica).
+FR20: Exportar cohort em modo focado na trajetória clínica (CSV/FHIR/HTML) sem poluição de eventos irrelevantes.
+FR21: Renderizar narrativa HTML agrupada por fase clínica (modo orientador) alinhada à condição-alvo.
+FR22: Aplicar perfil de geração enxuto que suprime módulos não essenciais quando `br.target_condition` está ativo.
+FR23: Restringir janela temporal de simulação à época relevante da trajetória (pré/diagnóstico/tratamento/seguimento).
+FR24: Oferecer módulo GMF de trajetória oncológica episódica como alternativa à simulação de vida inteira para cohort direcionada.
+FR25: Calibrar timings e transições entre fases a partir de estatísticas derivadas de referências externas (formato importável, sem PHI).
 
 ### NonFunctional Requirements
 
@@ -60,6 +69,8 @@ NFR10: Documentação publicável: materiais devem sustentar submissão em SBIS/
 - Regra upstream-first: alterações no core exigem ADR explícito; preferir extensão isolada.
 - FHIR R4 é contrato externo primário no MVP.
 - Deferred técnicos: fonte oficial CID-10 BR, frequência de rebase, modelo de monetização futura, IA operacional.
+- Epic 9 (trajetória clínica focada): três abordagens complementares — **C** filtro de export, **D** geração enxuta, **E** módulo GMF episódico; ancoragem documental em OncoSynth, Coogee e linhas SUS/DATASUS (sem integrar ML/LLM como motor primário no MVP do épico).
+- Modo trajetória focada preserva `HealthRecord` completo na geração; filtragem de export é read-only (AD-2). Módulo episódico (E) muta via GMF conforme AD-2/AD-4.
 
 ### UX Design Requirements
 
@@ -84,6 +95,14 @@ FR14: Epic 1 — Guia acadêmico PT-BR com disclaimer ético
 FR15: Epic 5 — Export FHIR R4 preservado para cohorts direcionadas
 FR16: Epic 5 — Metadados de proveniência no export
 FR17: Epic 6 — Export HTML narrativo da cohort (Cohort Narrative Viewer)
+FR18: Epic 9 — Spike e ADR de referências de trajetória longitudinal
+FR19: Epic 9 — Catálogo de fases de trajetória clínica (data pack)
+FR20: Epic 9 — Export focado em trajetória (abordagem C)
+FR21: Epic 9 — HTML narrativo por fase / modo orientador (abordagem C)
+FR22: Epic 9 — Perfil de geração enxuto (abordagem D)
+FR23: Epic 9 — Janela temporal de simulação (abordagem D)
+FR24: Epic 9 — Módulo GMF de trajetória episódica (abordagem E)
+FR25: Epic 9 — Calibração de timings a partir de referências externas
 
 ## Epic List
 
@@ -110,6 +129,18 @@ Pesquisadores exportam datasets em FHIR R4 com metadados de proveniência (fork 
 ### Epic 6: Visualizador Narrativo HTML da Cohort
 Pesquisadores validam casos clínicos com orientadores via HTML estático offline — timeline e seções aninhadas por paciente, complementando FHIR/CSV.
 **FRs cobertos:** FR17
+
+### Epic 8: Enriquecimento Clínico por IA (MAI-DxO)
+Pesquisadores enriquecem cohorts opcionalmente com painel de personas clínicas (BYOK), resumos narrativos PT-BR no HTML e salvaguardas de robustez/viés — **complementar** ao motor determinístico, nunca substituto.
+**Origem:** ADR-007 (implementação core já presente no código)
+**Depende de:** Epic 6 (HTML + seção IA)
+**Não depende de:** Epic 9 — camada IA permanece opcional
+
+### Epic 9: Trajetória Clínica Focada (Cohort Enxuta)
+Pesquisadores obtêm cohorts de condição-alvo **enxutas e narrativamente coerentes** — rastreio, diagnóstico, estadiamento, tratamento e seguimento — ancoradas em referências de trajetórias longitudinais (OncoSynth, Coogee, linhas SUS/DATASUS), via filtro de export (C), geração enxuta (D) e módulo GMF episódico (E).
+**FRs cobertos:** FR18, FR19, FR20, FR21, FR22, FR23, FR24, FR25
+**Depende de:** Epic 2 (condição garantida), Epic 4 (plausibilidade — recomendado antes de 9.4+), Epic 6 (HTML base — para 9.4)
+**Não depende de:** Epic 8 (MAI-DxO) — camada IA permanece opcional e complementar
 
 ## Epic 1: Infraestrutura Acadêmica e Rastreabilidade
 
@@ -405,3 +436,262 @@ para apresentar casos ao orientador com timeline e seções clínicas estruturad
 **When** HTML export roda
 **Then** implementação é read-only sobre `HealthRecord` (AD-2) e usa FreeMarker em `resources/templates/html/` (padrão CCDA)
 **And** `./gradlew check` passa incluindo testes novos de `HtmlExporter`
+
+---
+
+## Epic 8: Enriquecimento Clínico por IA (MAI-DxO)
+
+Pesquisadores enriquecem cohorts **opcionalmente** com orquestração MAI-DxO (ADR-007): cinco personas clínicas + Gatekeeper corrigem inconsistências pós-geração; resumos narrativos alimentam o HTML do Epic 6. O núcleo (`AiEnrichmentService`, `MaiDxoOrchestrator`) já está implementado; este épico formaliza hardening e extensões inspiradas em literatura recente (NHS England arXiv 2606.26879v2 — ver ADR-008 Adendo A).
+
+**Fora de escopo:** LLM como motor primário de trajetória (Epic 9 / ADR-008); treinamento de modelos; API keys institucionais.
+
+### Story 8.1: Robustez de Parsing LLM no Pipeline MAI-DxO
+
+Como pesquisador BYOK,
+quero recuperação previsível de respostas LLM malformadas ou truncadas,
+para não perder turnos de persona silenciosamente.
+
+**Acceptance Criteria:**
+
+**Given** resposta LLM inválida como JSON
+**When** parsing falha após extração regex
+**Then** fallback LLM de limpeza é tentado (N tentativas configurável) antes de skip do turno
+
+**Given** resposta truncada (padrões conhecidos)
+**When** guard detecta truncamento
+**Then** chamada de continuação concatena saída antes do parse
+
+**Given** enriquecimento completo
+**When** log é inspecionado
+**Then** contadores `json_parse_retries`, `truncation_continuations`, `persona_turns_skipped` presentes
+
+**Dependências:** ADR-007. **Bloqueia:** 8.2.
+
+### Story 8.2: Personas de Estilo Narrativo e Teste de Viés Demográfico
+
+Como pesquisador apresentando cohort enriquecida,
+quero variação realista de estilo nos resumos HTML e teste opt-in de viés demográfico,
+para narrativas credíveis sem amplificar preconceitos.
+
+**Acceptance Criteria:**
+
+**Given** enriquecimento IA ativo
+**When** `AiNarrativeSummarizer` gera resumo
+**Then** personas de escrita (`concise`, `narrative`, `bullet_points`, `clinical_shorthand`, `abcde`) alteram estilo sem mutar `HealthRecord`
+
+**Given** `br.ai.narrative.persona_mode=deterministic`
+**When** mesma seed e patientId
+**Then** mesma persona de escrita atribuída
+
+**Given** `br.ai.bias_test.enabled=true`
+**When** teste executa
+**Then** gera pares baseline/swap (sexo; extensão raça/UF) e `bias_report.json` agregado sem PHI
+
+**Dependências:** ADR-007, Story 8.1, Epic 6. **Complementa:** Epic 9 Story 9.4 (narrativa por fase).
+
+---
+
+## Epic 9: Trajetória Clínica Focada (Cohort Enxuta)
+
+Pesquisadores deixam de receber prontuários de **vida inteira** poluídos por comorbidades e consultas de rotina quando pedem uma cohort de câncer de mama. O épico entrega trajetórias **ancoradas em referências longitudinais** documentadas (OncoSynth para modelagem estatística de cohorts oncológicas; Coogee para padrões de auditoria/consistência narrativa; linhas de cuidado SUS/DATASUS para ordem e fases assistenciais), implementadas em três camadas:
+
+| Abordagem | Escopo | Onde atua |
+|-----------|--------|-----------|
+| **C — Filtro de export** | Dataset e HTML enxutos a partir do `HealthRecord` completo | `org.mitre.synthea.br.pathway` + exportadores (read-only, AD-2) |
+| **D — Geração enxuta** | Menos ruído **na origem** (módulos suprimidos, janela temporal) | `Generator` + config `br.generation.*` (ADR obrigatório para janela) |
+| **E — Módulo GMF episódico** | Trajetória oncológica como simulação principal, não subproduto de vida inteira | `resources/modules/br/` + gate Epic 2 |
+
+**Fora de escopo do Epic 9 (MVP):** substituir o `Generator` por OncoSynth/Coogee como motor primário; treinar modelos de difusão; pipeline LLM não-determinístico como única fonte de coerência (conflita com NFR1/ADR-001). Integrações ML/LLM futuras exigem ADR próprio pós-calibração SM-2.
+
+**Sequenciamento recomendado:** 9.1 → 9.2 → (9.3 ∥ 9.5) → 9.4 → 9.6 → 9.7 → 9.8
+
+### Story 9.1: Spike — Referências de Trajetória Longitudinal + ADR-008
+
+Como pesquisador líder,
+quero um spike documental que compare OncoSynth, Coogee e linhas de cuidado SUS/DATASUS como **fontes de ancoragem** (fases, ordem, timings),
+para decidir o que importar como data pack determinístico vs o que permanece referência bibliográfica.
+
+**Acceptance Criteria:**
+
+**Given** Epic 1 (processo de ADR) concluído
+**When** o spike analisa as três famílias de referência
+**Then** `docs/research/adr/ADR-008-trajetoria-clinica-focada.md` é publicado com: contexto, decisão (C+D+E complementares), consequências e matriz o que entra no fork vs deferred
+**And** o documento mapeia para câncer de mama piloto: fases assistenciais (rastreio → diagnóstico → estadiamento → tratamento → seguimento), com citações e limitações (ex.: OncoSynth = estatística de sobrevida/tratamento, não prontuário FHIR; Coogee = padrão de auditoria narrativa; DATASUS/SUS = ordem macro de procedimentos)
+**And** o spike **não** exige GPU, API paga nem commit de datasets com PHI
+**And** define formato-alvo de importação para Story 9.8 (ex.: JSON de priors temporais por fase, sem dados de paciente real)
+
+**Dependências:** Epic 1 (Story 1.3). **Bloqueia:** 9.2, 9.5, 9.7, 9.8.
+
+---
+
+### Story 9.2: Catálogo de Fases de Trajetória Clínica (Data Pack)
+
+Como pesquisador,
+quero um catálogo versionado de fases da trajetória de câncer de mama com allowlists de códigos clínicos,
+para que filtros, narrativa HTML e regras de plausibilidade compartilhem a mesma ontologia de “evento relevante”.
+
+**Acceptance Criteria:**
+
+**Given** ADR-008 aceito e módulo upstream `breast_cancer.json` disponível
+**When** o catálogo é carregado de `src/main/resources/br/pathways/breast_cancer_phases.json`
+**Then** cada fase possui: `phase_id` estável, título PT-BR, ordem canônica, descrição, `code_allowlist` (SNOMED/LOINC/RxNorm/CPT subset extraído do módulo piloto) e `encounter_types` opcionais
+**And** fases mínimas cobrem: `screening`, `diagnosis`, `staging`, `treatment`, `follow_up` (nomes finais documentados no JSON)
+**And** demografia e metadados de cohort (idade, sexo, município BR) estão marcados como `always_include` independente da fase
+**And** API Java `org.mitre.synthea.br.pathway.PathwayCatalog` expõe resolução por `br.target_condition` sem hardcode de códigos no Java (AD-3)
+**And** testes unitários validam parsing, ordem de fases e presença de códigos críticos (ex.: `254837009`)
+
+**Dependências:** Story 9.1. **Bloqueia:** 9.3, 9.4, 9.7, 9.8.
+
+---
+
+### Story 9.3: Export Focado em Trajetória — Abordagem C
+
+Como pesquisador,
+quero ativar `br.pathway.focus` para exportar apenas eventos da trajetória clínica alvo (+ demografia),
+para eliminar poluição visual em CSV/FHIR sem perder o prontuário completo na simulação.
+
+**Acceptance Criteria:**
+
+**Given** `br.target_condition=breast_cancer` e `br.pathway.focus=true` (CLI `--br.pathway.focus=true` ou property)
+**When** a cohort é gerada e exportada (CSV e FHIR R4)
+**Then** recursos exportados restringem-se a entradas cujo código/tipo está no catálogo 9.2 ou em `always_include`
+**And** `br.pathway.focus=false` (default) preserva comportamento atual de export integral
+**And** implementação estende o padrão `Exporter.filterForExport` em `org.mitre.synthea.br.pathway.PathwayExportFilter` — **read-only** sobre `HealthRecord` (AD-2)
+**And** `manifest.json` inclui: `pathway_focus`, `pathway_catalog_version`, `pathway_condition`
+**And** mesma seed + config + catálogo → mesmo output filtrado (NFR1)
+**And** `./gradlew check` inclui testes com fixture `Person` manual contendo eventos in/out da allowlist
+
+**Dependências:** Story 9.2, Epic 2, Epic 5 (Story 5.1 recomendado). **Bloqueia:** 9.4.
+
+---
+
+### Story 9.4: HTML Narrativo por Fase — Modo Orientador (Abordagem C)
+
+Como estudante apresentando cohort ao orientador,
+quero timeline agrupada por **fase clínica** e modo “orientador” que oculta ruído residual,
+para que a narrativa pareça seguir rastreio → diagnóstico → tratamento → seguimento.
+
+**Acceptance Criteria:**
+
+**Given** Story 9.3 implementada e `exporter.html.export=true`
+**When** `exporter.html.pathway_mode=orientador` (default quando `br.pathway.focus=true`; valores: `orientador`, `pesquisador`, `full`)
+**Then** cada paciente exibe timeline **agrupada por fase** na ordem canônica do catálogo 9.2, com eventos ordenados dentro da fase
+**And** modo `orientador` mostra apenas eventos da trajetória (+ demografia); modo `pesquisador` inclui seção colapsável “Fora da trajetória”; modo `full` equivale ao Epic 6
+**And** condição-alvo (`breast_cancer`) possui destaque visual ao longo da timeline (complemento v1.1 do brainstorm Epic 6)
+**And** labels e fases em PT-BR com perfil `br`
+**And** implementação read-only em `HtmlExporter` / templates FreeMarker (AD-2)
+**And** testes cobrem agrupamento por fase e ausência de eventos irrelevantes no modo orientador
+
+**Dependências:** Story 9.3, Epic 6 (Story 6.1). **Recomendado:** Epic 4 (PLAUS-002 sequência temporal).
+
+---
+
+### Story 9.5: Perfil de Geração Enxuto — Abordagem D
+
+Como pesquisador,
+quero `br.generation.module_profile=pathway_minimal` quando uso condição-alvo,
+para reduzir comorbidades e módulos paralelos **durante** a simulação, não só no export.
+
+**Acceptance Criteria:**
+
+**Given** `br.target_condition=breast_cancer` e `br.generation.module_profile=pathway_minimal`
+**When** a geração executa
+**Then** apenas módulos do perfil curado são carregados (mínimo documentado: lifecycle, insurance, encounters, wellness reduzido, `breast_cancer` + submódulos; **excluídos** módulos de baixa relevância oncológica piloto — dental, veteran, etc.)
+**And** perfil `full` (default) mantém comportamento upstream inalterado quando `module_profile` ausente
+**And** lista allow/deny versionada em `src/main/resources/br/generation/module_profiles/pathway_minimal.json`
+**And** gate Epic 2 continua garantindo 100% condição-alvo (SM-1)
+**And** mesma seed + config + perfil → mesma cohort (NFR1)
+**And** **não** usa flag `-m` isolada sem perfil — perfil é conjunto testado e documentado
+**And** `./gradlew check` inclui teste de integração: cohort minimal vs full com contagem de condições distintas inferior no minimal
+
+**Dependências:** Story 9.1, Epic 2. **Paralelizável com:** 9.3 após 9.2. **Bloqueia:** 9.6.
+
+---
+
+### Story 9.6: Janela Temporal de Simulação — Abordagem D
+
+Como pesquisador,
+quero restringir a simulação a uma janela temporal relevante (`br.generation.simulation_window`),
+para não simular décadas de vida irrelevantes antes do risco/onset oncológico.
+
+**Acceptance Criteria:**
+
+**Given** ADR-008 documenta impacto em demografia, seed e comorbidades
+**When** `br.generation.simulation_window=pre_onset_years:N` está configurado (N documentado; ex.: 5–15 para mama)
+**Then** a simulação inicia em `target_age - N` (ou equivalente documentado) em vez de nascimento, preservando atributos demográficos coerentes com `-a`/IBGE
+**And** combinação `simulation_window` + `module_profile=pathway_minimal` reduz tempo de geração mensurável vs baseline (log de duração no manifest ou metadata)
+**And** gate e plausibilidade Epic 4 continuam aplicáveis ao recorte exportado
+**And** mesma seed + config → mesmo resultado (NFR1)
+**And** combinações inválidas (janela incompatible com `-a`) falham com erro claro na inicialização
+
+**Dependências:** Story 9.5, Story 9.1 (ADR). **Recomendado antes de produção:** Epic 4.
+
+---
+
+### Story 9.7: Módulo GMF de Trajetória Episódica — Abordagem E
+
+Como pesquisador,
+quero um módulo GMF BR (`modules/br/breast_cancer_trajectory.json`) que modele a jornada oncológica como **trajetória principal**,
+para coerência clínica na origem em vez de depender só de filtragem pós-geração.
+
+**Acceptance Criteria:**
+
+**Given** catálogo de fases 9.2 e gate Epic 2 ativos
+**When** `br.generation.trajectory_mode=episodic` e condição `breast_cancer` configurada
+**Then** pacientes passam por fluxo GMF episódico alinhado às fases do catálogo (transições documentadas; compatível GMF 2.0)
+**And** módulo reside em `src/main/resources/modules/br/` (ou path documentado) e integra-se ao gate existente (`254837009` verificável)
+**And** states clonados por paciente — master module nunca mutado (AD-2)
+**And** modo `lifespan` (default) preserva simulação upstream atual
+**And** testes com seed fixo provam sequência: diagnóstico antes de procedimentos de tratamento piloto (alinhado PLAUS-001/002 quando Epic 4 existir)
+**And** documentação no guia de uso descreve trade-off episódico vs vida inteira
+
+**Dependências:** Story 9.2, Epic 2. **Recomendado:** Story 9.5 (perfil minimal como pré-requisito operacional). **Alimenta:** 9.8.
+
+---
+
+### Story 9.8: Calibração de Timings a Partir de Referências Externas
+
+Como pesquisador,
+quero importar **priors temporais** (intervalos entre fases) derivados de referências documentadas no ADR-008,
+para que transições GMF e ordem narrativa reflitam linhas SUS/DATASUS e literatura oncológica — sem incorporar PHI.
+
+**Acceptance Criteria:**
+
+**Given** Story 9.1 define formato de importação e Story 9.7 implementa módulo episódico
+**When** data pack `src/main/resources/br/pathways/breast_cancer_timing_priors.json` está presente (fonte citada: agregados SUS/DATASUS públicos, parâmetros inspirados em OncoSynth/Coogee **como metadado bibliográfico**, não runtime ML)
+**Then** transições entre fases usam distribuições documentadas (min/max/median ou buckets) configuráveis via JSON
+**And** nenhum arquivo no repositório contém PHI ou microdados de paciente real (NFR5)
+**And** alteração do data pack com mesma seed altera timings de forma determinística (NFR1)
+**And** `manifest.json` registra `pathway_timing_priors_version` e `pathway_reference_notes` (links/citações)
+**And** experimento piloto documentado em `docs/research/experiments/` compara cohort episódica calibrada vs não calibrada (métricas: % eventos fora de ordem, SM-2 quando Epic 4 disponível)
+
+**Dependências:** Story 9.1, Story 9.7. **Fecha:** loop de calibração com Epic 4 (revisão ADR-001 pós-SM-2 real).
+
+---
+
+### Dependências entre épicos (Epic 9)
+
+```mermaid
+flowchart TD
+  E2[Epic 2 — Gate condição] --> E9[Epic 9]
+  E6[Epic 6 — HTML base] --> S94[9.4 HTML fase]
+  E4[Epic 4 — Plausibilidade] -.->|recomendado| S94
+  E4 -.->|SM-2 calibração| S98[9.8 Timings]
+  S91[9.1 Spike ADR-008] --> S92[9.2 Catálogo fases]
+  S92 --> S93[9.3 Export C]
+  S92 --> S95[9.5 Perfil D]
+  S93 --> S94
+  S95 --> S96[9.6 Janela D]
+  S92 --> S97[9.7 GMF E]
+  S91 --> S97
+  S97 --> S98
+```
+
+### Métricas de sucesso sugeridas (Epic 9)
+
+| ID | Métrica | Alvo piloto (câncer de mama, n=10–50) |
+|----|---------|----------------------------------------|
+| SM-9.1 | % eventos exportados classificados como “trajetória” no modo focus | ≥ 80% |
+| SM-9.2 | Redução de linhas CSV vs export full (mesma cohort) | ≥ 50% |
+| SM-9.3 | Violações PLAUS-002 (ordem temporal) com modo episódico + calibração | ≤ SM-2 média |
+| SM-9.4 | Tempo de geração (minimal + window vs baseline) | redução documentada; não regredir NFR2 em n=500 |

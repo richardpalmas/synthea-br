@@ -104,6 +104,28 @@
     border-left: 3px solid var(--timeline);
   }
   .timeline li { margin-bottom: 0.65rem; padding-left: 0.75rem; }
+  .pathway-phase { margin-bottom: 1rem; }
+  .phase-title {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .phase-desc { margin: 0 0 0.5rem; color: var(--muted); font-size: 0.88rem; }
+  .target-badge {
+    color: #c45c00;
+    font-weight: 700;
+    margin-right: 0.25rem;
+  }
+  .target-condition-event .event-label { font-weight: 600; color: #8a3b00; }
+  .out-of-pathway-section {
+    margin-top: 1rem;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    background: #fafbfc;
+  }
+  .out-of-pathway-section > summary { list-style: none; }
+  .out-of-pathway-timeline { border-left-color: #e0d8c8; }
   .timeline time { font-weight: 600; margin-right: 0.5rem; }
   .event-type {
     display: inline-block;

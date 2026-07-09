@@ -124,6 +124,15 @@ public class CoverageRecord implements Serializable {
   }
 
   /**
+   * Defers insurance re-enrollment until the given time (used by simulation window bootstrap).
+   *
+   * @param time earliest time at which {@link #newEnrollmentPeriod(long)} may return true
+   */
+  public void deferEnrollmentUntil(long time) {
+    this.nextEnrollmentPeriod = time;
+  }
+
+  /**
    * Determines whether the person should enter an enrollment period and search for a new insurance
    * plan. If so, the next enrollment period will be accordingly updated.
    * @param time The current time.

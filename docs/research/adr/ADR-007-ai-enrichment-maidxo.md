@@ -70,6 +70,8 @@ Adotar um estágio opcional **`AiEnrichment`** pós-geração e pré-export:
 
 - Expandir operações de correção após validação com cohort piloto `breast_cancer`
 - Avaliar providers adicionais e modo sidecar (sem mutação) para publicações que exijam reprodutibilidade total
+- **Story 8.1** — fallback LLM de parsing JSON + detecção de truncamento (Poulett et al. 2026 §4.1, §4.3)
+- **Story 8.2** — personas de estilo narrativo + teste de viés demográfico (Poulett et al. 2026 §4.4.2, §6.1)
 
 ## Referências
 

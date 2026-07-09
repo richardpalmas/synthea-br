@@ -31,6 +31,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import org.hl7.fhir.r4.model.Parameters;
 import org.hl7.fhir.r4.model.StringType;
+import org.mitre.synthea.br.pathway.PathwayExportFilter;
 import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.export.flexporter.Actions;
 import org.mitre.synthea.export.flexporter.FhirPathUtils;
@@ -234,6 +235,9 @@ public abstract class Exporter {
     } else {
       if (options.yearsOfHistory > 0) {
         person = filterForExport(person, options.yearsOfHistory, stopTime);
+      }
+      if (PathwayExportFilter.isEnabled()) {
+        person = PathwayExportFilter.filterForExport(person);
       }
       if (!person.alive(stopTime)) {
         filterAfterDeath(person);
@@ -541,6 +545,15 @@ public abstract class Exporter {
    */
   public static void runPostCompletionExports(Generator generator) {
     runPostCompletionExports(generator, new ExporterRuntimeOptions());
+  }
+
+  /**
+   * Clears the HTML cohort accumulator before a new generation run when HTML export is enabled.
+   */
+  public static void prepareHtmlCohortExport() {
+    if (Config.getAsBoolean("exporter.html.export")) {
+      HtmlExporter.getInstance().reset();
+    }
   }
 
   /**

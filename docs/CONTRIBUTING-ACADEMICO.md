@@ -56,10 +56,33 @@ Enquanto não implementadas, use geração padrão upstream (EUA) para validar o
 Cada geração produz automaticamente `output/manifest.json` com:
 
 - `seed`, `config_hash`, `commit_sha`, `output_checksum`, `generated_at_iso8601`
+- `forkName`, `version`, `profile`, `targetCondition` (proveniência Synthea-br — Story 5.2)
 
 Desabilite temporariamente com `br.manifest.enabled = false` em `synthea.properties`.
 
 **Importante:** ausência de manifest invalida o run para uso acadêmico oficial. Sempre copie o manifest para a pasta do experimento antes de commitar.
+
+### Como citar a proveniência da execução
+
+O `manifest.json` identifica de forma inequívoca o fork, a configuração e a versão do código usados na geração. Use estes campos na seção **Methods** do artigo:
+
+| Campo | Significado | Exemplo |
+|-------|-------------|---------|
+| `forkName` | Nome do fork acadêmico | `"Synthea-br"` |
+| `version` | Versão do fork (`Utilities.SYNTHEA_VERSION`) | `"3.2.0"` |
+| `commit_sha` | Hash Git completo do código usado | `"c1247106c03fa57ace54d269af98c7833f4006a6"` |
+| `profile` | Perfil geográfico/demográfico ativo; `null` = upstream (EUA) | `"br"` ou `null` |
+| `targetCondition` | Condição clínica alvo (`br.target_condition`); `null` se inativa | `"breast_cancer"` ou `null` |
+| `seed` | Semente de reprodutibilidade | `42` |
+| `config_hash` | Hash SHA-256 da configuração efetiva | (hex) |
+| `output_checksum` | Hash determinístico dos arquivos exportados | (hex) |
+| `generated_at_iso8601` | Timestamp UTC da geração | `"2026-07-08T22:15:00Z"` |
+
+**Texto sugerido para Methods:**
+
+> Dataset gerado com Synthea-br v{version} (commit `{commit_sha}`), perfil `{profile}`, condição alvo `{targetCondition}`, seed `{seed}`. A reprodutibilidade foi verificada pelo `config_hash` e `output_checksum` registrados em `manifest.json`. Dados 100% sintéticos.
+
+Substitua os valores entre chaves pelos campos reais do seu `manifest.json`. Quando `profile` ou `targetCondition` forem `null`, indique explicitamente no texto (ex.: "perfil upstream (EUA)", "sem condição alvo configurada").
 
 ---
 
@@ -124,4 +147,4 @@ Geramos uma cohort sintética de 500 pacientes com o fork Synthea-br (commit `a1
 
 ---
 
-*Última atualização: 2026-06-30*
+*Última atualização: 2026-07-08*

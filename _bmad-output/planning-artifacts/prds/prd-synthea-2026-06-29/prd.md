@@ -2,7 +2,7 @@
 title: Synthea-br — Dados Clínicos Sintéticos Brasil
 status: final
 created: 2026-06-29
-updated: 2026-06-30
+updated: 2026-07-08
 ---
 
 # PRD: Synthea-br — Dados Clínicos Sintéticos Brasil
@@ -13,7 +13,7 @@ Projeto de pesquisa PUCPR — fork **Synthea-br**.
 
 Este PRD orienta o desenvolvimento de um **fork acadêmico do Synthea** para o grupo de pesquisa da PUCPR. Destinatários: líderes do grupo, estudantes envolvidos, orientadores e workflows downstream (arquitetura, épicos, implementação).
 
-O documento usa vocabulário fixo na seção **Glossary**; requisitos funcionais numerados globalmente (FR-1…FR-16); suposições marcadas com `[ASSUMPTION]` e indexadas na seção 11.
+O documento usa vocabulário fixo na seção **Glossary**; requisitos funcionais numerados globalmente (FR-1…FR-16, FR-18…FR-25); suposições marcadas com `[ASSUMPTION]` e indexadas na seção 11.
 
 Construído sobre o `project-context.md` (`_bmad-output/project-context.md`), que descreve o codebase brownfield Synthea. Decisões de implementação detalhadas estão em `addendum.md`.
 
@@ -67,6 +67,14 @@ A iniciativa começa como **projeto interno da universidade**, com **intenção 
 - **Climax:** Orientador reproduz run com mesma seed e output equivalente.
 - **Resolution:** Entrada pronta para seção Methods do artigo.
 
+**UJ-4. Ana valida cohort enxuta com narrativa clínica focada para o orientador**
+- **Persona + contexto:** Ana, mestranda PUCPR, precisa apresentar casos de câncer de mama ao orientador sem ruído de prontuário de vida inteira.
+- **Entry state:** Epic 2 ativo (`br.target_condition=breast_cancer`); catálogo de fases publicado (FR-19).
+- **Path:** Ativa `br.pathway.focus=true`; gera cohort com perfil `pathway_minimal` e, opcionalmente, `trajectory_mode=episodic`; exporta CSV/FHIR focado; abre `index.html` com `exporter.html.pathway_mode=orientador`.
+- **Climax:** Timeline agrupada por fase (rastreio → diagnóstico → estadiamento → tratamento → seguimento); orientador reconhece sequência assistencial plausível.
+- **Resolution:** Dataset enxuto versionado com manifest (`pathway_focus`, `pathway_catalog_version`); feedback incorporado antes do paper.
+- **Edge case:** Export focus vazio — erro com sugestão de revisar catálogo ou desativar filtro.
+
 ---
 
 ## 3. Glossary
@@ -80,6 +88,12 @@ A iniciativa começa como **projeto interno da universidade**, com **intenção 
 - **Workflow acadêmico** — Registro estruturado de experimentos, decisões e achados.
 - **Spike IA** — Investigação documental (sem GPU/API no lab) sobre viabilidade de IA; MVP prioriza regras/módulos.
 - **Seed** — Valor que garante reprodutibilidade da geração.
+- **Trajetória clínica focada** — Subconjunto enxuto e narrativamente coerente da jornada assistencial da condição-alvo (ex.: rastreio → diagnóstico → tratamento → seguimento), sem poluição de eventos irrelevantes.
+- **Modo orientador** — Variante do export HTML (`exporter.html.pathway_mode=orientador`) que exibe apenas eventos da trajetória focada (+ demografia), agrupados por fase clínica, para validação com orientador.
+- **Catálogo de fases** — Data pack versionado com fases canônicas da trajetória por condição-alvo: `phase_id`, ordem, allowlists de códigos e metadados `always_include`.
+- **Abordagem C** — Filtro read-only de export sobre `HealthRecord` completo (`br.pathway.focus`); reduz ruído em CSV/FHIR/HTML sem alterar a simulação.
+- **Abordagem D** — Geração enxuta na origem: perfil de módulos suprimidos (`pathway_minimal`) e janela temporal de simulação restrita à época relevante.
+- **Abordagem E** — Módulo GMF episódico que modela a trajetória oncológica como simulação principal (`trajectory_mode=episodic`), em vez de subproduto de vida inteira.
 
 ---
 
@@ -238,6 +252,92 @@ Metadados identificando Synthea-br, perfil, condição, versão.
 
 ---
 
+### 4.6 Trajetória Clínica Focada (Epic 9)
+
+Cohorts enxutas e narrativamente coerentes para condição-alvo, ancoradas em referências longitudinais documentadas. Realiza UJ-4. `[ASSUMPTION: abordagens C, D e E complementares; OncoSynth/Coogee/SUS como ancoragem documental — sem ML/LLM como motor primário no MVP do épico.]`
+
+#### FR-18: Spike e referências de trajetória longitudinal
+
+Spike documental compara OncoSynth, Coogee e linhas SUS/DATASUS como fontes de ancoragem (fases, ordem, timings) para câncer de mama piloto. Realiza UJ-4.
+
+**Consequences (testable):**
+- ADR publicado com matriz do que entra no fork vs deferred; decisão C+D+E complementares.
+- Spike mapeia fases assistenciais (rastreio → diagnóstico → estadiamento → tratamento → seguimento) com citações e limitações.
+- Spike não exige GPU, API paga nem commit de datasets com PHI.
+
+#### FR-19: Catálogo de fases de trajetória clínica
+
+Catálogo versionado de fases por condição-alvo com allowlists de códigos e ordem canônica compartilhada por filtros, HTML e plausibilidade.
+
+**Consequences (testable):**
+- Data pack em `resources/br/pathways/` com `phase_id` estável, título PT-BR e `code_allowlist` por fase.
+- Fases mínimas para câncer de mama: screening, diagnosis, staging, treatment, follow_up.
+- Demografia e metadados de cohort marcados como `always_include`.
+- API `PathwayCatalog` resolve por `br.target_condition` sem hardcode de códigos no Java.
+
+#### FR-20: Export focado em trajetória (abordagem C)
+
+Flag `br.pathway.focus` restringe export CSV/FHIR a eventos da trajetória (+ demografia), preservando `HealthRecord` completo na simulação.
+
+**Consequences (testable):**
+- `br.pathway.focus=false` (default) mantém export integral.
+- Filtro read-only via `PathwayExportFilter` — não muta `HealthRecord`.
+- `manifest.json` inclui `pathway_focus`, `pathway_catalog_version`, `pathway_condition`.
+- Mesma seed + config + catálogo → mesmo output filtrado.
+
+#### FR-21: Narrativa HTML por fase / modo orientador (abordagem C)
+
+Export HTML agrupa timeline por fase clínica; modo orientador oculta ruído residual para validação com orientador.
+
+**Consequences (testable):**
+- `exporter.html.pathway_mode=orientador` (default quando `br.pathway.focus=true`) exibe apenas eventos da trajetória (+ demografia).
+- Modos `pesquisador` (seção colapsável “Fora da trajetória”) e `full` (Epic 6) documentados.
+- Fases e labels em PT-BR com perfil `br`; condição-alvo com destaque visual na timeline.
+- Implementação read-only em `HtmlExporter` / templates FreeMarker.
+
+#### FR-22: Perfil de geração enxuto (abordagem D)
+
+`br.generation.module_profile=pathway_minimal` suprime módulos não essenciais quando `br.target_condition` está ativo.
+
+**Consequences (testable):**
+- Perfil `full` (default) mantém comportamento upstream inalterado.
+- Lista allow/deny versionada em `resources/br/generation/module_profiles/pathway_minimal.json`.
+- Gate de condição-alvo continua garantindo 100% da cohort (SM-1).
+- Mesma seed + config + perfil → mesma cohort.
+
+#### FR-23: Janela temporal de simulação (abordagem D)
+
+`br.generation.simulation_window` restringe simulação à época relevante (pré-onset, diagnóstico, tratamento, seguimento).
+
+**Consequences (testable):**
+- ADR documenta impacto em demografia, seed e comorbidades antes de uso em produção.
+- Simulação inicia em idade/janela documentada em vez de nascimento, preservando atributos demográficos coerentes.
+- Combinações inválidas (janela incompatível com idade alvo) falham com erro claro na inicialização.
+- Mesma seed + config → mesmo resultado; duração registrada no manifest ou metadata.
+
+#### FR-24: Módulo GMF de trajetória episódica (abordagem E)
+
+Módulo GMF BR modela jornada oncológica como trajetória principal (`br.generation.trajectory_mode=episodic`).
+
+**Consequences (testable):**
+- Fluxo episódico alinhado às fases do catálogo FR-19; compatível com GMF 2.0.
+- Modo `lifespan` (default) preserva simulação upstream atual.
+- States clonados por paciente — master module nunca mutado.
+- Sequência piloto verificável: diagnóstico antes de procedimentos de tratamento.
+
+#### FR-25: Calibração de timings a partir de referências externas
+
+Priors temporais (intervalos entre fases) importáveis de referências documentadas, sem PHI.
+
+**Consequences (testable):**
+- Data pack `breast_cancer_timing_priors.json` com distribuições documentadas (min/max/median ou buckets).
+- Fontes citadas: agregados SUS/DATASUS públicos; parâmetros OncoSynth/Coogee como metadado bibliográfico, não runtime ML.
+- Nenhum arquivo no repositório contém PHI ou microdados de paciente real.
+- `manifest.json` registra `pathway_timing_priors_version` e `pathway_reference_notes`.
+- Alteração do data pack com mesma seed altera timings de forma determinística.
+
+---
+
 ## 5. Cross-Cutting NFRs
 
 - **Reprodutibilidade:** seed + config → output equivalente (SM-3).
@@ -307,6 +407,13 @@ Metadados identificando Synthea-br, perfil, condição, versão.
 - **SM-4:** Orientador reproduz experimento sem suporte oral. Valida FR-11, FR-14.
 - **SM-5:** ADR do spike antes de expandir condições. Valida FR-10.
 - **SM-6:** Methods preenchível a partir do template. Valida FR-11, FR-14.
+
+**Epic 9 — Trajetória clínica focada**
+
+- **SM-9.1:** ≥ 80% dos eventos exportados classificados como “trajetória” no modo focus (câncer de mama, n=10–50). Valida FR-19, FR-20.
+- **SM-9.2:** ≥ 50% de redução de linhas CSV vs export full na mesma cohort. Valida FR-20.
+- **SM-9.3:** Violações PLAUS-002 (ordem temporal) com modo episódico + calibração ≤ limiar SM-2 média. Valida FR-24, FR-25.
+- **SM-9.4:** Redução documentada de tempo de geração (`pathway_minimal` + `simulation_window` vs baseline); não regredir NFR2 em n=500. Valida FR-22, FR-23.
 
 **Counter-metrics**
 

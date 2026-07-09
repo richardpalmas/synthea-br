@@ -1,0 +1,54 @@
+{
+  "name": "Breast Cancer Trajectory BR Episodic",
+  "remarks": [
+    "Story 9.7 — Abordagem E: marcadores de fase alinhados ao PathwayCatalog (9.2).",
+    "Top-level path: modules/breast_cancer_trajectory_br.json (GMF loader trata modules/br/* como submodulos).",
+    "Executa em paralelo ao modulo upstream breast_cancer (nao o substitui).",
+    "phase_id mapping:",
+    "  phase_screening -> screening (order 1)",
+    "  phase_diagnosis -> diagnosis (order 2)",
+    "  phase_staging -> staging (order 3)",
+    "  phase_treatment -> treatment (order 4)",
+    "  phase_follow_up -> follow_up (order 5)"
+  ],
+  "gmf_version": 2,
+  "states": {
+    "Initial": {
+      "type": "Initial",
+      "direct_transition": "phase_screening"
+    },
+    "phase_screening": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "screening",
+      "direct_transition": "phase_diagnosis"
+    },
+    "phase_diagnosis": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "diagnosis",
+      "direct_transition": "phase_staging"
+    },
+    "phase_staging": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "staging",
+      "direct_transition": "phase_treatment"
+    },
+    "phase_treatment": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "treatment",
+      "direct_transition": "phase_follow_up"
+    },
+    "phase_follow_up": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "follow_up",
+      "direct_transition": "Terminal"
+    },
+    "Terminal": {
+      "type": "Terminal"
+    }
+  }
+}

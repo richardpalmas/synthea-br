@@ -37,6 +37,24 @@ Processo: iterar catálogo FR-8 até SM-2 passar ou ADR registrar limite atingid
 
 ---
 
+## Epic 9 — Trajetória Clínica Focada (Cohort Enxuta)
+
+**Problema:** cohorts de condição-alvo (ex.: câncer de mama) exportam prontuários de vida inteira — poluição visual e narrativa incoerente para orientadores.
+
+**Solução (três abordagens complementares, ADR-008):**
+
+| Abordagem | O que faz |
+|-----------|-----------|
+| **C** | Filtro de export read-only (`br.pathway.focus`) + HTML modo orientador |
+| **D** | Geração enxuta (`module_profile`, `simulation_window`) |
+| **E** | Módulo GMF episódico + priors temporais (FR-25) |
+
+**Ancoragem documental:** OncoSynth, Coogee, linhas SUS/DATASUS — **referência e calibração**, não motor primário de geração (NFR1, ADR-001).
+
+**FRs:** FR-18…FR-25 | **Métricas:** SM-9.1…SM-9.4 | **Detalhe:** `epics.md` Epic 9, stories 9.1–9.8.
+
+---
+
 ## Publicação e Monetização Futura
 
 **MVP orientado a:**
@@ -98,3 +116,21 @@ Facilita rebase periódico com `synthetichealth/synthea`.
 - Manter fork alinhável ao upstream — evitar divergência estrutural no core Java.
 - Cadência sugerida: fim de cada fase do PRD ou semestre letivo; ADR registra versão upstream base e conflitos resolvidos.
 - Responsável: a definir no grupo (orientador / maintainer do fork).
+
+---
+
+## Epic 9 — Trajetória Clínica Focada (nota)
+
+**Objetivo:** cohorts de condição-alvo enxutas e narrativamente coerentes, sem prontuário de vida inteira poluído por comorbidades e rotina.
+
+**Três abordagens complementares (PRD §4.6, FR-18…FR-25):**
+
+| Abordagem | Escopo | Onde atua |
+|-----------|--------|-----------|
+| **C — Filtro de export** | CSV/FHIR/HTML enxutos a partir do `HealthRecord` completo | `org.mitre.synthea.br.pathway` + exportadores (read-only) |
+| **D — Geração enxuta** | Menos ruído na origem (módulos suprimidos, janela temporal) | `Generator` + `br.generation.*` |
+| **E — Módulo GMF episódico** | Trajetória oncológica como simulação principal | `resources/modules/br/` + gate Epic 2 |
+
+**Ancoragem documental:** OncoSynth (estatística de cohorts oncológicas), Coogee (padrões de auditoria narrativa), linhas SUS/DATASUS (ordem macro de procedimentos). Spike FR-18 → ADR-008; sem GPU/API/PHI; ML/LLM não substituem motor determinístico no MVP do épico.
+
+**Sequenciamento sugerido:** spike/catálogo → export C ∥ perfil D → HTML orientador → janela D → módulo E → calibração timings (FR-25).

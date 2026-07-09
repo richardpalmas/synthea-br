@@ -26,7 +26,11 @@ import java.util.Map;
 import org.mitre.synthea.br.ai.AiEnrichmentService;
 import org.mitre.synthea.br.ai.CohortEnrichmentLog;
 import org.mitre.synthea.br.condition.SupportedConditions;
+import org.mitre.synthea.br.condition.TargetConditionConfig;
 import org.mitre.synthea.br.demographics.BrRaceMapper;
+import org.mitre.synthea.br.pathway.PathwayHtmlModeConfig;
+import org.mitre.synthea.br.pathway.PathwayHtmlModelBuilder;
+import org.mitre.synthea.br.pathway.PathwayExportFilter;
 import org.mitre.synthea.br.profile.BrProfile;
 import org.mitre.synthea.br.terminology.BrTerminologyResolver;
 import org.mitre.synthea.helpers.Config;
@@ -43,6 +47,10 @@ import org.mitre.synthea.world.concepts.healthinsurance.PlanRecord;
 /**
  * Exports a cohort-level HTML narrative index ({@code output/html/index.html}) with one accordion
  * per patient. Data is read from {@link Person}/{@link HealthRecord} at export time (AD-2).
+ *
+ * <p>Cohort-scale note: a single {@code index.html} is practical for pilot cohorts (n≈10–500).
+ * For larger populations, prefer disabling HTML export or splitting output (v1.1:
+ * {@code patients/{id}.html}).
  */
 public class HtmlExporter {
 
@@ -97,25 +105,28 @@ public class HtmlExporter {
       return;
     }
 
-    Map<String, Object> model = new HashMap<>();
-    model.put("generatedDate", formatExportDate(System.currentTimeMillis(), BrProfile.isActive()));
-    model.put("patientCount", patients.size());
-    model.put("patients", new ArrayList<>(patients));
+    try {
+      Map<String, Object> model = new HashMap<>();
+      model.put("generatedDate", formatExportDate(System.currentTimeMillis(), BrProfile.isActive()));
+      model.put("patientCount", patients.size());
+      model.put("patients", new ArrayList<>(patients));
 
-    CohortEnrichmentLog aiLog = AiEnrichmentService.getLastLog();
-    if (aiLog != null && aiLog.getCohortNarrativeSummary() != null) {
-      model.put("aiEnrichmentEnabled", true);
-      model.put("aiCohortSummary", aiLog.getCohortNarrativeSummary());
-      model.put("aiModel", aiLog.getModel());
-    } else {
-      model.put("aiEnrichmentEnabled", false);
+      CohortEnrichmentLog aiLog = AiEnrichmentService.getLastLog();
+      if (aiLog != null && aiLog.getCohortNarrativeSummary() != null) {
+        model.put("aiEnrichmentEnabled", true);
+        model.put("aiCohortSummary", aiLog.getCohortNarrativeSummary());
+        model.put("aiModel", aiLog.getModel());
+      } else {
+        model.put("aiEnrichmentEnabled", false);
+      }
+
+      String html = renderTemplate("index.ftl", model);
+      Path outFile = Exporter.getOutputFolder("html", null).toPath().resolve("index.html");
+      Files.createDirectories(outFile.getParent());
+      Files.writeString(outFile, html, StandardCharsets.UTF_8);
+    } finally {
+      reset();
     }
-
-    String html = renderTemplate("index.ftl", model);
-    Path outFile = Exporter.getOutputFolder("html", null).toPath().resolve("index.html");
-    Files.createDirectories(outFile.getParent());
-    Files.writeString(outFile, html, StandardCharsets.UTF_8);
-    reset();
   }
 
   private static String renderTemplate(String templateName, Map<String, Object> model) {
@@ -131,26 +142,84 @@ public class HtmlExporter {
 
   private static PatientNarrative buildPatientNarrative(Person person, long stopTime,
       Map<String, Map<String, Object>> aiByPatientId) {
-    AggregatedClinicalData aggregated = aggregateClinicalData(person, stopTime);
+    String pathwayMode = resolvePathwayMode();
+    Person viewPerson = personForHtmlView(person, pathwayMode);
     boolean brProfile = BrProfile.isActive();
 
+    AggregatedClinicalData aggregated = aggregateClinicalData(viewPerson, stopTime);
+
     PatientNarrative narrative = new PatientNarrative();
-    narrative.displayName = stringAttr(person, Person.NAME);
-    narrative.patientId = stringAttr(person, Person.ID);
-    narrative.ageYears = person.age(stopTime).getYears();
-    narrative.sexLabel = formatSexLabel(stringAttr(person, Person.GENDER));
+    narrative.displayName = stringAttr(viewPerson, Person.NAME);
+    narrative.patientId = stringAttr(viewPerson, Person.ID);
+    narrative.ageYears = viewPerson.age(stopTime).getYears();
+    narrative.sexLabel = formatSexLabel(stringAttr(viewPerson, Person.GENDER));
     narrative.primaryCondition = resolvePrimaryCondition(aggregated, stopTime, brProfile);
-    narrative.demographics = buildDemographics(person, stopTime, brProfile);
+    narrative.primaryConditionHighlight = isTargetConditionConfigured();
+    narrative.demographics = buildDemographics(viewPerson, stopTime, brProfile);
     narrative.conditions = buildConditionRows(aggregated, stopTime, brProfile);
     narrative.medications = buildMedicationRows(aggregated, stopTime, brProfile);
     narrative.exams = buildExamRows(aggregated, stopTime, brProfile);
     narrative.procedures = buildProcedureRows(aggregated, stopTime, brProfile);
-    narrative.encounters = buildEncounterRows(person, stopTime, brProfile);
-    narrative.coverage = buildCoverageRows(person, stopTime, brProfile);
-    narrative.timeline = buildTimeline(aggregated, person, stopTime, brProfile);
+    narrative.encounters = buildEncounterRows(viewPerson, stopTime, brProfile);
+    narrative.coverage = buildCoverageRows(viewPerson, stopTime, brProfile);
+    narrative.timeline = buildTimeline(aggregated, viewPerson, stopTime, brProfile);
+
+    if (PathwayHtmlModeConfig.usesPathwayTimeline(pathwayMode)
+        && TargetConditionConfig.resolveConfigured() != null) {
+      PathwayHtmlModelBuilder.applyPathwayTimeline(narrative, viewPerson, stopTime, pathwayMode,
+          pathwayEventFactory(brProfile));
+      formatTimelineDates(narrative.timeline, brProfile);
+      formatTimelineDates(narrative.outOfPathwayEvents, brProfile);
+      if (narrative.pathwayPhases != null) {
+        for (PathwayPhaseSection section : narrative.pathwayPhases) {
+          formatTimelineDates(section.events, brProfile);
+        }
+      }
+    } else {
+      narrative.pathwayMode = pathwayMode;
+      narrative.pathwayTimelineEnabled = false;
+    }
+
     applyLastEvent(narrative);
     applyAiEnrichment(narrative, aiByPatientId);
     return narrative;
+  }
+
+  private static String resolvePathwayMode() {
+    return PathwayHtmlModeConfig.resolveMode();
+  }
+
+  private static Person personForHtmlView(Person person, String pathwayMode) {
+    if (!PathwayHtmlModeConfig.hidesOutOfPathwayClinicalData(pathwayMode)) {
+      return person;
+    }
+    if (TargetConditionConfig.resolveConfigured() == null) {
+      return person;
+    }
+    return PathwayExportFilter.filterForExport(person,
+        org.mitre.synthea.br.pathway.PathwayCatalog.loadForConfiguredCondition());
+  }
+
+  private static boolean isTargetConditionConfigured() {
+    return TargetConditionConfig.resolveConfigured() != null;
+  }
+
+  private static PathwayHtmlModelBuilder.TimelineEventFactory pathwayEventFactory(
+      boolean brProfile) {
+    return new PathwayHtmlModelBuilder.TimelineEventFactory() {
+      @Override
+      public TimelineEvent fromEntry(Entry entry, String type, boolean targetHighlight) {
+        TimelineEvent event = new TimelineEvent(entry.start, type, formatEntryLabel(entry, brProfile));
+        event.targetConditionHighlight = targetHighlight;
+        return event;
+      }
+
+      @Override
+      public TimelineEvent fromEncounter(Encounter encounter) {
+        return new TimelineEvent(encounter.start, "Encontro",
+            encounterLabel(encounter, brProfile));
+      }
+    };
   }
 
   private static Map<String, Map<String, Object>> aiEnrichmentByPatientId() {
@@ -259,6 +328,15 @@ public class HtmlExporter {
       return formatEntryLabel(best, brProfile);
     }
     return "Sem condição principal registrada";
+  }
+
+  private static void formatTimelineDates(List<TimelineEvent> events, boolean brProfile) {
+    if (events == null) {
+      return;
+    }
+    for (TimelineEvent event : events) {
+      event.date = formatExportDate(event.timestamp, brProfile);
+    }
   }
 
   private static void applyLastEvent(PatientNarrative narrative) {
@@ -526,8 +604,13 @@ public class HtmlExporter {
     public int ageYears;
     public String sexLabel;
     public String primaryCondition;
+    public boolean primaryConditionHighlight;
     public String lastEventDate;
     public String lastEventLabel;
+    public String pathwayMode;
+    public boolean pathwayTimelineEnabled;
+    public List<PathwayPhaseSection> pathwayPhases;
+    public List<TimelineEvent> outOfPathwayEvents;
     public DemographicsSection demographics;
     public List<RowItem> conditions;
     public List<RowItem> medications;
@@ -540,6 +623,15 @@ public class HtmlExporter {
     public String aiSummary;
     public int aiAppliedCount;
     public int aiFlagCount;
+  }
+
+  /** One clinical pathway phase section for grouped HTML timeline. */
+  public static final class PathwayPhaseSection {
+    public String phaseId;
+    public int order;
+    public String title;
+    public String description;
+    public List<TimelineEvent> events;
   }
 
   /** Demographics nested section. */
@@ -570,6 +662,8 @@ public class HtmlExporter {
     public String date;
     public String type;
     public String label;
+    public String phaseId;
+    public boolean targetConditionHighlight;
 
     TimelineEvent(long timestamp, String type, String label) {
       this.timestamp = timestamp;

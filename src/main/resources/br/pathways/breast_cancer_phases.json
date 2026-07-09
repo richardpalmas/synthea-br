@@ -1,0 +1,141 @@
+{
+  "catalog_version": "1.0.0",
+  "condition": "breast_cancer",
+  "source_module": "modules/breast_cancer.json",
+  "source_reference": "docs/research/adr/ADR-008-trajetoria-clinica-focada.md",
+  "phases": [
+    {
+      "phase_id": "screening",
+      "order": 1,
+      "title_pt_br": "Rastreio",
+      "description_pt_br": "Mamografia de rastreio e reavaliacoes periodicas antes de qualquer suspeita diagnostica.",
+      "encounter_types": ["ambulatory", "wellness"],
+      "code_allowlist": [
+        { "system": "SNOMED-CT", "code": "24623002", "display": "Screening mammography (procedure)" },
+        { "system": "SNOMED-CT", "code": "268547008", "display": "Screening for malignant neoplasm of breast (procedure)" },
+        { "system": "SNOMED-CT", "code": "86013001", "display": "Periodic reevaluation and management of healthy individual (procedure)" }
+      ]
+    },
+    {
+      "phase_id": "diagnosis",
+      "order": 2,
+      "title_pt_br": "Diagnostico",
+      "description_pt_br": "Confirmacao diagnostica: exames de imagem, biopsia, condicao-alvo e subtipagem molecular (receptores hormonais/HER2).",
+      "encounter_types": ["ambulatory"],
+      "code_allowlist": [
+        { "system": "SNOMED-CT", "code": "254837009", "display": "Malignant neoplasm of breast (disorder)" },
+        { "system": "SNOMED-CT", "code": "241055006", "display": "Mammogram - symptomatic (procedure)" },
+        { "system": "SNOMED-CT", "code": "1571000087109", "display": "Ultrasonography of bilateral breasts (procedure)" },
+        { "system": "SNOMED-CT", "code": "241615005", "display": "Magnetic resonance imaging of breast (procedure)" },
+        { "system": "SNOMED-CT", "code": "122548005", "display": "Biopsy of breast (procedure)" },
+        { "system": "SNOMED-CT", "code": "185345009", "display": "Encounter for symptom (procedure)" },
+        { "system": "SNOMED-CT", "code": "434363004", "display": "Human epidermal growth factor receptor 2 gene detection by fluorescence in situ hybridization (procedure)" },
+        { "system": "SNOMED-CT", "code": "433114000", "display": "Human epidermal growth factor receptor 2 gene detection by immunohistochemistry (procedure)" },
+        { "system": "LOINC", "code": "85319-2", "display": "HER2 [Presence] in Breast cancer specimen by Immune stain" },
+        { "system": "LOINC", "code": "85337-4", "display": "Estrogen receptor Ag [Presence] in Breast cancer specimen by Immune stain" },
+        { "system": "LOINC", "code": "85339-0", "display": "Progesterone receptor Ag [Presence] in Breast cancer specimen by Immune stain" },
+        { "system": "LOINC", "code": "21924-6", "display": "Tumor marker Cancer" },
+        { "system": "LOINC", "code": "10480-2", "display": "Estrogen+Progesterone receptor Ag [Presence] in Tissue by Immune stain" },
+        { "system": "LOINC", "code": "85318-4", "display": "ERBB2 gene duplication [Presence] in Breast cancer specimen by FISH" }
+      ]
+    },
+    {
+      "phase_id": "staging",
+      "order": 3,
+      "title_pt_br": "Estadiamento",
+      "description_pt_br": "Classificacao TNM e estadiamento clinico (AJCC 8a edicao) apos confirmacao diagnostica.",
+      "encounter_types": ["ambulatory"],
+      "code_allowlist": [
+        { "system": "LOINC", "code": "21908-9", "display": "Stage group.clinical Cancer" },
+        { "system": "LOINC", "code": "21907-1", "display": "Distant metastases.clinical [Class] Cancer" },
+        { "system": "LOINC", "code": "21905-5", "display": "Primary tumor.clinical [Class] Cancer" },
+        { "system": "LOINC", "code": "21906-3", "display": "Regional lymph nodes.clinical [Class] Cancer" },
+        { "system": "LOINC", "code": "33728-7", "display": "Size.maximum dimension in Tumor" },
+        { "system": "LOINC", "code": "44667-4", "display": "Site of distant metastasis in Breast tumor" },
+        { "system": "LOINC", "code": "85352-3", "display": "Lymph nodes with isolated tumor cells [#] in Cancer specimen by Light microscopy" },
+        { "system": "LOINC", "code": "85344-0", "display": "Lymph nodes with micrometastases [#] in Cancer specimen by Light microscopy" },
+        { "system": "LOINC", "code": "85343-2", "display": "Lymph nodes with macrometastases [#] in Cancer specimen by Light microscopy" }
+      ]
+    },
+    {
+      "phase_id": "treatment",
+      "order": 4,
+      "title_pt_br": "Tratamento",
+      "description_pt_br": "Cirurgia, radioterapia, quimioterapia e terapia hormonal/alvo-molecular apos estadiamento.",
+      "encounter_types": ["ambulatory", "inpatient"],
+      "code_allowlist": [
+        { "system": "SNOMED-CT", "code": "223484005", "display": "Discussion about treatment (procedure)" },
+        { "system": "SNOMED-CT", "code": "223487003", "display": "Discussion about options (procedure)" },
+        { "system": "SNOMED-CT", "code": "367336001", "display": "Chemotherapy (procedure)" },
+        { "system": "SNOMED-CT", "code": "185347001", "display": "Encounter for problem (procedure)" },
+        { "system": "SNOMED-CT", "code": "392023007", "display": "Excision of lesion of breast (procedure)" },
+        { "system": "SNOMED-CT", "code": "392021009", "display": "Lumpectomy of breast (procedure)" },
+        { "system": "SNOMED-CT", "code": "33195004", "display": "External beam radiation therapy procedure (procedure)" },
+        { "system": "SNOMED-CT", "code": "385798007", "display": "Radiation therapy care (regime/therapy)" },
+        { "system": "SNOMED-CT", "code": "1287742003", "display": "Radiotherapy (procedure)" },
+        { "system": "SNOMED-CT", "code": "447759004", "display": "Brachytherapy of breast (procedure)" },
+        { "system": "SNOMED-CT", "code": "113120007", "display": "Interstitial brachytherapy (procedure)" },
+        { "system": "SNOMED-CT", "code": "384692006", "display": "Intracavitary brachytherapy (procedure)" },
+        { "system": "SNOMED-CT", "code": "396487001", "display": "Sentinel lymph node biopsy (procedure)" },
+        { "system": "SNOMED-CT", "code": "234262008", "display": "Excision of axillary lymph node (procedure)" },
+        { "system": "SNOMED-CT", "code": "443497002", "display": "Excision of sentinel lymph node (procedure)" },
+        { "system": "SNOMED-CT", "code": "43060002", "display": "Intravenous injection (procedure)" },
+        { "system": "LOINC", "code": "59557-9", "display": "Treatment status Cancer" },
+        { "system": "LOINC", "code": "88040-1", "display": "Response to cancer treatment" },
+        { "system": "RxNorm", "code": "1734919", "display": "Cyclophosphamide 1000 MG Injection" },
+        { "system": "RxNorm", "code": "597195", "display": "Carboplatin 10 MG/ML Injectable Solution" },
+        { "system": "RxNorm", "code": "1791701", "display": "10 ML Fluorouracil 50 MG/ML Injection" },
+        { "system": "RxNorm", "code": "1790099", "display": "10 ML Doxorubicin Hydrochloride 2 MG/ML Injection" },
+        { "system": "RxNorm", "code": "1732186", "display": "100 ML Epirubicin Hydrochloride 2 MG/ML Injection" },
+        { "system": "RxNorm", "code": "583214", "display": "Paclitaxel 100 MG Injection" },
+        { "system": "RxNorm", "code": "1114085", "display": "100 ML zoledronic acid 0.04 MG/ML Injection" },
+        { "system": "RxNorm", "code": "993452", "display": "1 ML denosumab 60 MG/ML Prefilled Syringe" },
+        { "system": "RxNorm", "code": "1737449", "display": "10 ML Pamidronate Disodium 3 MG/ML Injection" },
+        { "system": "RxNorm", "code": "727762", "display": "5 ML fulvestrant 50 MG/ML Prefilled Syringe" },
+        { "system": "RxNorm", "code": "1658084", "display": "ado-trastuzumab emtansine 100 MG Injection" },
+        { "system": "RxNorm", "code": "672149", "display": "lapatinib 250 MG Oral Tablet" },
+        { "system": "RxNorm", "code": "1940648", "display": "neratinib 40 MG Oral Tablet" },
+        { "system": "RxNorm", "code": "2119714", "display": "5 ML hyaluronidase-oysk 2000 UNT/ML / trastuzumab-oysk 120 MG/ML Injection" },
+        { "system": "RxNorm", "code": "1946840", "display": "abemaciclib 100 MG Oral Tablet [Verzenio]" },
+        { "system": "RxNorm", "code": "1601380", "display": "palbociclib 100 MG Oral Capsule" },
+        { "system": "RxNorm", "code": "1873983", "display": "ribociclib 200 MG Oral Tablet" }
+      ]
+    },
+    {
+      "phase_id": "follow_up",
+      "order": 5,
+      "title_pt_br": "Seguimento",
+      "description_pt_br": "Consultas periodicas, mamografia de seguimento e terapia hormonal de manutencao pos-tratamento.",
+      "encounter_types": ["ambulatory"],
+      "code_allowlist": [
+        { "system": "SNOMED-CT", "code": "439740005", "display": "Postoperative follow-up visit (procedure)" },
+        { "system": "SNOMED-CT", "code": "410410006", "display": "Screening surveillance (regime/therapy)" },
+        { "system": "SNOMED-CT", "code": "71651007", "display": "Mammography (procedure)" },
+        { "system": "SNOMED-CT", "code": "310061009", "display": "Gynecology service (qualifier value)" },
+        { "system": "SNOMED-CT", "code": "35025007", "display": "Manual pelvic examination (procedure)" },
+        { "system": "SNOMED-CT", "code": "90226004", "display": "Cytopathology procedure, preparation of smear, genital source (procedure)" },
+        { "system": "SNOMED-CT", "code": "312681000", "display": "Bone density scan (procedure)" },
+        { "system": "SNOMED-CT", "code": "185389009", "display": "Follow-up visit (procedure)" },
+        { "system": "RxNorm", "code": "198240", "display": "Tamoxifen 10 MG Oral Tablet" },
+        { "system": "RxNorm", "code": "313428", "display": "Toremifene 60 MG Oral Tablet" },
+        { "system": "RxNorm", "code": "310261", "display": "exemestane 25 MG Oral Tablet" },
+        { "system": "RxNorm", "code": "199224", "display": "anastrozole 1 MG Oral Tablet" },
+        { "system": "RxNorm", "code": "200064", "display": "letrozole 2.5 MG Oral Tablet" }
+      ]
+    }
+  ],
+  "always_include": {
+    "description_pt_br": "Demografia e metadados de cohort permanecem visiveis independente da fase clinica.",
+    "attributes": [
+      "age",
+      "gender",
+      "race",
+      "ethnicity",
+      "municipio_ibge",
+      "municipio_nome",
+      "uf",
+      "br.target_condition",
+      "br.profile"
+    ]
+  }
+}

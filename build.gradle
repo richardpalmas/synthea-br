@@ -167,6 +167,9 @@ test {
     // showStandardStreams = true
   }
   maxHeapSize = "6144m"
+  // Unique binary results path per run avoids Windows file locks on output.bin
+  binaryResultsDirectory.set(
+      layout.buildDirectory.dir("test-binary-results/" + System.currentTimeMillis()))
   jacoco {
     includes = ["org.mitre.*"]
   }
@@ -310,6 +313,14 @@ task physiology(type: JavaExec) {
     description = 'Test a physiology simulation'
     classpath sourceSets.main.runtimeClasspath
     mainClass = "org.mitre.synthea.engine.PhysiologySimulator"
+}
+
+task plausibilityReport(type: JavaExec) {
+    group = 'Application'
+    description = 'Generate a cohort with plausibility report enabled (shortcut for run_synthea with br.plausibility.report.enabled=true)'
+    classpath sourceSets.main.runtimeClasspath
+    mainClass = 'App'
+    args = ['-p', '10', '--br.plausibility.report.enabled=true']
 }
 
 task versionTxt() {

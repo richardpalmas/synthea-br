@@ -211,6 +211,55 @@ As abordagens **não são mutuamente exclusivas**. A combinação recomendada pa
 - [ ] Registrar experimento piloto em `docs/research/experiments/` (cohort calibrada vs. não calibrada)
 - [ ] Revisar ADR-001 após SM-2 real (Epic 4) para avaliar integrações ML/LLM adicionais
 
+---
+
+## Adendo A — Validação externa (NHS England, jun/2026)
+
+**Fonte:** Poulett et al., *A Pipeline for Generating Longitudinal Synthetic Clinical Notes Using Large Language Models*, arXiv [2606.26879v2](https://arxiv.org/html/2606.26879v2) (NHS England Data Science and Applied AI Team, CC BY 4.0).
+
+Este adendo registra evidência externa independente que **reforça** as decisões deste ADR, sem alterar o status **Aceito** nem o escopo do Epic 9.
+
+### O que o paper faz (resumo)
+
+A NHS England publicou um pipeline modular em cinco estágios para gerar **notas clínicas hospitalares longitudinais** (70 pacientes × 20–50 notas) usando LLMs:
+
+1. **Pacientes** — Synthea UK (adaptação NHS) **apenas para demografia** (nome, idade, sexo); LLM complementa contatos e alergias.
+2. **Admissões** — motivo de internação amostrado de tabela curada (SNOMED/ICD possível); LLM gera especialidade, ward, medicações, histórico.
+3. **Jornada do paciente** — **100% LLM**: jornada simples → detecção de truncamento → validador de realismo → enriquecimento por evento.
+4. **Notas clínicas** — uma nota por evento; **personas de escrita** por membro de staff (Concise, Narrative, Bullet Points, etc.); validador de fidelidade em loop.
+5. **Augmentação** — abreviações clínicas e typos por staff.
+
+Eles **não usam** o motor completo do Synthea para trajetória hospitalar. Motivo explícito no paper:
+
+> *"Synthea UK is focused on primary care — to use it later in our pipeline we would require secondary care journeys and development of a secondary care simulation engine was not possible in the time available."*
+
+### Implicações para o Synthea-br (Epic 9)
+
+| Insight do paper | Decisão já tomada neste ADR | Ação no fork |
+|------------------|----------------------------|--------------|
+| Synthea sozinho insuficiente para jornada hospitalar/secundária coerente | Abordagem **E** (GMF episódico BR) como motor determinístico de trajetória | Story 9.7 — `breast_cancer_trajectory.json` |
+| LLM como **única** fonte de coerência longitudinal é frágil (alucinações, truncamento, viés, casos "médios") | Explicitamente **fora do MVP** (conflita NFR1/ADR-001) | Manter deferred; ADR próprio pós-SM-2 se necessário |
+| Coerência temporal = timestamps em ordem por paciente | PLAUS-002 / SM-9.3 no Epic 4 e experimento 9.8 | Reutilizar métrica `% pacientes 100% em ordem` do paper |
+| Jornada em duas passadas (esqueleto → complexidade) melhora qualidade | Sequenciamento 9.7 (GMF placeholder) → 9.8 (priors calibrados) | Confirmado — não unificar em uma única story |
+| MedSyn-like: injetar dados estruturados no prompt LLM | Abordagem **C** exporta `HealthRecord` determinístico; IA opcional via ADR-007 | Epic 8 complementar, não motor primário |
+
+### O que **não** importamos do paper (regressão arquitetural)
+
+- Geração de admissão, red flags e exames obrigatórios **via LLM** — o GMF + catálogo 9.2 já modelam isso deterministicamente.
+- Dataset Bronze/Silver/Gold com revisão clínica NHS — fora do escopo acadêmico PUCPR no MVP.
+- GPT-4o como motor de jornada — conflita com restrição **sem API paga** no laboratório para geração core.
+
+### Personas e viés — encaminhamento Epic 8
+
+O paper valida dois padrões reaproveitáveis na **camada opcional de IA** (ADR-007), não na geração core:
+
+- **Personas de estilo de escrita** consistentes por autor sintético → Story **8.2** (personas narrativas + integração HTML/Epic 6).
+- **Teste de viés por troca de gênero** (Rickman, citado no paper) → Story **8.2** (extensão BR: sexo/raça/UF).
+
+### Conclusão do adendo
+
+O paper da NHS England é evidência **a favor** da arquitetura C+D+E deste ADR: quando a trajetória clínica precisa ser longitudinal e coerente, **simulação determinística na origem** (GMF episódico) supera pipeline LLM-heavy como fonte primária. A camada LLM permanece útil para **narrativa, validação opcional e augmentação** — exatamente onde o ADR-007 posiciona o MAI-DxO.
+
 ## Referências
 
 - [ADR-001](ADR-001-spike-ia-vs-regras.md) — Spike IA vs Regras Puras (NFR1, determinismo)
@@ -221,3 +270,4 @@ As abordagens **não são mutuamente exclusivas**. A combinação recomendada pa
 - Coogee — referência metodológica para padrões de auditoria/consistência narrativa LLM (MVP: documental)
 - Linhas de cuidado SUS/DATASUS — ordem macro de fases e procedimentos (dados agregados públicos)
 - PRD Synthea-br — FR-19 a FR-25 (`docs/_bmad-output/planning-artifacts/`)
+- Poulett et al. (2026) — *A Pipeline for Generating Longitudinal Synthetic Clinical Notes Using Large Language Models*, arXiv:2606.26879v2 — [HTML](https://arxiv.org/html/2606.26879v2) (validação externa; ver Adendo A)

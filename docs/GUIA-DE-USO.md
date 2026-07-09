@@ -115,12 +115,15 @@ Parâmetros mais usados:
 
 | Parâmetro | Significado | Exemplo |
 |-----------|-------------|---------|
-| `-s` | Seed (reprodutibilidade) | `-s 42` |
+| `-s` | Seed mestre da população (reprodutibilidade) | `-s 42` |
+| `-cs` | Seed de clínicos/provedores (recomendado junto com `-s`) | `-cs 42` |
 | `-p` | Tamanho da população | `-p 100` |
 | `-g` | Gênero (`M` ou `F`) | `-g F` |
 | `-a` | Faixa etária | `-a 50-70` |
 | `-c` | Arquivo de config alternativo | `-c meu.properties` |
 | `--chave=valor` | Sobrescreve qualquer property | `--exporter.csv.export=true` |
+
+Detalhes sobre os três níveis de seed, retries do gate e limites do determinismo: [§13](#13-como-funciona-a-seed).
 
 ---
 
@@ -165,7 +168,7 @@ Exemplo de estrutura:
 
 | Campo | Uso |
 |-------|-----|
-| `seed` | Mesma seed + mesma config → mesma população |
+| `seed` | Seed mestre (`-s`); mesma seed + mesma config → mesma população — ver [§13](#13-como-funciona-a-seed) |
 | `config_hash` | Identifica a configuração exata usada |
 | `commit_sha` | Versão do código no momento da geração |
 | `output_checksum` | Hash dos arquivos exportados (reprodutibilidade) |
@@ -315,6 +318,28 @@ Ao final, o log deve mostrar algo como:
 
 Valores não suportados (ex.: `diabetes_tipo_x`) geram erro claro na inicialização — consulte `synthea.properties` para a lista atual.
 
+### Trajetória clínica focada (Epic 9 — Abordagens C, D, E)
+
+| Abordagem | Property | Efeito |
+|-----------|----------|--------|
+| **C — Export enxuto** | `br.pathway.focus=true` | CSV/FHIR exportam só eventos do catálogo de fases (+ demografia); simulação completa preservada |
+| **D — Geração enxuta** | `br.generation.module_profile=pathway_minimal` | Carrega allowlist curada de módulos GMF (menos comorbidades na origem) |
+| **E — GMF episódico** | `br.generation.trajectory_mode=episodic` | Carrega `modules/breast_cancer_trajectory_br.json` **em paralelo** ao módulo upstream `breast_cancer` — marca fases (`pathway_phase`) |
+
+Combinação recomendada para cohort piloto de câncer de mama:
+
+```bash
+run_synthea.bat -s 42 -p 10 -g F -a 45-75 ^
+  --br.profile=br ^
+  --br.target_condition=breast_cancer ^
+  --br.generation.module_profile=pathway_minimal ^
+  --br.generation.trajectory_mode=episodic ^
+  --br.pathway.focus=true ^
+  --exporter.fhir.export=true
+```
+
+**Trade-offs:** `lifespan` (padrão) simula vida inteira com módulo upstream; `episodic` estrutura fases explícitas (rastreio→…→seguimento) antes de delegar ao submodule clínico. O perfil `pathway_minimal` substitui uso ad hoc de `-m` — é conjunto testado e versionado em `br/generation/module_profiles/`.
+
 ---
 
 ## 9. Visualizador narrativo HTML (Epic 6)
@@ -408,7 +433,7 @@ Navegue para **http://127.0.0.1:8080** (host `br.web.bind`, porta `br.web.port`)
 
 | Campo | Equivalente CLI / config |
 |-------|--------------------------|
-| Seed | `-s` |
+| Seed | `-s` (a web também fixa `-cs` com o mesmo valor) |
 | Tamanho da população | `-p` — **exatamente N exportados** (1 por slot). Pacientes que falecem durante a simulação **contam** entre os N; a UI web desativa `overflow` para não gerar mortos *extras* além do tamanho pedido. |
 | Gênero | `-g` (`M`, `F` ou qualquer) |
 | Idade mín./máx. | `-a min-max` (ambos preenchidos) |
@@ -510,7 +535,7 @@ run_synthea.bat -s 12345 -p 100 --br.profile=br
 ### C — Cohort BR de câncer de mama (20 pacientes, reprodutível)
 
 ```bash
-run_synthea.bat -s 42 -p 20 -g F -a 45-75 --br.profile=br --br.target_condition=breast_cancer
+run_synthea.bat -s 42 -cs 42 -p 20 -g F -a 45-75 --br.profile=br --br.target_condition=breast_cancer
 ```
 
 ### D — Export FHIR + CSV para análise tabular
@@ -575,9 +600,103 @@ flowchart TD
 
 ---
 
-## 13. Reprodutibilidade em 4 passos
+## 13. Como funciona a seed
 
-1. **Fixe a seed** (`-s 42`).
+A seed no Synthea-br **não** é um único número que identifica cada paciente. É uma **cadeia de geradores pseudoaleatórios** que define o que é reprodutível entre execuções — e o que não é.
+
+### Três níveis de aleatoriedade
+
+```mermaid
+flowchart TD
+    S["Seed mestre (-s)"] --> PR["populationRandom<br/>sorteia seed por slot"]
+    PR --> PS["personSeed<br/>1 por paciente"]
+    PS --> P["Person.random<br/>simulação clínica"]
+    CS["clinicianSeed (-cs)"] --> CR["clinicianRandom<br/>médicos e provedores"]
+    PS -->|retry gate / morte / overflow| PS2["nova personSeed<br/>derivada da anterior"]
+```
+
+| Nível | Flag / origem | O que controla |
+|-------|---------------|----------------|
+| **População** | `-s` | Sorteia a seed de cada um dos `-p` slots da cohort |
+| **Paciente** | derivada de `-s` | Demografia, módulos clínicos, evolução da vida simulada |
+| **Clínico** | `-cs` | Médicos, provedores e atribuições de atendimento |
+
+### Seed mestre (`-s`)
+
+Inicializa o gerador da população. Para cada slot (`-p N`), o motor **deriva uma seed de paciente** a partir dessa seed mestre — `-s 42 -p 10` **não** significa “10 pacientes com seed 42”, e sim “comece em 42 e derive 10 pacientes distintos”.
+
+Com a **mesma** `-s`, **mesma** configuração (`config_hash`) e **mesmo** commit, você obtém a **mesma cohort exportada**.
+
+Se você **omitir** `-s`, o padrão é o timestamp da execução — cada run gera pacientes diferentes.
+
+### Seed por paciente (`personSeed`)
+
+Cada `Person` recebe sua própria seed e a simula clínica inteira (idade, raça, município no perfil BR, onset de doenças, tratamentos etc.). A seed mestre fica registrada no paciente como `populationSeed` (visível em metadados FHIR).
+
+### Rotação de seed (retries)
+
+Quando um paciente **não passa nos critérios** — gate `breast_cancer`, morte com `overflow` ativo, keep module etc. — o motor **não reutiliza** a mesma seed (senão o próximo tentaria o mesmo destino). Uma nova seed é sorteada a partir da cadeia anterior, de forma **determinística**.
+
+Isso significa:
+
+- Mesma `-s` + mesma config → **mesmos pacientes finais**
+- O **número de tentativas internas** (ex.: `excluded=N` no gate) também é reprodutível
+
+Com `br.target_condition=breast_cancer` e filtros `-g F -a 45-75`, espere da ordem de **~20–25 simulações descartadas por paciente exportado** (centenas no total para `-p 10`, não dezenas de milhares). Sem filtros demográficos, o descarte sobe — ver [§8](#8-cohort-com-condição-garantida-brtarget_condition).
+
+### Seed de clínico (`-cs`)
+
+Stream **separado** para provedores e clínicos. No **CLI**, se você passa só `-s 42` **sem** `-cs`, o `clinicianSeed` permanece como o timestamp da execução e **varia a cada run** — o que pode alterar provedores atribuídos mesmo com `-s` fixo.
+
+A **interface web** iguala as duas automaticamente (`seed` = `clinicianSeed`).
+
+**Recomendação para papers e reprodutibilidade via CLI:**
+
+```bash
+run_synthea.bat -s 42 -cs 42 -p 10 --br.profile=br
+```
+
+### Flags especiais
+
+| Flag | Função |
+|------|--------|
+| `-ps <seed>` | Gera **um único** paciente com seed fixa (debug) |
+| `-i` / `-u` | Snapshot de população — continua cohort existente em vez de sortear do zero |
+| `-f` | Demografia fixa por entidade (identity module) |
+| `-r` / `-e` | Data de referência / fim da simulação — alteram o “hoje” da simulação |
+
+### O que a seed governa — e o que não governa
+
+| Fator | Reprodutível com mesma seed + config? |
+|-------|--------------------------------------|
+| Geração clínica (sem IA) | Sim |
+| Retries do gate `breast_cancer` | Sim (mesma cadeia de seeds) |
+| `clinicianSeed` omitido no CLI | **Não** — fixe com `-cs` |
+| Datas `-r` / `-e` diferentes | **Não** |
+| Enriquecimento MAI-DxO (`br.ai.*`) | **Não** — camada declarada não-determinística |
+| `metadata/runStartTime` | **Não** — excluído do `output_checksum` do manifest |
+
+### Exemplo passo a passo
+
+```bash
+run_synthea.bat -s 42 -cs 42 -p 3 -g F -a 45-75 ^
+  --br.profile=br --br.target_condition=breast_cancer ^
+  --br.target_condition.gate_mode=exclude
+```
+
+1. `populationRandom(42)` sorteia 3 seeds de paciente (A, B, C).
+2. Slot 0: seed A → gate rejeita → nova seed A' → aceita → exporta Paciente 1.
+3. Slots 1 e 2: seeds B e C → exportam Pacientes 2 e 3.
+4. Log: `Synthea-br gate (exclude): requested=3 exported=3 excluded=N ...`
+5. `manifest.json` registra `seed: 42` + `output_checksum`.
+
+Repetir o comando → mesmos 3 pacientes e mesmo checksum (salvo diferença de commit ou config).
+
+---
+
+## 14. Reprodutibilidade em 4 passos
+
+1. **Fixe a seed mestre e a de clínico** (`-s 42 -cs 42`) — ver [§13](#13-como-funciona-a-seed).
 2. **Registre o comando exato** (incluindo todos os `--flags`) — mesmo que tenha usado a interface web, transcreva os parâmetros equivalentes para a seção Methods.
 3. **Guarde `output/manifest.json`** — ele amarra seed, config e commit.
 4. **Documente** seguindo o [template de experimento](research/experiments/experiment-template.md).
@@ -586,7 +705,7 @@ Outro pesquisador deve conseguir repetir o run e obter checksum equivalente (sal
 
 ---
 
-## 14. Limitações conhecidas (MVP)
+## 15. Limitações conhecidas (MVP)
 
 Leia como **escopo intencional**, não bugs ocultos:
 
@@ -602,13 +721,14 @@ Decisões de arquitetura detalhadas: [`docs/research/adr/README.md`](research/ad
 
 ---
 
-## 15. Solução de problemas
+## 16. Solução de problemas
 
 | Sintoma | Causa provável | O que fazer |
 |---------|----------------|-------------|
 | `java` não encontrado | JDK não instalado ou fora do PATH | Instalar JDK 17+ e reiniciar o terminal |
 | `./gradlew check` falha | Dependência, teste ou Checkstyle | Ler a mensagem de erro; rodar `./gradlew test` para isolar |
 | Geração muito lenta com `breast_cancer` | Filtros demográficos ausentes | Adicionar `-g F -a 45-75` (ou faixa documentada) |
+| Mesma `-s`, outputs diferentes no CLI | `-cs` omitido ou datas `-r`/`-e` variando | Usar `-s 42 -cs 42` e registrar **todas** as flags — [§13](#13-como-funciona-a-seed) |
 | Pasta `output/` vazia | Export desabilitado | Verificar `exporter.fhir.export=true` (padrão) |
 | Sem `manifest.json` | Flag desligada ou falha de escrita | Confirmar `br.manifest.enabled=true`; checar permissões em `output/` |
 | Cidade US aparece com `br.profile=br` | Esperado no MVP para etnia/renda | Demografia IBGE cobre idade/sexo/raça; socioeconômico = deferido |
@@ -620,7 +740,7 @@ Decisões de arquitetura detalhadas: [`docs/research/adr/README.md`](research/ad
 
 ---
 
-## 16. Onde ir a partir daqui
+## 17. Onde ir a partir daqui
 
 | Documento | Conteúdo |
 |-----------|----------|
@@ -635,11 +755,11 @@ Decisões de arquitetura detalhadas: [`docs/research/adr/README.md`](research/ad
 
 ---
 
-## 17. Glossário rápido
+## 18. Glossário rápido
 
 | Termo | Significado |
 |-------|-------------|
-| **Seed** | Número que torna a geração determinística |
+| **Seed** | Número(s) que tornam a geração determinística — ver [§13](#13-como-funciona-a-seed) |
 | **Cohort** | Conjunto de pacientes gerados numa execução |
 | **GMF** | Generic Module Framework — módulos de doença em JSON |
 | **FHIR** | Padrão HL7 de interoperabilidade em saúde |
@@ -650,4 +770,4 @@ Decisões de arquitetura detalhadas: [`docs/research/adr/README.md`](research/ad
 
 ---
 
-*Última atualização: 2026-07-02 — inclui Epics 6 (HTML narrativo) e 7 (interface web); Epics 4–5 parcial/futuro.*
+*Última atualização: 2026-07-08 — inclui §13 (sistema de seed); Epics 6–8; Epics 4–5 parcial/futuro.*

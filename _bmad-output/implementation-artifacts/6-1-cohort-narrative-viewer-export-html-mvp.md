@@ -1,6 +1,6 @@
 # Story 6.1: Cohort Narrative Viewer — Export HTML MVP
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -85,6 +85,24 @@ para apresentar casos ao orientador com timeline e seções clínicas estruturad
   - [x] Subtask 6.2: Teste flag off — assert ausência de `output/html/index.html`
   - [x] Subtask 6.3: Teste flag on — gerar 1-3 pacientes via `TestHelper`, assert estrutura HTML (accordions, triagem, timeline, seções)
   - [x] Subtask 6.4: Rodar `./gradlew check` completo
+
+### Review Findings
+
+Code review 2026-07-08 — diff `master...HEAD`, 16 arquivos, +1063 linhas. 3 camadas: Blind Hunter, Edge Case Hunter, Acceptance Auditor.
+
+- [x] [Review][Patch] `reset()` ausente no início do run de cohort — Task 4.2 não implementada; acumulador singleton pode vazar pacientes entre execuções se `writeIndex()` não for chamado [`Exporter.java`] — fixed: `Exporter.prepareHtmlCohortExport()` + call em `Generator.run()`
+- [x] [Review][Patch] `writeIndex()` só chama `reset()` no happy path — falha de I/O ou template deixa singleton sujo para o próximo run [`HtmlExporter.java:94-119`] — fixed: `try/finally`
+- [x] [Review][Patch] Testes não assertam cabeçalho de triagem (idade, sexo, condição, último evento) — AC2/AC6 parcialmente cobertos [`HtmlExporterTest.java`] — fixed
+- [x] [Review][Patch] Testes não assertam labels "Exames" e "Procedimentos" explicitamente — AC3/AC6 [`HtmlExporterTest.java`] — fixed
+- [x] [Review][Patch] Sem teste `br.profile=br` / CID-10 BR — AC4 sem cobertura automatizada [`HtmlExporterTest.java`] — fixed: `htmlExportBrProfileResolvesCid10PilotCondition`
+- [x] [Review][Patch] Sem teste `@Ignore` n≈500 nem Javadoc de limitação de escala — AC7 [`HtmlExporterTest.java`] — fixed: `@Ignore htmlExportScalabilityCohort500` + Javadoc em `HtmlExporter`
+- [x] [Review][Patch] `Config.set()` sem restore em `@After` — poluição de estado entre testes [`HtmlExporterTest.java:25-27`] — fixed: `@Before`/`@After` com restore
+- [x] [Review][Patch] Teste flag-on não exercita `Exporter.runPostCompletionExports()` — caminho real de produção não coberto [`HtmlExporterTest.java`] — fixed: `htmlExportEnabledWritesValidIndexViaPostCompletion`
+
+- [x] [Review][Defer] `aggregateClinicalData` assume encounters ordenados (break em `start > stopTime`) — mesmo padrão de `CCDAExporter.java:83-96`; encounters inseridos cronologicamente no engine [`HtmlExporter.java:214-224`] — deferred, pre-existing
+- [x] [Review][Defer] `printStackTrace` em falha de `writeIndex` — consistente com ~20 outros exportadores em `Exporter.java` [`Exporter.java:676-681`] — deferred, pre-existing
+- [x] [Review][Defer] `RuntimeException` de FreeMarker não capturada em `Exporter` — mesmo risco em `CCDAExporter.renderTemplate`; fora do escopo desta story [`HtmlExporter.java:126-128`] — deferred, pre-existing
+- [x] [Review][Defer] Integração AI enrichment opcional (guarded) — feature aditiva pós-MVP com teste dedicado `HtmlExporterAiSectionTest`; não viola ACs do MVP [`HtmlExporter.java`, `index.ftl`] — deferred, escopo aceito no bundle do commit
 
 ## Dev Notes
 
