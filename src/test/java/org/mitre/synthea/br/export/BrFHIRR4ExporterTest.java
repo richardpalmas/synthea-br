@@ -1,5 +1,6 @@
 package org.mitre.synthea.br.export;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import ca.uhn.fhir.context.FhirContext;
@@ -25,6 +26,7 @@ import org.junit.Test;
 import org.mitre.synthea.FailedExportHelper;
 import org.mitre.synthea.TestHelper;
 import org.mitre.synthea.br.coding.BrCodeMapper;
+import org.mitre.synthea.br.condition.GateEvaluator;
 import org.mitre.synthea.br.demographics.BrDemographicsLoader;
 import org.mitre.synthea.br.profile.BrProfile;
 import org.mitre.synthea.br.terminology.BrTerminologyResolver;
@@ -33,6 +35,7 @@ import org.mitre.synthea.engine.Generator.GeneratorOptions;
 import org.mitre.synthea.engine.State;
 import org.mitre.synthea.export.FhirR4;
 import org.mitre.synthea.export.FhirR4TestSupport;
+import org.mitre.synthea.export.FhirR4TestSupport.FhirR4ExportState;
 import org.mitre.synthea.export.ValidationResources;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.world.agents.PayerManager;
@@ -49,6 +52,8 @@ public class BrFHIRR4ExporterTest {
   private static final long FIXED_REFERENCE_TIME = 1_600_000_000_000L;
 
   private static boolean physStateEnabled;
+  private FhirR4ExportState previousFhirState;
+  private String previousUseUsCoreIg;
 
   /**
    * Enable physiology state and baseline payer configuration for exporter tests.
@@ -85,26 +90,37 @@ public class BrFHIRR4ExporterTest {
     PayerManager.clear();
     PayerManager.loadNoInsurance();
     Generator.DEFAULT_STATE = Config.get("test_state.default", "Massachusetts");
+    previousUseUsCoreIg = Config.get("exporter.fhir.use_us_core_ig");
+    previousFhirState = FhirR4TestSupport.captureState();
     Config.set("exporter.fhir.use_us_core_ig", "false");
     FhirR4TestSupport.configureBaseR4Export();
   }
 
   /**
-   * Reset BR configuration so it cannot leak into other test classes.
+   * Reset BR configuration and FHIR statics so they cannot leak into other test classes.
    */
   @After
   public void tearDown() {
     Config.remove("br.target_condition");
+    Config.remove("br.target_condition.gate_mode");
     Config.remove("br.profile");
-    Config.set("br.profile", "");
+    if (previousUseUsCoreIg == null) {
+      Config.remove("exporter.fhir.use_us_core_ig");
+    } else {
+      Config.set("exporter.fhir.use_us_core_ig", previousUseUsCoreIg);
+    }
+    FhirR4TestSupport.restoreState(previousFhirState);
     BrCodeMapper.resetCacheForTest();
     BrTerminologyResolver.resetCacheForTest();
     BrDemographicsLoader.resetCacheForTest();
+    Provider.clear();
+    PayerManager.clear();
   }
 
   @Test
   public void testBrCohortFhirR4ExportPassesBaseValidation() throws Exception {
     Config.set("br.target_condition", "breast_cancer");
+    Config.set("br.target_condition.gate_mode", "retry");
     Config.set("br.profile", "br");
     assertTrue(BrProfile.isActive());
 
@@ -127,10 +143,15 @@ public class BrFHIRR4ExporterTest {
     generator.options.overflow = false;
 
     List<String> errors = new ArrayList<>();
+    int generated = 0;
     for (int i = 0; i < PILOT_POPULATION; i++) {
       Person person = generator.generatePerson(i, FIXED_SEED + i);
+      assertTrue("BR cohort patient must have breast cancer condition",
+          GateEvaluator.hasBreastCancer(person));
       errors.addAll(validateExportedBundle(person, validator, parser));
+      generated++;
     }
+    assertEquals(PILOT_POPULATION, generated);
 
     assertTrue("Validation of BR cohort FHIR R4 export failed: "
         + String.join("|", errors), errors.isEmpty());

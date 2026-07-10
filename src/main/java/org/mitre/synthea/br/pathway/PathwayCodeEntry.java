@@ -40,9 +40,12 @@ public final class PathwayCodeEntry {
   /**
    * Unified key combining system and code, used for allowlist lookups.
    *
-   * @return {@code "{system}|{code}"}
+   * @return {@code "{system}|{code}"}, or {@code null} when system/code is missing
    */
   public String toUnifiedKey() {
+    if (system == null || system.isBlank() || code == null || code.isBlank()) {
+      return null;
+    }
     return system + "|" + code;
   }
 }

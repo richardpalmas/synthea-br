@@ -67,3 +67,12 @@ Itens identificados em code reviews, válidos mas não bloqueantes para a story 
 - `printStackTrace` em falha de `writeIndex` — consistente com ~20 outros exportadores em `Exporter.java`. [Exporter.java:676-681]
 - `RuntimeException` de FreeMarker não capturada em `Exporter` — mesmo risco em `CCDAExporter.renderTemplate`; fora do escopo desta story. [HtmlExporter.java:126-128]
 - Integração AI enrichment opcional (guarded) — feature aditiva pós-MVP com teste dedicado `HtmlExporterAiSectionTest`; não viola ACs do MVP. [HtmlExporter.java, index.ftl]
+
+## Deferred from: code review of 7-2-interface-web-trajetoria-focada-e-artefatos-pos-geracao (2026-07-10)
+
+- Preset mama não marca export HTML — decisão Boss: preset só trajetória; usuário marca exports manualmente; GUIA não deve afirmar equivalência total à receita H (exports).
+- Snapshot Config só restaura chaves de trajetória — padrão pré-existente 7.1 para exports/AI; restore completo fora do escopo.
+- `file://` bloqueado a partir de origem HTTP — mesmo contrato UX do link HTML 7.1.
+- AC #7 HTML por fase sem assert no path web — Dev Notes permitem smoke via HtmlExporterPathwayTest.
+- `./gradlew check` global com falhas estatísticas — BrDemographicsIntegrationTest pré-existente.
+- Creep em synthea.properties / PlausibilityReportWriter além do mínimo 7.2 — working tree misturado com Epics 4/8/9.

@@ -27,3 +27,8 @@ episodico (9.7). Ver `docs/research/adr/ADR-008-trajetoria-clinica-focada.md`.
 
 - `breast_cancer_phases.json` — catalogo piloto (condicao `breast_cancer`, SNOMED
   `254837009`).
+- `breast_cancer_timing_priors.json` — priors temporais entre fases (Story 9.8). Schema
+  ADR-008: `priors_version`, `condition`, `unit`, `reference_notes`, `transitions` com
+  chaves `{phase_id}->{phase_id}` e distribuicoes `min`/`max`/`median` ou `buckets`.
+  Consumido por `PathwayTimingLoader` quando `br.pathway.timing_priors=default` e
+  `br.generation.trajectory_mode=episodic`. Apenas agregados/citacoes — zero PHI (NFR5).

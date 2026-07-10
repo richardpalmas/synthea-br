@@ -84,6 +84,8 @@ O `manifest.json` identifica de forma inequívoca o fork, a configuração e a v
 
 Substitua os valores entre chaves pelos campos reais do seu `manifest.json`. Quando `profile` ou `targetCondition` forem `null`, indique explicitamente no texto (ex.: "perfil upstream (EUA)", "sem condição alvo configurada").
 
+**Bundle FHIR R4:** nesta versão a proveniência citável fica **apenas** no sidecar `manifest.json`. O recurso `Provenance` do Bundle FHIR **não** recebe agente de software adicional identificando Synthea-br (decisão Story 5.2 / AC #6 — estabilidade estrutural do Bundle priorizada). Ferramentas que leem só FHIR não verão esses metadados; use o manifest.
+
 ---
 
 ## Documentação de experimento
@@ -134,7 +136,7 @@ Para entender *por que* uma decisão foi tomada (ex.: por que não há IA no MVP
 
 ### Métodos
 
-Geramos uma cohort sintética de 500 pacientes com o fork Synthea-br (commit `a1b2c3d4e5f6789012345678abcdef0123456789`), seed 42 e configuração hash `9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08`. A geração utilizou perfil geográfico padrão (upstream) e exportação FHIR R4. A reprodutibilidade foi verificada pelo checksum de output `c3d4e5f6...` registrado no manifest de rastreabilidade. Dados 100% sintéticos; o pipeline não foi validado para uso clínico.
+Geramos uma cohort sintética de 500 pacientes com Synthea-br v3.2.0 (commit `a1b2c3d4e5f6789012345678abcdef0123456789`), perfil `br`, condição alvo `breast_cancer`, seed 42. A reprodutibilidade foi verificada pelo `config_hash` e `output_checksum` registrados em `manifest.json`. Exportação FHIR R4; proveniência citável apenas no sidecar (Bundle sem agente Provenance adicional). Dados 100% sintéticos; o pipeline não foi validado para uso clínico.
 
 ---
 

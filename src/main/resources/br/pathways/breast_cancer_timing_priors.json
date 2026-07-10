@@ -1,0 +1,43 @@
+{
+  "priors_version": "1.0.0",
+  "condition": "breast_cancer",
+  "unit": "days",
+  "reference_notes": [
+    "SUS/DATASUS: linha de cuidado oncológica — intervalos macro entre etapas assistenciais (agregados públicos; sem microdados).",
+    "INCA / diretrizes brasileiras de câncer de mama: ordem rastreio → diagnóstico → estadiamento → tratamento → seguimento (referência normativa agregada).",
+    "OncoSynth (bibliografia): priors estatísticos de duração de etapas oncológicas — metadado bibliográfico apenas, não runtime ML.",
+    "Coogee (bibliografia): coerência temporal em trajetórias sintéticas — metadado bibliográfico apenas, não runtime LLM.",
+    "Valores piloto ilustrativos calibrados para o MVP Epic 9; substituir por agregados locais documentados em experimentos futuros."
+  ],
+  "transitions": {
+    "screening->diagnosis": {
+      "min": 15,
+      "max": 90,
+      "median": 30
+    },
+    "diagnosis->staging": {
+      "min": 7,
+      "max": 45,
+      "median": 14
+    },
+    "staging->treatment": {
+      "min": 7,
+      "max": 60,
+      "median": 21
+    },
+    "treatment->follow_up": {
+      "buckets": [
+        {
+          "range_min": 90,
+          "range_max": 180,
+          "probability": 0.6
+        },
+        {
+          "range_min": 181,
+          "range_max": 365,
+          "probability": 0.4
+        }
+      ]
+    }
+  }
+}

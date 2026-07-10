@@ -96,6 +96,14 @@ Some settings can be changed in `./src/main/resources/synthea.properties`.
 
 Synthea<sup>TM</sup> will output patient records in C-CDA and FHIR formats in `./output`.
 
+### Plausibility Report (Synthea-br)
+After generation, write `output/plausibility_report.json` with per-patient violations and severity aggregates. Requires custom exporters enabled (`exporter.enable_custom_exporters=true`, `exporter.custom.export=true`).
+```
+./run_synthea -p 100 --br.plausibility.report.enabled=true
+./gradlew plausibilityReport
+```
+The Gradle task is a convenience shortcut equivalent to running `run_synthea` with the property enabled.
+
 ### Synthea<sup>TM</sup> GraphViz
 Generate graphical visualizations of Synthea<sup>TM</sup> rules and modules.
 ```

@@ -1,0 +1,2 @@
+Escreva de forma CONCISA: no máximo 2 frases curtas, sem adjetivos desnecessários.
+Foque só no essencial das correções e limitações. Português do Brasil. Sem markdown nem JSON.

@@ -20,7 +20,6 @@ import org.junit.rules.TemporaryFolder;
 import org.mitre.synthea.TestHelper;
 import org.mitre.synthea.engine.Generator;
 import org.mitre.synthea.engine.Generator.GeneratorOptions;
-import org.mitre.synthea.export.Exporter;
 import org.mitre.synthea.export.Exporter.ExporterRuntimeOptions;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.world.agents.PayerManager;
@@ -84,11 +83,13 @@ public class PlausibilityReportIntegrationTest {
     options.ageSpecified = true;
     options.threadPoolSize = 2;
 
+    // generator.run() already invokes PostCompletionExporter (incl. report write + reset).
+    // Do not call Exporter.runPostCompletionExports again — a second write would overwrite
+    // the report with an empty accumulator.
     ExporterRuntimeOptions exportOpts = new ExporterRuntimeOptions();
     Generator generator = new Generator(options, exportOpts);
     generator.options.overflow = false;
     generator.run();
-    Exporter.runPostCompletionExports(generator, exportOpts);
 
     File reportFile = new File(exportDir, "plausibility_report.json");
     assertTrue(reportFile.exists());
@@ -107,5 +108,14 @@ public class PlausibilityReportIntegrationTest {
     assertNotNull(aggregates.get("alta"));
     assertNotNull(aggregates.get("media"));
     assertNotNull(aggregates.get("baixa"));
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> alta = (Map<String, Object>) aggregates.get("alta");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> media = (Map<String, Object>) aggregates.get("media");
+    assertNotNull(alta.get("count"));
+    assertNotNull(alta.get("percentage"));
+    assertNotNull(media.get("count"));
+    assertNotNull(media.get("percentage"));
   }
 }

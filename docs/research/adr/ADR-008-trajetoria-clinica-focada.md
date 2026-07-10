@@ -48,7 +48,7 @@ fontes distintas, com limitações explícitas — nenhuma fonte é usada como m
 | Fase (PT-BR) | `phase_id` previsto (9.2) | Contribuição por fonte | Limitação por fonte |
 |--------------|---------------------------|-------------------------|----------------------|
 | Rastreio | `screening` | SUS/DATASUS: protocolo de mamografia bienal (linha de cuidado pública) | SUS/DATASUS: agregados macro, sem timing individual; não é prontuário FHIR |
-| Diagnóstico | `diagnosis` | OncoSynth: intervalo estatístico rastreio→biópsia/confirmação; SUS/DATASUS: ordem exame→biópsia→anatomopatológico | OncoSynth: não gera FHIR nem prontuário determinístico, apenas estatística de sobrevida/tratamento; é priors, não runtime |
+| Diagnóstico | `diagnosis` | SUS/DATASUS/INCA: ordem exame→biópsia→anatomopatológico (linha de cuidado); OncoSynth: **não** ancora intervalo pré-tratamento neste ADR (ver limitação) | OncoSynth no MVP: priors de **tratamento/sobrevida**, não de intervalo rastreio→biópsia; SUS: agregados macro, sem prontuário FHIR |
 | Estadiamento | `staging` | SUS/DATASUS: sequência exames de estadiamento (imagem, marcadores) pós-diagnóstico | SUS/DATASUS: sem granularidade de subtipo tumoral; dado agregado nacional, não individualizado |
 | Tratamento | `treatment` | OncoSynth: distribuições de duração/sequência de linhas de tratamento (cirurgia, quimio, radio, hormonioterapia); Coogee: checklist de consistência narrativa entre eventos de tratamento | Coogee: padrão de **auditoria narrativa** (revisão de coerência textual/LLM), não fonte de timing quantitativo; não substitui validação clínica |
 | Seguimento | `follow_up` | SUS/DATASUS: periodicidade de consultas de seguimento oncológico pós-tratamento | SUS/DATASUS: não captura desfechos individuais nem eventos adversos raros |
@@ -105,6 +105,14 @@ agregadas, sem qualquer chamada a runtime ML/LLM.
   estáveis do catálogo (Story 9.2); valor é uma distribuição com `min`, `max`, `median` **ou**
   `buckets` (lista de `{ "range_min", "range_max", "probability" }` somando 1.0).
 
+**Invariantes v1 (para Story 9.8):**
+
+- Cada transição usa **ou** `{min,max,median}` **ou** `buckets` — não ambos.
+- Se `min`/`max`/`median`: `min ≤ median ≤ max` e todos ≥ 0.
+- Se `buckets`: cada `range_min ≤ range_max`; soma de `probability` = 1.0 (±1e-6).
+- Chaves de `transitions` devem referenciar `phase_id` existentes no catálogo 9.2.
+- Valores do exemplo abaixo são **placeholder ilustrativo**, não calibração clínica.
+
 **Exemplo esquemático (sem dados de paciente real — valores ilustrativos de placeholder):**
 
 ```json
@@ -146,6 +154,9 @@ Adotar **três abordagens complementares** (C + D + E), combináveis por configu
 
 As abordagens **não são mutuamente exclusivas**. A combinação recomendada para cohort piloto de apresentação é **C + D**; **E** eleva coerência na origem quando o pesquisador aceita desviar da simulação de vida inteira.
 
+**Sequenciamento de implementação (Epic 9):**
+`9.1 → 9.2 → (9.3 ∥ 9.5) → 9.4 → 9.6 → 9.7 → 9.8`.
+
 ### Matriz de uso — quando aplicar cada abordagem
 
 | Cenário do pesquisador | C (export) | D (geração enxuta) | E (GMF episódico) |
@@ -163,11 +174,24 @@ As abordagens **não são mutuamente exclusivas**. A combinação recomendada pa
 |-------------|-------------------|-----------|---------|
 | `br.pathway.focus` | `true` / `false` | C | `false` |
 | `br.generation.module_profile` | `full`, `pathway_minimal` | D | `full` |
-| `br.generation.simulation_window` | ex.: `pre_onset_years:N` | D | ausente (vida inteira) |
+| `br.generation.simulation_window` | `full_lifespan`, `pre_onset_years:N` | D | `full_lifespan` |
 | `br.generation.trajectory_mode` | `lifespan`, `episodic` | E | `lifespan` |
 | `exporter.html.pathway_mode` | `orientador`, `pesquisador`, `full` | C (HTML) | `orientador` quando `br.pathway.focus=true`; senão `full` |
 
 **Pré-requisitos operacionais:** `br.profile=br`, `br.target_condition=breast_cancer` (gate Epic 2), catálogo de fases carregado (Story 9.2).
+
+### Semântica de `br.generation.simulation_window` (Story 9.6)
+
+| Aspecto | Decisão |
+|---------|---------|
+| **Fórmula** | Com `pre_onset_years:N`, `person.lastUpdated` inicia em `birthdate + (target_age − N) × 365 dias`. `BIRTHDATE` e demografia (`-a`/IBGE) **não** são reescritos. |
+| **Bootstrap** | `LifecycleModule` avança silenciosamente de nascimento até o início da janela; módulos de doença entram só a partir daí. |
+| **Insurance** | Enrollment adiado até o **início da janela** (`person.lastUpdated`); cobertura clínica retoma quando os módulos de doença começam. Usa `CoverageRecord.deferEnrollmentUntil` (API mínima no core). |
+| **Piloto mama** | N ∈ **[5, 15]** quando `br.target_condition=breast_cancer`. |
+| **Fail-fast** | Formato inválido; N ≤ 0; **`-a` obrigatório** com janela ativa; N ≥ `minAge`; N fora do intervalo piloto mama → `IllegalArgumentException` na inicialização do `Generator`. |
+| **Hook core** | Validação no construtor + ajuste de `lastUpdated`/bootstrap/defer insurance em `createPerson()`; `CoverageRecord.deferEnrollmentUntil` — lógica de cálculo em `SimulationWindowConfig` (AD-7). |
+| **Manifest** | `simulation_window`, `module_profile`, `generation_duration_ms`. |
+| **Trade-off** | Comorbidades e eventos clínicos pré-janela não são simulados pelos módulos de doença; idade/raça/UF no `referenceTime` permanecem coerentes com demografia escolhida. |
 
 ### O que entra no fork vs. deferred
 
@@ -205,10 +229,10 @@ As abordagens **não são mutuamente exclusivas**. A combinação recomendada pa
 - [ ] Implementar `PathwayExportFilter` e `br.pathway.focus` (Story 9.3)
 - [ ] Implementar HTML por fase e `exporter.html.pathway_mode` (Story 9.4)
 - [ ] Definir perfil `pathway_minimal.json` e testes de integração (Story 9.5)
-- [ ] Documentar semântica de `br.generation.simulation_window` e combinações inválidas (Story 9.6)
+- [x] Documentar semântica de `br.generation.simulation_window` e combinações inválidas (Story 9.6)
 - [ ] Criar módulo `breast_cancer_trajectory.json` com `trajectory_mode=episodic` (Story 9.7)
-- [ ] Importar `breast_cancer_timing_priors.json` com citações SUS/DATASUS e notas OncoSynth/Coogee (Story 9.8)
-- [ ] Registrar experimento piloto em `docs/research/experiments/` (cohort calibrada vs. não calibrada)
+- [x] Importar `breast_cancer_timing_priors.json` com citações SUS/DATASUS e notas OncoSynth/Coogee (Story 9.8)
+- [x] Registrar experimento piloto em `docs/research/experiments/` (cohort calibrada vs. não calibrada)
 - [ ] Revisar ADR-001 após SM-2 real (Epic 4) para avaliar integrações ML/LLM adicionais
 
 ---
@@ -262,12 +286,19 @@ O paper da NHS England é evidência **a favor** da arquitetura C+D+E deste ADR:
 
 ## Referências
 
+### Revisão bibliográfica — três famílias (âncoras do spike)
+
+| Família | Fonte citável (MVP) | Uso no fork |
+|---------|---------------------|-------------|
+| **OncoSynth** | Literatura de modelagem estatística de cohorts oncológicas (priors de tratamento/sobrevida; **não** motor FHIR). Citar no `reference_notes` do data pack 9.8 ao popular valores. | Priors agregados apenas; sem runtime |
+| **Coogee** | Padrões de auditoria/consistência narrativa de prontuários (revisão textual/LLM). Metodologia documental no MVP. | Checklist narrativo; sem auditor runtime |
+| **SUS/DATASUS/INCA** | Linhas de cuidado e agregados públicos de câncer de mama (ordem macro de procedimentos; protocolos de rastreio). Normas/portarias MS e materiais INCA de domínio público. | Ordem de fases + timings agregados |
+
+### Documentos internos
+
 - [ADR-001](ADR-001-spike-ia-vs-regras.md) — Spike IA vs Regras Puras (NFR1, determinismo)
 - [ADR-007](ADR-007-ai-enrichment-maidxo.md) — Enriquecimento opcional pós-geração (complementar, não substituto)
 - Epic 9 — `_bmad-output/planning-artifacts/epics.md` (FR18–FR25, Stories 9.1–9.8)
 - ARCHITECTURE-SPINE — AD-2 (read-only export), AD-3 (data packs vs. hardcode)
-- OncoSynth — referência bibliográfica para priors estatísticos de trajetória oncológica (não motor FHIR)
-- Coogee — referência metodológica para padrões de auditoria/consistência narrativa LLM (MVP: documental)
-- Linhas de cuidado SUS/DATASUS — ordem macro de fases e procedimentos (dados agregados públicos)
-- PRD Synthea-br — FR-19 a FR-25 (`docs/_bmad-output/planning-artifacts/`)
+- PRD Synthea-br — FR-19 a FR-25 (`_bmad-output/planning-artifacts/`)
 - Poulett et al. (2026) — *A Pipeline for Generating Longitudinal Synthetic Clinical Notes Using Large Language Models*, arXiv:2606.26879v2 — [HTML](https://arxiv.org/html/2606.26879v2) (validação externa; ver Adendo A)

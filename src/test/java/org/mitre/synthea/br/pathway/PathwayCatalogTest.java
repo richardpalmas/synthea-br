@@ -36,7 +36,8 @@ public class PathwayCatalogTest {
     List<PathwayPhase> phases = catalog.getPhasesInOrder();
     List<String> phaseIds = phases.stream().map(PathwayPhase::getPhaseId).toList();
     assertTrue(phaseIds.containsAll(
-        List.of("screening", "diagnosis", "staging", "treatment", "follow_up")));
+        List.of("screening", "diagnosis", "staging", "treatment", "follow_up",
+            "progression", "palliative")));
   }
 
   @Test
@@ -45,7 +46,9 @@ public class PathwayCatalogTest {
     List<String> phaseIds = catalog.getPhasesInOrder().stream()
         .map(PathwayPhase::getPhaseId).toList();
     assertEquals(
-        List.of("screening", "diagnosis", "staging", "treatment", "follow_up"), phaseIds);
+        List.of("screening", "diagnosis", "staging", "treatment", "follow_up",
+            "progression", "palliative"),
+        phaseIds);
   }
 
   @Test
@@ -129,5 +132,32 @@ public class PathwayCatalogTest {
     } catch (PathwayCatalogNotFoundException expected) {
       assertTrue(expected.getMessage().contains("condicao_inexistente_xyz"));
     }
+  }
+
+  @Test
+  public void loadForCondition_blank_throwsIllegalArgument() {
+    try {
+      PathwayCatalog.loadForCondition("  ");
+      fail("Expected IllegalArgumentException for blank condition");
+    } catch (IllegalArgumentException expected) {
+      assertTrue(expected.getMessage().contains("targetCondition"));
+    }
+  }
+
+  @Test
+  public void unifiedAllowlistCodes_isUnmodifiable() {
+    PathwayCatalog catalog = PathwayCatalog.loadForCondition("breast_cancer");
+    try {
+      catalog.unifiedAllowlistCodes().add("SNOMED-CT|000");
+      fail("Expected UnsupportedOperationException");
+    } catch (UnsupportedOperationException expected) {
+      // expected
+    }
+  }
+
+  @Test
+  public void getCatalogVersion_equalsDataPackValue() {
+    PathwayCatalog catalog = PathwayCatalog.loadForCondition("breast_cancer");
+    assertEquals("2.0.0", catalog.getCatalogVersion());
   }
 }

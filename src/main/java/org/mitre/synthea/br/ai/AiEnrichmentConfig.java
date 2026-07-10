@@ -23,6 +23,13 @@ public final class AiEnrichmentConfig {
   private static final String MAX_PATIENTS_KEY = PREFIX + "max_patients";
   private static final String TEMPERATURE_KEY = PREFIX + "temperature";
   private static final String TIMEOUT_KEY = PREFIX + "timeout_seconds";
+  private static final String JSON_PARSE_RETRIES_KEY = PREFIX + "json_parse_retries";
+  private static final String TRUNCATION_CONTINUATION_MAX_KEY =
+      PREFIX + "truncation_continuation_max";
+  private static final String NARRATIVE_PERSONA_MODE_KEY = PREFIX + "narrative.persona_mode";
+  private static final String BIAS_TEST_ENABLED_KEY = PREFIX + "bias_test.enabled";
+  private static final String BIAS_TEST_LENGTH_THRESHOLD_KEY =
+      PREFIX + "bias_test.length_threshold";
 
   private AiEnrichmentConfig() {
   }
@@ -66,6 +73,12 @@ public final class AiEnrichmentConfig {
     }
     if (getMaxPatients() < 1) {
       throw new IllegalStateException("br.ai.max_patients deve ser >= 1.");
+    }
+    if (getJsonParseRetries() < 0) {
+      throw new IllegalStateException("br.ai.json_parse_retries deve ser >= 0.");
+    }
+    if (getTruncationContinuationMax() < 0) {
+      throw new IllegalStateException("br.ai.truncation_continuation_max deve ser >= 0.");
     }
   }
 
@@ -141,6 +154,52 @@ public final class AiEnrichmentConfig {
    */
   public static int getTimeoutSeconds() {
     return Config.getAsInteger(TIMEOUT_KEY, 120);
+  }
+
+  /**
+   * Maximum LLM cleanup attempts after local JSON parse failure (Story 8.1).
+   *
+   * @return retry count (default 1)
+   */
+  public static int getJsonParseRetries() {
+    return Config.getAsInteger(JSON_PARSE_RETRIES_KEY, 1);
+  }
+
+  /**
+   * Maximum truncation continuation calls per persona turn (Story 8.1).
+   *
+   * @return continuation cap (default 1)
+   */
+  public static int getTruncationContinuationMax() {
+    return Config.getAsInteger(TRUNCATION_CONTINUATION_MAX_KEY, 1);
+  }
+
+  /**
+   * Narrative writing persona assignment mode (Story 8.2).
+   *
+   * @return {@code deterministic} or {@code random}
+   */
+  public static String getNarrativePersonaMode() {
+    String value = Config.get(NARRATIVE_PERSONA_MODE_KEY, "deterministic");
+    return value == null ? "deterministic" : value.trim().toLowerCase();
+  }
+
+  /**
+   * Whether demographic bias testing runs after enrichment (Story 8.2).
+   *
+   * @return true when bias test is enabled
+   */
+  public static boolean isBiasTestEnabled() {
+    return Config.getAsBoolean(BIAS_TEST_ENABLED_KEY, false);
+  }
+
+  /**
+   * Relative length delta threshold for flagging bias (Story 8.2).
+   *
+   * @return threshold between 0 and 1 (default 0.20)
+   */
+  public static double getBiasTestLengthThreshold() {
+    return Config.getAsDouble(BIAS_TEST_LENGTH_THRESHOLD_KEY, 0.20);
   }
 
   /**

@@ -109,6 +109,53 @@ public class WebServerTest {
   }
 
   @Test
+  public void testGetConfigOptionsIncludesTrajectory() throws Exception {
+    int port = server.getBoundPort();
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create("http://127.0.0.1:" + port + "/api/config/options"))
+        .GET()
+        .build();
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    assertEquals(200, response.statusCode());
+    assertTrue(response.body().contains("\"trajectory\""));
+    assertTrue(response.body().contains("pathway_minimal"));
+    assertTrue(response.body().contains("pre_onset_years:10"));
+  }
+
+  @Test
+  public void testPostFocusedTrajectoryInvalidReturns400() throws Exception {
+    int port = server.getBoundPort();
+    String body = "{\"population\":5,\"seed\":42,\"pathwayFocus\":true,"
+        + "\"exportFhir\":false,\"exportCsv\":false,\"exportHtml\":false}";
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create("http://127.0.0.1:" + port + "/api/generate"))
+        .header("Content-Type", "application/json")
+        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build();
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    assertEquals(400, response.statusCode());
+    assertTrue(response.body().contains("condição clínica alvo"));
+  }
+
+  @Test
+  public void testPostFocusedTrajectoryValidAccepted() throws Exception {
+    int port = server.getBoundPort();
+    String body = "{\"population\":1,\"seed\":42,\"brProfile\":true,"
+        + "\"targetCondition\":\"breast_cancer\",\"gender\":\"F\","
+        + "\"minAge\":45,\"maxAge\":75,\"pathwayFocus\":true,"
+        + "\"moduleProfile\":\"pathway_minimal\",\"trajectoryMode\":\"episodic\","
+        + "\"simulationWindow\":\"pre_onset_years:10\","
+        + "\"exportFhir\":false,\"exportCsv\":false,\"exportHtml\":false}";
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create("http://127.0.0.1:" + port + "/api/generate"))
+        .header("Content-Type", "application/json")
+        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build();
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    assertTrue("Accepted job start", response.statusCode() == 200 || response.statusCode() == 202);
+  }
+
+  @Test
   public void testStatusEndpointIdleByDefault() throws Exception {
     int port = server.getBoundPort();
     HttpRequest request = HttpRequest.newBuilder()

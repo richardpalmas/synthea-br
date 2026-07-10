@@ -16,7 +16,7 @@ import org.mitre.synthea.world.agents.Person;
 import org.mitre.synthea.world.concepts.HealthRecord;
 
 /**
- * {@code PLAUS-001}: treatment procedure or medication without prior breast cancer diagnosis.
+ * {@code PLAUS-001}: treatment procedure without prior breast cancer diagnosis.
  */
 public final class Plaus001TreatmentWithoutDiagnosis implements PlausibilityRule {
 
@@ -47,15 +47,6 @@ public final class Plaus001TreatmentWithoutDiagnosis implements PlausibilityRule
       }
       if (!hasDiagnosisBefore(person, diagnosisCode, procedure.start)) {
         violations.add(buildViolation(patientId, procedure, diagnosisCode, "procedure"));
-      }
-    }
-
-    for (HealthRecord.Medication medication : HealthRecordScan.allMedications(person)) {
-      if (!HealthRecordScan.matchesAnyCode(medication, codeSets.getChemotherapyMedications())) {
-        continue;
-      }
-      if (!hasDiagnosisBefore(person, diagnosisCode, medication.start)) {
-        violations.add(buildViolation(patientId, medication, diagnosisCode, "medication"));
       }
     }
 

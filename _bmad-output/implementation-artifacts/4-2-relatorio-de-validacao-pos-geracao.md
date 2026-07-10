@@ -172,3 +172,21 @@ claude-4.6-opus-high-thinking
 ### Change Log
 
 - 2026-07-08: Story 4.2 implementada — relatório pós-geração via SPI, agregação thread-safe, testes e integração com cohort real.
+- 2026-07-10: CR adversarial — patches: reset em `finally`, snapshot atômico, replace-by-patient, null-guard, integração sem double PostCompletion, README. **Status permanece `review`**: AC #6/#7 SM-2 (n=500, 0% alta / ≤2% média) não medidos formalmente.
+
+### Senior Developer Review (AI)
+
+**Date:** 2026-07-10
+**Outcome:** changes requested (SM-2 aberto) — code patches applied
+
+| ID | Source | Title | Action |
+|----|--------|-------|--------|
+| 1 | blind+edge | Reset só após write bem-sucedido → contaminação | patch ✓ |
+| 2 | blind+edge | Snapshot concorrente NPE / inconsistência | patch ✓ |
+| 3 | blind+edge | Integração double PostCompletion esvazia JSON | patch ✓ |
+| 4 | edge | Flag disabled não limpa acumulador | patch ✓ |
+| 5 | edge | Person null / multi-record append | patch ✓ |
+| 6 | auditor | README sem comando documentado | patch ✓ |
+| 7 | auditor | SM-2 n=500 / metas não validadas | **defer — bloqueia done** |
+| 8 | auditor | ADR-001 sem números SM-2 | **defer — depende #7** |
+| 9 | edge | `enable_custom_exporters=false` deixa flag inerte | dismiss (config padrão true; documentado no README) |

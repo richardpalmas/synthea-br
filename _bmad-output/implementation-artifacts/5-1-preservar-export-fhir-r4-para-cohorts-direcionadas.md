@@ -4,7 +4,7 @@ baseline_commit: c1247106c03fa57ace54d269af98c7833f4006a6
 
 # Story 5.1: Preservar Export FHIR R4 para Cohorts Direcionadas
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -132,3 +132,17 @@ Composer (Cursor)
 ### Change Log
 
 - 2026-07-08: Story 5.1 — teste de integração FHIR R4 para cohort BR (breast_cancer + perfil br).
+- 2026-07-10: CR adversarial — assert `GateEvaluator.hasBreastCancer`, teardown Config/FhirR4 estáticos/Provider, `gate_mode=retry` explícito. AC #1 `./gradlew check` completo permanece defer (AppTest paralelo).
+
+### Senior Developer Review (AI)
+
+**Date:** 2026-07-10
+**Outcome:** approve with patches applied → done
+
+| ID | Finding | Action |
+|----|---------|--------|
+| 1 | Sem assert breast_cancer | patch ✓ |
+| 2 | Poluição Config/FhirR4 estáticos | patch ✓ |
+| 3 | Provider/Payer não limpos no @After | patch ✓ |
+| 4 | gate_mode implícito | patch ✓ |
+| 5 | AC #1 check completo bloqueado AppTest | defer (pré-existente) |

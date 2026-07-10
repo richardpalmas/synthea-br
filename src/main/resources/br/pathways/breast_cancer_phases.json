@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.0.0",
+  "catalog_version": "2.0.0",
   "condition": "breast_cancer",
   "source_module": "modules/breast_cancer.json",
   "source_reference": "docs/research/adr/ADR-008-trajetoria-clinica-focada.md",
@@ -8,7 +8,7 @@
       "phase_id": "screening",
       "order": 1,
       "title_pt_br": "Rastreio",
-      "description_pt_br": "Mamografia de rastreio e reavaliacoes periodicas antes de qualquer suspeita diagnostica.",
+      "description_pt_br": "Mamografia de rastreio e reavaliações periódicas antes de qualquer suspeita diagnóstica.",
       "encounter_types": ["ambulatory", "wellness"],
       "code_allowlist": [
         { "system": "SNOMED-CT", "code": "24623002", "display": "Screening mammography (procedure)" },
@@ -19,8 +19,8 @@
     {
       "phase_id": "diagnosis",
       "order": 2,
-      "title_pt_br": "Diagnostico",
-      "description_pt_br": "Confirmacao diagnostica: exames de imagem, biopsia, condicao-alvo e subtipagem molecular (receptores hormonais/HER2).",
+      "title_pt_br": "Diagnóstico",
+      "description_pt_br": "Confirmação diagnóstica: exames de imagem, biópsia, condição-alvo e subtipagem molecular (receptores hormonais/HER2).",
       "encounter_types": ["ambulatory"],
       "code_allowlist": [
         { "system": "SNOMED-CT", "code": "254837009", "display": "Malignant neoplasm of breast (disorder)" },
@@ -43,9 +43,13 @@
       "phase_id": "staging",
       "order": 3,
       "title_pt_br": "Estadiamento",
-      "description_pt_br": "Classificacao TNM e estadiamento clinico (AJCC 8a edicao) apos confirmacao diagnostica.",
+      "description_pt_br": "Imagem de estadiamento, classificação TNM e estadiamento clínico (AJCC 8ª edição) após confirmação diagnóstica.",
       "encounter_types": ["ambulatory"],
       "code_allowlist": [
+        { "system": "SNOMED-CT", "code": "169069000", "display": "Computed tomography of thorax (procedure)" },
+        { "system": "SNOMED-CT", "code": "418714002", "display": "Computed tomography of abdomen (procedure)" },
+        { "system": "SNOMED-CT", "code": "418891003", "display": "Computed tomography of chest and abdomen (procedure)" },
+        { "system": "SNOMED-CT", "code": "77477000", "display": "Radionuclide imaging of bone (procedure)" },
         { "system": "LOINC", "code": "21908-9", "display": "Stage group.clinical Cancer" },
         { "system": "LOINC", "code": "21907-1", "display": "Distant metastases.clinical [Class] Cancer" },
         { "system": "LOINC", "code": "21905-5", "display": "Primary tumor.clinical [Class] Cancer" },
@@ -70,6 +74,7 @@
         { "system": "SNOMED-CT", "code": "185347001", "display": "Encounter for problem (procedure)" },
         { "system": "SNOMED-CT", "code": "392023007", "display": "Excision of lesion of breast (procedure)" },
         { "system": "SNOMED-CT", "code": "392021009", "display": "Lumpectomy of breast (procedure)" },
+        { "system": "SNOMED-CT", "code": "172138000", "display": "Modified radical mastectomy (procedure)" },
         { "system": "SNOMED-CT", "code": "33195004", "display": "External beam radiation therapy procedure (procedure)" },
         { "system": "SNOMED-CT", "code": "385798007", "display": "Radiation therapy care (regime/therapy)" },
         { "system": "SNOMED-CT", "code": "1287742003", "display": "Radiotherapy (procedure)" },
@@ -105,15 +110,12 @@
       "phase_id": "follow_up",
       "order": 5,
       "title_pt_br": "Seguimento",
-      "description_pt_br": "Consultas periodicas, mamografia de seguimento e terapia hormonal de manutencao pos-tratamento.",
+      "description_pt_br": "Consultas periódicas, mamografia de seguimento e terapia hormonal de manutenção pós-tratamento.",
       "encounter_types": ["ambulatory"],
       "code_allowlist": [
         { "system": "SNOMED-CT", "code": "439740005", "display": "Postoperative follow-up visit (procedure)" },
         { "system": "SNOMED-CT", "code": "410410006", "display": "Screening surveillance (regime/therapy)" },
         { "system": "SNOMED-CT", "code": "71651007", "display": "Mammography (procedure)" },
-        { "system": "SNOMED-CT", "code": "310061009", "display": "Gynecology service (qualifier value)" },
-        { "system": "SNOMED-CT", "code": "35025007", "display": "Manual pelvic examination (procedure)" },
-        { "system": "SNOMED-CT", "code": "90226004", "display": "Cytopathology procedure, preparation of smear, genital source (procedure)" },
         { "system": "SNOMED-CT", "code": "312681000", "display": "Bone density scan (procedure)" },
         { "system": "SNOMED-CT", "code": "185389009", "display": "Follow-up visit (procedure)" },
         { "system": "RxNorm", "code": "198240", "display": "Tamoxifen 10 MG Oral Tablet" },
@@ -121,6 +123,34 @@
         { "system": "RxNorm", "code": "310261", "display": "exemestane 25 MG Oral Tablet" },
         { "system": "RxNorm", "code": "199224", "display": "anastrozole 1 MG Oral Tablet" },
         { "system": "RxNorm", "code": "200064", "display": "letrozole 2.5 MG Oral Tablet" }
+      ]
+    },
+    {
+      "phase_id": "progression",
+      "order": 6,
+      "title_pt_br": "Progressão",
+      "description_pt_br": "Reavaliação por imagem e confirmação de doença metastática após falha terapêutica ou recorrência.",
+      "encounter_types": ["ambulatory", "inpatient"],
+      "code_allowlist": [
+        { "system": "SNOMED-CT", "code": "418891003", "display": "Computed tomography of chest and abdomen (procedure)" },
+        { "system": "SNOMED-CT", "code": "78899008", "display": "Positron emission tomography (procedure)" },
+        { "system": "SNOMED-CT", "code": "94222008", "display": "Secondary malignant neoplasm of lung (disorder)" },
+        { "system": "LOINC", "code": "88040-1", "display": "Response to cancer treatment" },
+        { "system": "LOINC", "code": "44667-4", "display": "Site of distant metastasis in Breast tumor" }
+      ]
+    },
+    {
+      "phase_id": "palliative",
+      "order": 7,
+      "title_pt_br": "Cuidados paliativos",
+      "description_pt_br": "Hospice, controle de sintomas e desfecho terminal da trajetória oncológica.",
+      "encounter_types": ["hospice", "inpatient", "ambulatory"],
+      "code_allowlist": [
+        { "system": "SNOMED-CT", "code": "305336008", "display": "Admission to hospice (procedure)" },
+        { "system": "SNOMED-CT", "code": "385763009", "display": "Hospice care (regime/therapy)" },
+        { "system": "SNOMED-CT", "code": "103735009", "display": "Palliative care (regime/therapy)" },
+        { "system": "SNOMED-CT", "code": "182964004", "display": "Terminal care (regime/therapy)" },
+        { "system": "SNOMED-CT", "code": "419099009", "display": "Died in hospice (finding)" }
       ]
     }
   ],

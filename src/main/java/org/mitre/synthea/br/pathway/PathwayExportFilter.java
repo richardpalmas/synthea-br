@@ -90,6 +90,9 @@ public final class PathwayExportFilter {
       retainAllowed(encounter.medications, allowlist);
       retainAllowed(encounter.immunizations, allowlist);
       retainAllowed(encounter.careplans, allowlist);
+      retainAllowed(encounter.imagingStudies, allowlist);
+      retainAllowed(encounter.devices, allowlist);
+      retainAllowed(encounter.supplies, allowlist);
       filterObservations(encounter.observations, allowlist);
       filterReports(encounter.reports, allowlist);
     }
@@ -136,7 +139,10 @@ public final class PathwayExportFilter {
         || !encounter.procedures.isEmpty()
         || !encounter.medications.isEmpty()
         || !encounter.immunizations.isEmpty()
-        || !encounter.careplans.isEmpty();
+        || !encounter.careplans.isEmpty()
+        || !encounter.imagingStudies.isEmpty()
+        || !encounter.devices.isEmpty()
+        || !encounter.supplies.isEmpty();
   }
 
   private static boolean entryMatchesAllowlist(Entry entry, Set<String> allowlist) {

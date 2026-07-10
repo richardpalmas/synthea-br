@@ -77,19 +77,24 @@ public final class PathwayEventClassifier {
     if (encounter == null) {
       return null;
     }
-    if (encounter.reason != null) {
-      String phaseId = unifiedKeyToPhaseId.get(toAllowlistKey(
-          encounter.reason.system, encounter.reason.code));
-      if (phaseId != null) {
-        return phaseId;
-      }
-    }
+    // Prefer encounter type/code over reason to avoid collapsing follow-up visits
+    // into diagnosis when reason carries the target-condition code.
     if (encounter.codes != null) {
       for (Code code : encounter.codes) {
         String phaseId = unifiedKeyToPhaseId.get(toAllowlistKey(code.system, code.code));
         if (phaseId != null) {
           return phaseId;
         }
+      }
+    }
+    if (encounter.reason != null) {
+      String reasonKey = toAllowlistKey(encounter.reason.system, encounter.reason.code);
+      if (targetConditionCodes.contains(encounter.reason.code)) {
+        return null;
+      }
+      String phaseId = unifiedKeyToPhaseId.get(reasonKey);
+      if (phaseId != null) {
+        return phaseId;
       }
     }
     return null;

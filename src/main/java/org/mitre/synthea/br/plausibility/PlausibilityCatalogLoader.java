@@ -61,6 +61,10 @@ public final class PlausibilityCatalogLoader {
     Map<String, RuleMetadata> rules = new LinkedHashMap<>();
     for (JsonElement element : rulesArray) {
       RuleMetadata metadata = RuleMetadata.fromJson(element.getAsJsonObject());
+      if (rules.containsKey(metadata.getId())) {
+        throw new IllegalStateException("Duplicate rule id in plausibility catalog: "
+            + metadata.getId());
+      }
       rules.put(metadata.getId(), metadata);
     }
     return Collections.unmodifiableMap(rules);

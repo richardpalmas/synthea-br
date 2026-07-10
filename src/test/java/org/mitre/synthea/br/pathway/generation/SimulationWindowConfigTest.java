@@ -64,6 +64,19 @@ public class SimulationWindowConfigTest {
   }
 
   @Test
+  public void validateForGeneration_rejectsWhenAgeNotSpecified() {
+    Config.set("br.generation.simulation_window", "pre_onset_years:10");
+    GeneratorOptions options = new GeneratorOptions();
+    options.ageSpecified = false;
+    try {
+      SimulationWindowConfig.validateForGeneration(options);
+      fail("Expected IllegalArgumentException when -a is missing");
+    } catch (IllegalArgumentException expected) {
+      assertTrue(expected.getMessage().contains("-a"));
+    }
+  }
+
+  @Test
   public void validateForGeneration_rejectsWhenNExceedsMinAge() {
     Config.set("br.generation.simulation_window", "pre_onset_years:40");
     GeneratorOptions options = ageOptions(40, 75);

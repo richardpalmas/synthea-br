@@ -98,9 +98,15 @@ public final class SimulationWindowConfig {
           "br.generation.simulation_window=pre_onset_years:%d invalido — N deve ser positivo.",
           preOnsetYears));
     }
-    if (options.ageSpecified && preOnsetYears >= options.minAge) {
+    // Fail-fast: without -a, pickAge() can yield ages < N and corrupt lastUpdated < birthdate.
+    if (!options.ageSpecified) {
+      throw new IllegalArgumentException(
+          "br.generation.simulation_window=pre_onset_years requer -a (idade alvo). "
+              + "Ex.: -a 45-75 com pre_onset_years:10.");
+    }
+    if (preOnsetYears >= options.minAge) {
       throw new IllegalArgumentException(String.format(
-          "br.generation.simulation_window=pre_onset_years:%d incompatible com idade alvo minima %d "
+          "br.generation.simulation_window=pre_onset_years:%d incompativel com idade alvo minima %d "
               + "— N deve ser menor que a idade alvo.",
           preOnsetYears, options.minAge));
     }

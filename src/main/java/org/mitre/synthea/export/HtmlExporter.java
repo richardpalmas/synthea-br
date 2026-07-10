@@ -85,6 +85,15 @@ public class HtmlExporter {
   }
 
   /**
+   * Test hook for verifying cohort accumulation without writing index.html.
+   *
+   * @return number of patients accumulated since the last reset
+   */
+  synchronized int getAccumulatedPatientCountForTest() {
+    return patients.size();
+  }
+
+  /**
    * Accumulates one patient's narrative model for the cohort index.
    *
    * @param person   patient to export
@@ -175,9 +184,15 @@ public class HtmlExporter {
           formatTimelineDates(section.events, brProfile);
         }
       }
+      narrative.hideNonPathwayClinicalSections =
+          PathwayHtmlModeConfig.hidesOutOfPathwayClinicalData(pathwayMode);
+      narrative.showOutOfPathwaySection =
+          PathwayHtmlModeConfig.MODE_PESQUISADOR.equals(pathwayMode);
     } else {
       narrative.pathwayMode = pathwayMode;
       narrative.pathwayTimelineEnabled = false;
+      narrative.hideNonPathwayClinicalSections = false;
+      narrative.showOutOfPathwaySection = false;
     }
 
     applyLastEvent(narrative);
@@ -254,6 +269,10 @@ public class HtmlExporter {
     narrative.aiSummary = summary.toString();
     narrative.aiAppliedCount = intValue(row.get("appliedCount"));
     narrative.aiFlagCount = intValue(row.get("flagCount"));
+    Object writingPersona = row.get("writingPersona");
+    if (writingPersona != null) {
+      narrative.aiWritingPersona = writingPersona.toString();
+    }
   }
 
   private static int intValue(Object value) {
@@ -537,6 +556,12 @@ public class HtmlExporter {
   }
 
   private static String encounterLabel(Encounter encounter, boolean brProfile) {
+    // Prefer encounter code/type label; reason is often the target condition and
+    // can make distinct follow-up encounters look like duplicated diagnosis rows.
+    if (encounter.codes != null && !encounter.codes.isEmpty()) {
+      Code code = encounter.codes.get(0);
+      return brProfile ? BrTerminologyResolver.resolveDisplay(code) : code.display;
+    }
     if (encounter.reason != null) {
       if (brProfile) {
         return "Encontro: " + BrTerminologyResolver.resolveDisplay(encounter.reason);
@@ -544,10 +569,6 @@ public class HtmlExporter {
       if (encounter.reason.display != null) {
         return "Encontro: " + encounter.reason.display;
       }
-    }
-    if (encounter.codes != null && !encounter.codes.isEmpty()) {
-      Code code = encounter.codes.get(0);
-      return brProfile ? BrTerminologyResolver.resolveDisplay(code) : code.display;
     }
     return "Encontro clínico";
   }
@@ -623,6 +644,11 @@ public class HtmlExporter {
     public String aiSummary;
     public int aiAppliedCount;
     public int aiFlagCount;
+    public String aiWritingPersona;
+    /** When true, hide empty clinical accordion sections (orientador mode). */
+    public boolean hideNonPathwayClinicalSections;
+    /** When true, render collapsible out-of-pathway timeline (pesquisador). */
+    public boolean showOutOfPathwaySection;
   }
 
   /** One clinical pathway phase section for grouped HTML timeline. */

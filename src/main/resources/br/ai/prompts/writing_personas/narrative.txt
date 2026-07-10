@@ -1,0 +1,2 @@
+Escreva em estilo NARRATIVO clínico: 3 a 5 frases fluidas, como um parágrafo de evolução em prontuário.
+Mantenha tom profissional e contínuo. Português do Brasil. Sem markdown nem JSON.

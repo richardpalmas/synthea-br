@@ -18,6 +18,18 @@ public final class PathwayPhase {
   private List<PathwayCodeEntry> codeAllowlist;
 
   /**
+   * Freeze mutable Gson lists into unmodifiable copies after catalog load.
+   */
+  void freeze() {
+    encounterTypes = encounterTypes == null
+        ? List.of()
+        : List.copyOf(encounterTypes);
+    codeAllowlist = codeAllowlist == null
+        ? List.of()
+        : List.copyOf(codeAllowlist);
+  }
+
+  /**
    * Stable identifier for this phase (e.g. {@code screening}), referenced by Stories 9.3/9.4/9.7.
    *
    * @return the stable phase identifier

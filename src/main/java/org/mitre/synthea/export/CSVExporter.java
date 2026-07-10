@@ -295,6 +295,9 @@ public class CSVExporter {
       }
       @SuppressWarnings("unchecked")
       Map<Integer, Double> scores = (Map<Integer, Double>) person.attributes.get(score);
+      if (scores == null || scores.isEmpty()) {
+        continue;
+      }
       for (Integer year : scores.keySet()) {
         birthDay.set(Calendar.YEAR, year);
         if (birthDay.after(cutOff) && birthDay.before(now)) {

@@ -64,6 +64,29 @@ public class PlausibilityReportAccumulatorTest {
     assertTrue(accumulator.getViolationsByPatientSorted().isEmpty());
   }
 
+  @Test
+  public void testRecordReplacesPreviousViolationsForSamePatient() {
+    PlausibilityReportAccumulator accumulator = PlausibilityReportAccumulator.getInstance();
+    accumulator.recordPatientViolations("p1", List.of(sampleViolation("PLAUS-001", "alta")));
+    accumulator.recordPatientViolations("p1", List.of(sampleViolation("PLAUS-002", "média")));
+
+    List<Violation> violations = accumulator.getViolationsByPatientSorted().get("p1");
+    assertEquals(1, violations.size());
+    assertEquals("PLAUS-002", violations.get(0).getRuleId());
+  }
+
+  @Test
+  public void testSnapshotIsConsistentAcrossViolationsAndAggregates() {
+    PlausibilityReportAccumulator accumulator = PlausibilityReportAccumulator.getInstance();
+    accumulator.recordPatientViolations("p1", List.of(sampleViolation("PLAUS-001", "alta")));
+    accumulator.recordPatientViolations("p2", List.of(sampleViolation("PLAUS-002", "média")));
+
+    PlausibilityReportAccumulator.ReportSnapshot snapshot = accumulator.snapshot();
+    assertEquals(2, snapshot.violationsByPatient.size());
+    assertEquals(Integer.valueOf(1), snapshot.severityCounts.get("alta"));
+    assertEquals(Integer.valueOf(1), snapshot.severityCounts.get("média"));
+  }
+
   private static Violation sampleViolation(String ruleId, String severity) {
     return new Violation(ruleId, severity, "patient-x", "desc", new LinkedHashMap<>());
   }

@@ -19,7 +19,8 @@
       </ol>
     </section>
   </#list>
-  <#if patient.pathwayMode == "pesquisador" && (patient.outOfPathwayEvents![])?size gt 0>
+  <#if (patient.showOutOfPathwaySection!false)
+      && (patient.outOfPathwayEvents![])?size gt 0>
     <details class="out-of-pathway-section">
       <summary class="section-header">Fora da trajetória</summary>
       <div class="section-body">

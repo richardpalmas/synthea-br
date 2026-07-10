@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -27,16 +26,34 @@ public final class MaiDxoOrchestrator {
 
   private final LlmClient llmClient;
   private final int maxIterations;
+  private final int jsonParseRetries;
+  private final int truncationContinuationMax;
 
   /**
-   * Creates an orchestrator.
+   * Creates an orchestrator using configured robustness defaults.
    *
    * @param llmClient LLM client (or mock for tests)
    * @param maxIterations debate iteration cap per patient
    */
   public MaiDxoOrchestrator(LlmClient llmClient, int maxIterations) {
+    this(llmClient, maxIterations, AiEnrichmentConfig.getJsonParseRetries(),
+        AiEnrichmentConfig.getTruncationContinuationMax());
+  }
+
+  /**
+   * Creates an orchestrator with explicit robustness limits (tests).
+   *
+   * @param llmClient LLM client (or mock for tests)
+   * @param maxIterations debate iteration cap per patient
+   * @param jsonParseRetries LLM clean retries after local parse failure
+   * @param truncationContinuationMax max continuation calls per persona turn
+   */
+  public MaiDxoOrchestrator(LlmClient llmClient, int maxIterations, int jsonParseRetries,
+      int truncationContinuationMax) {
     this.llmClient = llmClient;
     this.maxIterations = maxIterations;
+    this.jsonParseRetries = Math.max(0, jsonParseRetries);
+    this.truncationContinuationMax = Math.max(0, truncationContinuationMax);
   }
 
   /**
@@ -54,6 +71,7 @@ public final class MaiDxoOrchestrator {
 
     List<Map<String, Object>> appliedOps = new ArrayList<>();
     List<Map<String, Object>> flags = new ArrayList<>();
+    RobustnessStats stats = new RobustnessStats();
     boolean finalized = false;
 
     for (int iteration = 0; iteration < maxIterations && !finalized; iteration++) {
@@ -63,17 +81,22 @@ public final class MaiDxoOrchestrator {
       for (String persona : PERSONA_CHAIN) {
         String response;
         try {
-          response = llmClient.complete(
+          response = LlmResponseGuard.completeWithContinuation(
+              llmClient,
               PersonaPrompts.get(persona),
-              buildUserPrompt(persona, debateLog.toString()));
+              buildUserPrompt(persona, debateLog.toString()),
+              truncationContinuationMax,
+              stats);
         } catch (LlmException e) {
           debateLog.append(persona).append(" ERRO: ").append(e.getMessage()).append('\n');
           continue;
         }
         debateLog.append('[').append(persona).append("] ").append(response).append('\n');
 
-        PersonaDecision decision = parseDecision(response);
-        if (decision.action == null) {
+        PersonaDecision decision = parseDecision(response, stats);
+        if (decision == null) {
+          debateLog.append(persona).append(" ERRO: json_parse_failed\n");
+          stats.incrementPersonaTurnsSkipped();
           continue;
         }
 
@@ -118,7 +141,9 @@ public final class MaiDxoOrchestrator {
         appliedOps,
         flags,
         debateLog.toString(),
-        finalized);
+        finalized,
+        null,
+        stats);
   }
 
   private static String buildUserPrompt(String persona, String context) {
@@ -129,39 +154,53 @@ public final class MaiDxoOrchestrator {
         + "Para flag_unfixable, inclua reason obrigatório descrevendo a limitação.";
   }
 
-  private static PersonaDecision parseDecision(String raw) {
+  /**
+   * Parses a persona reply with local extraction and optional LLM cleanup.
+   *
+   * @param raw model text
+   * @param stats robustness counters
+   * @return decision or null when parse failed after retries
+   */
+  PersonaDecision parseDecision(String raw, RobustnessStats stats) {
+    LlmJsonParser.ParseResult parsed = LlmJsonParser.parseWithFallback(
+        llmClient, raw, jsonParseRetries, stats);
+    if (!parsed.isSuccess()) {
+      return null;
+    }
+    JsonObject obj = parsed.getObject();
     PersonaDecision decision = new PersonaDecision();
-    if (raw == null || raw.trim().isEmpty()) {
-      return decision;
-    }
-    String json = extractJson(raw);
-    if (json == null) {
-      return decision;
-    }
     try {
-      JsonObject obj = JsonParser.parseString(json).getAsJsonObject();
-      if (obj.has("action")) {
-        decision.action = obj.get("action").getAsString();
+      String action = readJsonString(obj, "action");
+      if (action == null || action.trim().isEmpty()) {
+        return null;
       }
-      if (obj.has("query")) {
-        decision.query = obj.get("query").getAsString();
-      }
+      decision.action = action;
+      decision.query = readJsonString(obj, "query");
       if (obj.has("operations") && obj.get("operations").isJsonArray()) {
         decision.operations = jsonArrayToMaps(obj.getAsJsonArray("operations"));
       }
-    } catch (Exception expected) {
-      // Non-JSON model output — skip this persona turn
+      return decision;
+    } catch (RuntimeException expected) {
+      return null;
     }
-    return decision;
   }
 
-  private static String extractJson(String raw) {
-    int start = raw.indexOf('{');
-    int end = raw.lastIndexOf('}');
-    if (start >= 0 && end > start) {
-      return raw.substring(start, end + 1);
+  /**
+   * Reads a JSON string field, or null when missing / not a string primitive.
+   *
+   * @param obj JSON object
+   * @param field field name
+   * @return string value or null
+   */
+  private static String readJsonString(JsonObject obj, String field) {
+    if (!obj.has(field) || obj.get(field).isJsonNull()) {
+      return null;
     }
-    return null;
+    JsonElement element = obj.get(field);
+    if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()) {
+      return null;
+    }
+    return element.getAsString();
   }
 
   private static List<Map<String, Object>> jsonArrayToMaps(JsonArray array) {
@@ -191,7 +230,7 @@ public final class MaiDxoOrchestrator {
     return result;
   }
 
-  private static final class PersonaDecision {
+  static final class PersonaDecision {
     private String action;
     private String query;
     private List<Map<String, Object>> operations;

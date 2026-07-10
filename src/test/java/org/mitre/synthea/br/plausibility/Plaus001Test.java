@@ -25,6 +25,7 @@ public class Plaus001Test {
 
   private static final String BREAST_CANCER_CODE = "254837009";
   private static final String MASTECTOMY_CODE = "392023007";
+  private static final String DOXORUBICIN_CODE = "1790099";
   private static final long DAY = 86_400_000L;
 
   private Provider provider;
@@ -79,6 +80,23 @@ public class Plaus001Test {
     HealthRecord.Procedure procedure = person.record.procedure(treatmentTime, MASTECTOMY_CODE);
     procedure.codes.add(new Code("SNOMED-CT", MASTECTOMY_CODE,
         "Excision of lesion of breast (procedure)"));
+
+    PlausibilityRule rule = new Plaus001TreatmentWithoutDiagnosis(new PlausibilityCatalogLoader());
+    List<Violation> violations = rule.evaluate(person);
+
+    assertTrue(violations.isEmpty());
+  }
+
+  @Test
+  public void testNoViolationForMedicationOnlyCaseHandledByPlaus003() {
+    Person person = buildPerson("p-003");
+    long medicationTime = 8 * DAY;
+
+    person.record.encounterStart(medicationTime, EncounterType.OUTPATIENT);
+    HealthRecord.Medication medication =
+        person.record.medicationStart(medicationTime, DOXORUBICIN_CODE, false);
+    medication.codes.add(new Code("RxNorm", DOXORUBICIN_CODE,
+        "10 ML Doxorubicin Hydrochloride 2 MG/ML Injection"));
 
     PlausibilityRule rule = new Plaus001TreatmentWithoutDiagnosis(new PlausibilityCatalogLoader());
     List<Violation> violations = rule.evaluate(person);

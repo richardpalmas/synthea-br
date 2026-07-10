@@ -7,6 +7,10 @@ import org.mitre.synthea.helpers.Config;
 
 /**
  * Parses {@code br.generation.trajectory_mode} for episodic vs lifespan simulation (Story 9.7).
+ *
+ * <p>MVP: the episodic module is a <strong>phase marker</strong> ({@code pathway_phase} attributes)
+ * that runs in parallel with the upstream {@code breast_cancer} GMF module — it does not replace
+ * clinical event generation (ADR-008 / GUIA-DE-USO).
  */
 public final class TrajectoryModeConfig {
 
@@ -21,13 +25,20 @@ public final class TrajectoryModeConfig {
    * Active trajectory mode from configuration.
    *
    * @return {@code lifespan} or {@code episodic}
+   * @throws IllegalArgumentException when the configured value is not supported
    */
   public static String getActiveMode() {
     String value = Config.get("br.generation.trajectory_mode", MODE_LIFESPAN);
     if (value == null || value.isBlank()) {
       return MODE_LIFESPAN;
     }
-    return value.trim();
+    String trimmed = value.trim();
+    if (MODE_LIFESPAN.equalsIgnoreCase(trimmed) || MODE_EPISODIC.equalsIgnoreCase(trimmed)) {
+      return trimmed.toLowerCase();
+    }
+    throw new IllegalArgumentException(String.format(
+        "br.generation.trajectory_mode='%s' invalido. Valores suportados: lifespan, episodic.",
+        trimmed));
   }
 
   /**
@@ -40,19 +51,30 @@ public final class TrajectoryModeConfig {
   }
 
   /**
-   * Module path predicate ensuring episodic marker module loads alongside upstream disease module.
+   * Module path predicate for episodic vs lifespan.
    *
-   * <p>Does not remove {@code breast_cancer} — clinical simulation remains in the upstream module;
-   * episodic wrapper sets {@code pathway_phase} attributes in parallel (Story 9.7 AC #4).
+   * <p>In {@code lifespan} mode the episodic marker module is excluded so default simulation
+   * stays unchanged (AC #4). In {@code episodic} mode prerequisites are validated; inclusion is
+   * forced via {@link #forceInclude(String)} alongside the module profile filter.
    *
    * @return predicate applied alongside module profile filtering
    */
   public static Predicate<String> buildPathPredicate() {
     if (!isEpisodic()) {
-      return path -> true;
+      return path -> !isEpisodicModulePath(path);
     }
     validateEpisodicPrerequisites();
     return path -> true;
+  }
+
+  /**
+   * Whether the module path must be loaded even if the active module profile would exclude it.
+   *
+   * @param path module path
+   * @return {@code true} when episodic mode forces this path
+   */
+  public static boolean forceInclude(String path) {
+    return isEpisodic() && isEpisodicModulePath(path);
   }
 
   /**
@@ -62,6 +84,11 @@ public final class TrajectoryModeConfig {
    */
   public static String episodicModulePath() {
     return isEpisodic() ? EPISODIC_MODULE_PATH : null;
+  }
+
+  private static boolean isEpisodicModulePath(String path) {
+    return path != null
+        && (EPISODIC_MODULE_PATH.equals(path) || path.startsWith(EPISODIC_MODULE_PATH + "/"));
   }
 
   private static void validateEpisodicPrerequisites() {

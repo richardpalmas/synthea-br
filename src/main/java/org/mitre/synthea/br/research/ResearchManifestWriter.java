@@ -27,6 +27,8 @@ import org.mitre.synthea.br.ai.CohortEnrichmentLog;
 import org.mitre.synthea.br.condition.TargetConditionConfig;
 import org.mitre.synthea.br.pathway.PathwayCatalog;
 import org.mitre.synthea.br.pathway.PathwayFocusConfig;
+import org.mitre.synthea.br.pathway.PathwayTimingLoader;
+import org.mitre.synthea.br.pathway.TrajectoryModeConfig;
 import org.mitre.synthea.br.pathway.generation.ModuleProfileConfig;
 import org.mitre.synthea.br.pathway.generation.SimulationWindowConfig;
 import org.mitre.synthea.br.profile.BrProfile;
@@ -121,6 +123,16 @@ public class ResearchManifestWriter implements PostCompletionExporter {
       CohortEnrichmentLog enrichmentLog = AiEnrichmentService.getLastLog();
       if (enrichmentLog != null) {
         aiSection.put("patients_enriched", enrichmentLog.getPatients().size());
+        Map<String, Object> meta = enrichmentLog.getMetadata();
+        if (meta.containsKey("json_parse_retries")) {
+          aiSection.put("json_parse_retries", meta.get("json_parse_retries"));
+        }
+        if (meta.containsKey("truncation_continuations")) {
+          aiSection.put("truncation_continuations", meta.get("truncation_continuations"));
+        }
+        if (meta.containsKey("persona_turns_skipped")) {
+          aiSection.put("persona_turns_skipped", meta.get("persona_turns_skipped"));
+        }
       }
       manifest.put("ai_enrichment", aiSection);
     }
@@ -148,24 +160,47 @@ public class ResearchManifestWriter implements PostCompletionExporter {
    * @return condition key from {@link TargetConditionConfig#resolveConfigured()}, or {@code null}
    */
   static String resolveTargetConditionField() {
-    TargetConditionConfig.ResolvedTargetCondition resolved =
-        TargetConditionConfig.resolveConfigured();
-    return resolved != null ? resolved.definition.conditionKey : null;
+    try {
+      TargetConditionConfig.ResolvedTargetCondition resolved =
+          TargetConditionConfig.resolveConfigured();
+      return resolved != null ? resolved.definition.conditionKey : null;
+    } catch (RuntimeException e) {
+      // Invalid/misconfigured target must not abort the whole manifest (seed/commit/checksum).
+      System.err.println("ResearchManifestWriter: targetCondition unresolved: " + e.getMessage());
+      return null;
+    }
   }
 
   private static void appendPathwayFields(Map<String, Object> manifest) {
     boolean focusEnabled = PathwayFocusConfig.isEnabled();
     manifest.put("pathway_focus", focusEnabled);
-    if (!focusEnabled) {
-      return;
+    if (focusEnabled) {
+      try {
+        PathwayCatalog catalog = PathwayCatalog.loadForConfiguredCondition();
+        manifest.put("pathway_catalog_version", catalog.getCatalogVersion());
+        manifest.put("pathway_condition", catalog.getCondition());
+      } catch (RuntimeException e) {
+        System.err.println("ResearchManifestWriter: pathway catalog unresolved: "
+            + e.getMessage());
+        manifest.put("pathway_catalog_version", null);
+        manifest.put("pathway_condition", null);
+      }
     }
-    PathwayCatalog catalog = PathwayCatalog.loadForConfiguredCondition();
-    manifest.put("pathway_catalog_version", catalog.getCatalogVersion());
-    manifest.put("pathway_condition", catalog.getCondition());
+    // Provenance only when episodic mode can consume the pack (Story 9.8 AC #5).
+    if (TrajectoryModeConfig.isEpisodic() && PathwayTimingLoader.isEnabled()) {
+      PathwayTimingLoader.PathwayTimingPack pack =
+          PathwayTimingLoader.loadForConfiguredCondition();
+      manifest.put("pathway_timing_priors_version", pack.getPriorsVersion());
+      manifest.put("pathway_reference_notes", pack.getReferenceNotes());
+    } else if (TrajectoryModeConfig.isEpisodic()) {
+      manifest.put("pathway_timing_priors_version", PathwayTimingLoader.VALUE_OFF);
+      manifest.put("pathway_reference_notes", List.of());
+    }
   }
 
   private static void appendGenerationFields(Map<String, Object> manifest, Generator generator) {
     manifest.put("module_profile", ModuleProfileConfig.getActiveProfileKey());
+    manifest.put("module_profile_version", ModuleProfileConfig.getActiveProfileVersion());
     manifest.put("simulation_window", SimulationWindowConfig.getEffectiveValue());
     if (generator.generationDurationMs > 0) {
       manifest.put("generation_duration_ms", generator.generationDurationMs);

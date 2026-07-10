@@ -1,6 +1,6 @@
 # Story 9.5: Perfil de Geração Enxuto — Abordagem D
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -140,10 +140,22 @@ JUnit 4. Teste de integração pode ser mais lento — n pequeno (10-20). `./gra
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
-
-### Debug Log References
+Amelia (CR adversarial 2026-07-10)
 
 ### Completion Notes List
 
+- CR: `module_profile_version` no manifest; `breast_cancer_trajectory_br` removido do `pathway_minimal` (só via `trajectory_mode=episodic`).
+
+### Senior Developer Review (AI)
+
+**Date:** 2026-07-10 · **Outcome:** approve → done
+
+| Finding | Action |
+|---------|--------|
+| profile_version ausente no manifest | patch ✓ |
+| trajectory module na allowlist fixa | patch ✓ |
+| insurance ≠ módulo GMF | documentado no JSON |
+
 ### File List
+
+- `pathway_minimal.json`, `ModuleProfileConfig.java`, `ResearchManifestWriter.java`, testes

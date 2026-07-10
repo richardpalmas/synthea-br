@@ -35,6 +35,9 @@ public final class PlausibilityPatientExporter implements PatientExporter {
     if (!Config.getAsBoolean("br.plausibility.report.enabled", true)) {
       return;
     }
+    if (person == null) {
+      return;
+    }
 
     List<Violation> violations = catalog.evaluateAll(person);
     String patientId = HealthRecordScan.patientId(person);

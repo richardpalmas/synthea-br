@@ -31,7 +31,7 @@ public class MaiDxoOrchestratorTest {
     person.attributes.put(Person.BIRTHDATE, Utilities.convertTime("years", -55));
     person.record = new HealthRecord(person);
 
-    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 2);
+    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 2, 0, 0);
     PatientEnrichmentResult result = orchestrator.enrichPatient(person);
 
     assertEquals("orch-test", result.getPatientId());
@@ -57,7 +57,7 @@ public class MaiDxoOrchestratorTest {
     person.attributes.put(Person.ID, "merge-test");
     person.record = new HealthRecord(person);
 
-    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1);
+    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1, 0, 0);
     PatientEnrichmentResult result = orchestrator.enrichPatient(person);
 
     assertEquals("PR", person.attributes.get("STATE"));
@@ -75,9 +75,119 @@ public class MaiDxoOrchestratorTest {
     person.attributes.put(Person.ID, "iter-test");
     person.record = new HealthRecord(person);
 
-    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1);
+    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1, 0, 0);
     orchestrator.enrichPatient(person);
 
     assertTrue(mock.getCallCount() <= 5);
+  }
+
+  @Test
+  public void testMalformedJsonSkipsTurnWithExplicitLog() {
+    // First persona: garbage → fallback fails → skip with json_parse_failed
+    // Remaining personas: valid AskQuestion (no Finalize needed)
+    MockLlmClient mock = new MockLlmClient(
+        "NOT_JSON",
+        "still-bad",
+        "{\"action\":\"AskQuestion\",\"query\":\"idade\"}",
+        "{\"action\":\"AskQuestion\",\"query\":\"sexo\"}",
+        "{\"action\":\"AskQuestion\",\"query\":\"cidade\"}",
+        "{\"action\":\"AskQuestion\",\"query\":\"exame\"}");
+
+    Person person = new Person(7L);
+    person.attributes.put(Person.ID, "parse-fail");
+    person.record = new HealthRecord(person);
+
+    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1, 1, 0);
+    PatientEnrichmentResult result = orchestrator.enrichPatient(person);
+
+    assertTrue(result.getDebateLog().contains("ERRO: json_parse_failed"));
+    assertEquals(1, result.getRobustnessStats().getPersonaTurnsSkipped());
+    assertEquals(1, result.getRobustnessStats().getJsonParseRetries());
+  }
+
+  @Test
+  public void testTruncationContinuationBeforeParse() {
+    // Incomplete JSON + truncation marker; continuation closes the object.
+    MockLlmClient mock = new MockLlmClient(
+        "{\"action\":\"FinalizePatient\" For brevity I have stopped",
+        "}");
+
+    Person person = new Person(8L);
+    person.attributes.put(Person.ID, "trunc-test");
+    person.record = new HealthRecord(person);
+
+    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1, 0, 1);
+    PatientEnrichmentResult result = orchestrator.enrichPatient(person);
+
+    assertTrue(result.isFinalized());
+    assertEquals(1, result.getRobustnessStats().getTruncationContinuations());
+    assertTrue(mock.getCallCount() >= 2);
+  }
+
+  @Test
+  public void testFallbackRecoversMalformedThenFinalizes() {
+    MockLlmClient mock = new MockLlmClient(
+        "broken output",
+        "{\"action\":\"FinalizePatient\"}");
+
+    Person person = new Person(9L);
+    person.attributes.put(Person.ID, "fallback-ok");
+    person.record = new HealthRecord(person);
+
+    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1, 1, 0);
+    PatientEnrichmentResult result = orchestrator.enrichPatient(person);
+
+    assertTrue(result.isFinalized());
+    assertEquals(1, result.getRobustnessStats().getJsonParseRetries());
+    assertEquals(0, result.getRobustnessStats().getPersonaTurnsSkipped());
+  }
+
+  @Test
+  public void testNullActionSkipsTurnWithoutAbortingPatient() {
+    MockLlmClient mock = new MockLlmClient(
+        "{\"action\":null}",
+        "{\"action\":\"AskQuestion\",\"query\":\"idade\"}",
+        "{\"action\":\"AskQuestion\",\"query\":\"sexo\"}",
+        "{\"action\":\"AskQuestion\",\"query\":\"cidade\"}",
+        "{\"action\":\"FinalizePatient\"}");
+
+    Person person = new Person(11L);
+    person.attributes.put(Person.ID, "null-action");
+    person.record = new HealthRecord(person);
+
+    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1, 0, 0);
+    PatientEnrichmentResult result = orchestrator.enrichPatient(person);
+
+    assertTrue(result.getDebateLog().contains("ERRO: json_parse_failed"));
+    assertEquals(1, result.getRobustnessStats().getPersonaTurnsSkipped());
+    assertTrue(result.isFinalized());
+  }
+
+  @Test
+  public void testValidJsonWithMarkerPhraseDoesNotWasteContinuation() {
+    String valid = "{\"action\":\"FinalizePatient\","
+        + "\"query\":\"deseja que eu continue?\"}";
+    MockLlmClient mock = new MockLlmClient(valid);
+
+    Person person = new Person(12L);
+    person.attributes.put(Person.ID, "false-positive");
+    person.record = new HealthRecord(person);
+
+    MaiDxoOrchestrator orchestrator = new MaiDxoOrchestrator(mock, 1, 0, 1);
+    PatientEnrichmentResult result = orchestrator.enrichPatient(person);
+
+    assertTrue(result.isFinalized());
+    assertEquals(0, result.getRobustnessStats().getTruncationContinuations());
+    assertEquals(1, mock.getCallCount());
+  }
+
+  @Test
+  public void testCohortLogAggregatesRobustnessCounters() {
+    CohortEnrichmentLog log = new CohortEnrichmentLog();
+    log.setMetadata("openai", "gpt-4o-mini", false);
+    log.addRobustnessStats(new RobustnessStats(2, 1, 3));
+    assertEquals(2, log.getMetadata().get("json_parse_retries"));
+    assertEquals(1, log.getMetadata().get("truncation_continuations"));
+    assertEquals(3, log.getMetadata().get("persona_turns_skipped"));
   }
 }

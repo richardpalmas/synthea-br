@@ -6,7 +6,7 @@
       "id": "PLAUS-001",
       "severity": "alta",
       "title": "Tratamento sem diagnóstico prévio de câncer de mama",
-      "description": "Procedimento ou medicação de tratamento de câncer de mama sem Condition SNOMED 254837009 registrada em data anterior ao tratamento (ex.: mastectomia sem diagnóstico)."
+      "description": "Procedimento de tratamento de câncer de mama sem Condition SNOMED 254837009 registrada em data anterior ao tratamento (ex.: mastectomia sem diagnóstico)."
     },
     {
       "id": "PLAUS-002",
@@ -31,7 +31,6 @@
       { "system": "SNOMED-CT", "code": "392023007", "display": "Excision of lesion of breast (procedure)" },
       { "system": "SNOMED-CT", "code": "392021009", "display": "Lumpectomy of breast (procedure)" },
       { "system": "SNOMED-CT", "code": "367336001", "display": "Chemotherapy (procedure)" },
-      { "system": "SNOMED-CT", "code": "122548005", "display": "Biopsy of breast (procedure)" },
       { "system": "SNOMED-CT", "code": "33195004", "display": "Radical mastectomy (procedure)" },
       { "system": "SNOMED-CT", "code": "385798007", "display": "Radiotherapy (procedure)" },
       { "system": "SNOMED-CT", "code": "1287742003", "display": "External beam radiation therapy (procedure)" },
@@ -39,6 +38,7 @@
     ],
     "diagnosticProcedures": [
       { "system": "SNOMED-CT", "code": "241055006", "display": "Mammogram - symptomatic (procedure)" },
+      { "system": "SNOMED-CT", "code": "122548005", "display": "Biopsy of breast (procedure)" },
       { "system": "SNOMED-CT", "code": "1571000087109", "display": "Ultrasonography of bilateral breasts (procedure)" },
       { "system": "SNOMED-CT", "code": "24623002", "display": "Screening mammography (procedure)" },
       { "system": "SNOMED-CT", "code": "241615005", "display": "Magnetic resonance imaging of breast (procedure)" },

@@ -16,8 +16,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": "392023007",
-          "display": "Excision of lesion of breast (procedure)"
+          "code": "172138000",
+          "display": "Modified radical mastectomy (procedure)"
         }
       ],
       "duration": {
@@ -1087,6 +1087,36 @@
     "Initialize Breast Surgery Treatment Counter": {
       "type": "SetAttribute",
       "attribute": "breast_cancer_treat_count",
+      "conditional_transition": [
+        {
+          "transition": "Breast-conserving surgery (BCS)",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "remission"
+          }
+        },
+        {
+          "transition": "Mastectomy",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "progression"
+          }
+        },
+        {
+          "transition": "Initialize Breast Surgery Treatment Random"
+        }
+      ],
+      "remarks": [
+        "https://www.cooperhealth.org/services/radiation-oncology/questions-you-may-have-about-radiation-therapy"
+      ],
+      "value": 0
+    },
+    "Initialize Breast Surgery Treatment Random": {
+      "type": "Simple",
       "distributed_transition": [
         {
           "transition": "Breast-conserving surgery (BCS)",
@@ -1096,11 +1126,7 @@
           "transition": "Mastectomy",
           "distribution": 0.4
         }
-      ],
-      "remarks": [
-        "https://www.cooperhealth.org/services/radiation-oncology/questions-you-may-have-about-radiation-therapy"
-      ],
-      "value": 0
+      ]
     },
     "Post Surgical Recovery": {
       "type": "Delay",

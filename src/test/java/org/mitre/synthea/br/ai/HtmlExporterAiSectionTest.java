@@ -48,7 +48,8 @@ public class HtmlExporterAiSectionTest {
         java.util.Collections.emptyList(),
         "",
         true,
-        "Foi ajustado o perfil regional do paciente."));
+        "Foi ajustado o perfil regional do paciente.")
+        .withWritingPersona("concise"));
     log.setCohortNarrativeSummary(
         "A cohort teve inconsistências de perfil corrigidas pelo painel MAI-DxO.");
     AiEnrichmentService.setLastLogForTest(log);
@@ -65,5 +66,6 @@ public class HtmlExporterAiSectionTest {
     assertTrue(html.contains("Dados enriquecidos por IA - Modelo Usado: gpt-4o-mini"));
     assertTrue(html.contains("A cohort teve inconsistências de perfil corrigidas"));
     assertTrue(html.contains("Foi ajustado o perfil regional do paciente."));
+    assertTrue(html.contains("persona: concise"));
   }
 }

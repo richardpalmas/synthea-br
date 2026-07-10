@@ -82,14 +82,22 @@ public final class PathwayCatalog {
    * @throws PathwayCatalogNotFoundException when no data pack exists for the condition
    */
   public static PathwayCatalog loadForCondition(String targetCondition) {
-    String resourcePath = String.format(RESOURCE_PATTERN, targetCondition);
+    if (targetCondition == null || targetCondition.isBlank()) {
+      throw new IllegalArgumentException(
+          "targetCondition nao pode ser null ou blank ao carregar catalogo de trajetoria.");
+    }
+    String resourcePath = String.format(RESOURCE_PATTERN, targetCondition.trim());
     try (InputStream stream = PathwayCatalog.class.getResourceAsStream(resourcePath)) {
       if (stream == null) {
-        throw new PathwayCatalogNotFoundException(targetCondition);
+        throw new PathwayCatalogNotFoundException(targetCondition.trim());
       }
       try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
         PathwayCatalog catalog = GSON.fromJson(reader, PathwayCatalog.class);
-        catalog.finishInit();
+        if (catalog == null) {
+          throw new IllegalStateException(
+              "Catalogo de trajetoria vazio ou JSON invalido: " + resourcePath);
+        }
+        catalog.finishInit(targetCondition.trim(), resourcePath);
         return catalog;
       }
     } catch (IOException e) {
@@ -97,20 +105,41 @@ public final class PathwayCatalog {
     }
   }
 
-  private void finishInit() {
+  private void finishInit(String expectedCondition, String resourcePath) {
+    if (catalogVersion == null || catalogVersion.isBlank()) {
+      throw new IllegalStateException(
+          "catalog_version ausente ou blank em " + resourcePath);
+    }
+    if (condition == null || condition.isBlank()) {
+      throw new IllegalStateException("condition ausente ou blank em " + resourcePath);
+    }
+    if (!expectedCondition.equals(condition)) {
+      throw new IllegalStateException(String.format(
+          "condition do JSON ('%s') diverge da chave de carga ('%s') em %s",
+          condition, expectedCondition, resourcePath));
+    }
+    if (phases == null || phases.isEmpty()) {
+      throw new IllegalStateException(
+          "phases ausente ou vazio em " + resourcePath);
+    }
     phasesInOrder = phases.stream()
         .sorted(Comparator.comparingInt(PathwayPhase::getOrder))
         .collect(Collectors.toUnmodifiableList());
     phasesById = new LinkedHashMap<>();
     for (PathwayPhase phase : phasesInOrder) {
       phasesById.put(phase.getPhaseId(), phase);
+      phase.freeze();
     }
-    unifiedCodes = new TreeSet<>();
+    TreeSet<String> codes = new TreeSet<>();
     for (PathwayPhase phase : phasesInOrder) {
       for (PathwayCodeEntry entry : phase.getCodeAllowlist()) {
-        unifiedCodes.add(entry.toUnifiedKey());
+        String key = entry.toUnifiedKey();
+        if (key != null) {
+          codes.add(key);
+        }
       }
     }
+    unifiedCodes = Set.copyOf(codes);
     alwaysIncludeAttributes = alwaysInclude == null || alwaysInclude.attributes == null
         ? Set.of()
         : Set.copyOf(alwaysInclude.attributes);

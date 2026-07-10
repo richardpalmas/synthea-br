@@ -15,6 +15,8 @@ public final class PatientEnrichmentResult {
   private final String debateLog;
   private final boolean finalized;
   private final String narrativeSummary;
+  private final RobustnessStats robustnessStats;
+  private final String writingPersona;
 
   /**
    * Creates a patient enrichment result.
@@ -30,7 +32,7 @@ public final class PatientEnrichmentResult {
       List<Map<String, Object>> flags,
       String debateLog,
       boolean finalized) {
-    this(patientId, appliedOperations, flags, debateLog, finalized, null);
+    this(patientId, appliedOperations, flags, debateLog, finalized, null, null, null);
   }
 
   /**
@@ -49,12 +51,59 @@ public final class PatientEnrichmentResult {
       String debateLog,
       boolean finalized,
       String narrativeSummary) {
+    this(patientId, appliedOperations, flags, debateLog, finalized, narrativeSummary, null, null);
+  }
+
+  /**
+   * Creates a patient enrichment result with narrative and robustness stats.
+   *
+   * @param patientId patient identifier
+   * @param appliedOperations successfully applied corrections
+   * @param flags unfixable issues flagged by personas
+   * @param debateLog full debate transcript
+   * @param finalized whether FinalizePatient was reached
+   * @param narrativeSummary human-readable PT-BR summary for HTML export
+   * @param robustnessStats parse/truncation counters for this patient
+   */
+  public PatientEnrichmentResult(String patientId,
+      List<Map<String, Object>> appliedOperations,
+      List<Map<String, Object>> flags,
+      String debateLog,
+      boolean finalized,
+      String narrativeSummary,
+      RobustnessStats robustnessStats) {
+    this(patientId, appliedOperations, flags, debateLog, finalized, narrativeSummary,
+        robustnessStats, null);
+  }
+
+  /**
+   * Creates a full patient enrichment result including writing persona.
+   *
+   * @param patientId patient identifier
+   * @param appliedOperations successfully applied corrections
+   * @param flags unfixable issues flagged by personas
+   * @param debateLog full debate transcript
+   * @param finalized whether FinalizePatient was reached
+   * @param narrativeSummary human-readable PT-BR summary for HTML export
+   * @param robustnessStats parse/truncation counters for this patient
+   * @param writingPersona narrative writing persona id (Story 8.2)
+   */
+  public PatientEnrichmentResult(String patientId,
+      List<Map<String, Object>> appliedOperations,
+      List<Map<String, Object>> flags,
+      String debateLog,
+      boolean finalized,
+      String narrativeSummary,
+      RobustnessStats robustnessStats,
+      String writingPersona) {
     this.patientId = patientId;
     this.appliedOperations = appliedOperations == null ? new ArrayList<>() : appliedOperations;
     this.flags = flags == null ? new ArrayList<>() : flags;
     this.debateLog = debateLog == null ? "" : debateLog;
     this.finalized = finalized;
     this.narrativeSummary = narrativeSummary;
+    this.robustnessStats = robustnessStats == null ? new RobustnessStats() : robustnessStats;
+    this.writingPersona = writingPersona;
   }
 
   /**
@@ -65,7 +114,20 @@ public final class PatientEnrichmentResult {
    */
   public PatientEnrichmentResult withNarrativeSummary(String summary) {
     return new PatientEnrichmentResult(
-        patientId, appliedOperations, flags, debateLog, finalized, summary);
+        patientId, appliedOperations, flags, debateLog, finalized, summary, robustnessStats,
+        writingPersona);
+  }
+
+  /**
+   * Returns a copy with writing persona id attached.
+   *
+   * @param personaId writing persona id
+   * @return result with writing persona
+   */
+  public PatientEnrichmentResult withWritingPersona(String personaId) {
+    return new PatientEnrichmentResult(
+        patientId, appliedOperations, flags, debateLog, finalized, narrativeSummary,
+        robustnessStats, personaId);
   }
 
   /**
@@ -120,5 +182,23 @@ public final class PatientEnrichmentResult {
    */
   public String getNarrativeSummary() {
     return narrativeSummary;
+  }
+
+  /**
+   * Returns parse/truncation robustness counters for this patient.
+   *
+   * @return robustness stats
+   */
+  public RobustnessStats getRobustnessStats() {
+    return robustnessStats;
+  }
+
+  /**
+   * Returns the writing persona id used for the narrative summary, when set.
+   *
+   * @return persona id or null
+   */
+  public String getWritingPersona() {
+    return writingPersona;
   }
 }

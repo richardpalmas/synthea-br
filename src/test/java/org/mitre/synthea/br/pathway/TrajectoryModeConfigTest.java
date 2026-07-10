@@ -27,6 +27,7 @@ public class TrajectoryModeConfigTest {
   public void buildPathPredicate_lifespan_allowsBreastCancerModule() {
     Config.set("br.generation.trajectory_mode", "lifespan");
     assertTrue(TrajectoryModeConfig.buildPathPredicate().test("breast_cancer"));
+    assertFalse(TrajectoryModeConfig.buildPathPredicate().test("breast_cancer_trajectory_br"));
   }
 
   @Test
@@ -35,6 +36,18 @@ public class TrajectoryModeConfigTest {
     Config.set("br.target_condition", "breast_cancer");
     assertTrue(TrajectoryModeConfig.buildPathPredicate().test("breast_cancer"));
     assertTrue(TrajectoryModeConfig.buildPathPredicate().test("breast_cancer_trajectory_br"));
+    assertTrue(TrajectoryModeConfig.forceInclude("breast_cancer_trajectory_br"));
+  }
+
+  @Test
+  public void getActiveMode_invalid_throwsClearError() {
+    Config.set("br.generation.trajectory_mode", "modo_invalido");
+    try {
+      TrajectoryModeConfig.getActiveMode();
+      fail("Expected IllegalArgumentException for invalid trajectory_mode");
+    } catch (IllegalArgumentException expected) {
+      assertTrue(expected.getMessage().contains("modo_invalido"));
+    }
   }
 
   @Test

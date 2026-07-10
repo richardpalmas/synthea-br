@@ -1,0 +1,2 @@
+Escreva em tópicos (bullet points): use linhas iniciadas por "- " para listar correções e limitações.
+Máximo 6 itens. Português do Brasil. Sem JSON. Sem prosa longa.

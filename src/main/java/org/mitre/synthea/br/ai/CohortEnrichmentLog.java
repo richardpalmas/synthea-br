@@ -26,6 +26,33 @@ public final class CohortEnrichmentLog {
     metadata.put("model", model);
     metadata.put("deterministic", deterministic);
     metadata.put("orchestration", "MAI-DxO");
+    metadata.put("json_parse_retries", 0);
+    metadata.put("truncation_continuations", 0);
+    metadata.put("persona_turns_skipped", 0);
+  }
+
+  /**
+   * Adds cohort-level robustness counters into metadata (Story 8.1).
+   *
+   * @param stats aggregated counters
+   */
+  public void addRobustnessStats(RobustnessStats stats) {
+    if (stats == null) {
+      return;
+    }
+    metadata.put("json_parse_retries",
+        asInt(metadata.get("json_parse_retries")) + stats.getJsonParseRetries());
+    metadata.put("truncation_continuations",
+        asInt(metadata.get("truncation_continuations")) + stats.getTruncationContinuations());
+    metadata.put("persona_turns_skipped",
+        asInt(metadata.get("persona_turns_skipped")) + stats.getPersonaTurnsSkipped());
+  }
+
+  private static int asInt(Object value) {
+    if (value instanceof Number) {
+      return ((Number) value).intValue();
+    }
+    return 0;
   }
 
   /**
@@ -44,6 +71,9 @@ public final class CohortEnrichmentLog {
     row.put("debateLog", result.getDebateLog());
     if (result.getNarrativeSummary() != null) {
       row.put("narrativeSummary", result.getNarrativeSummary());
+    }
+    if (result.getWritingPersona() != null) {
+      row.put("writingPersona", result.getWritingPersona());
     }
     patients.add(row);
   }

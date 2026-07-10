@@ -35,7 +35,7 @@
     padding: 0.85rem 1rem;
     margin: 0.5rem 0 0.75rem;
   }
-  .ai-summary { margin: 0.35rem 0 0; font-size: 0.95rem; }
+  .ai-summary { margin: 0.35rem 0 0; font-size: 0.95rem; white-space: pre-line; }
   .ai-meta { margin: 0; color: var(--muted); font-size: 0.85rem; }
   .meta, .hint { color: var(--muted); margin: 0.25rem 0; }
   main { max-width: 960px; margin: 0 auto; padding: 0 1rem 2rem; }

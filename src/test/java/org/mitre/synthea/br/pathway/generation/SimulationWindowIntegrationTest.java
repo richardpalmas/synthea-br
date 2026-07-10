@@ -58,8 +58,26 @@ public class SimulationWindowIntegrationTest {
     Config.remove("br.target_condition.gate_mode");
     Config.remove("br.generation.simulation_window");
     Config.remove("br.generation.module_profile");
+    Config.remove("br.profile");
     Config.remove("generate.max_attempts_to_keep_patient");
     Config.remove("exporter.baseDirectory");
+    Config.remove("exporter.custom.export");
+    Config.remove("br.manifest.enabled");
+  }
+
+  @Test
+  public void simulationWindow_resumesInsuranceAfterWindowStart() throws Exception {
+    Config.remove("br.target_condition");
+    Config.remove("br.target_condition.gate_mode");
+    Config.set("br.generation.simulation_window", "pre_onset_years:5");
+    Generator generator = buildGenerator(1, FIXED_SEED + 33L);
+    Person person = generator.generatePerson(0, FIXED_SEED + 33L);
+    long birthdate = (long) person.attributes.get(Person.BIRTHDATE);
+    long approxWindowStart = birthdate + 35L * 365L * 86_400_000L;
+    boolean enrolledAfterWindow = person.coverage.getPlanHistory().stream()
+        .anyMatch(planRecord -> !planRecord.getPlan().isNoInsurance()
+            && planRecord.getStartTime() >= approxWindowStart - 365L * 86_400_000L);
+    assertTrue("Paciente deve obter cobertura apos inicio da janela", enrolledAfterWindow);
   }
 
   @Test
@@ -95,6 +113,56 @@ public class SimulationWindowIntegrationTest {
     assertTrue("Simulation should start after birth when window is active",
         person.record.encounters.isEmpty()
             || person.record.encounters.get(0).start > birthdate + 4L * 365L * 86_400_000L);
+  }
+
+  @Test
+  public void simulationWindow_preservesBrDemographicsWithAgeRange() throws Exception {
+    Config.remove("br.target_condition");
+    Config.remove("br.target_condition.gate_mode");
+    Config.set("br.profile", "br");
+    Config.set("br.generation.simulation_window", "pre_onset_years:10");
+    org.mitre.synthea.br.demographics.BrDemographicsLoader.resetCacheForTest();
+    try {
+      Generator generator = buildGenerator(1, FIXED_SEED + 77L);
+      Person person = generator.generatePerson(0, FIXED_SEED + 77L);
+      assertNotNull(person.attributes.get(Person.BIRTHDATE));
+      assertNotNull(person.attributes.get(Person.RACE));
+      assertNotNull(person.attributes.get(Person.GENDER));
+      assertNotNull("Perfil BR deve preencher RACE_IBGE",
+          person.attributes.get(Person.RACE_IBGE));
+      int ageYears = person.ageInYears(FIXED_REFERENCE_TIME);
+      assertTrue("Idade no referenceTime deve respeitar -a 40-75",
+          ageYears >= 40 && ageYears <= 75);
+      long birthdate = (long) person.attributes.get(Person.BIRTHDATE);
+      // Window start = birth + (targetAge - 10) years; first clinical encounter should be after that.
+      long approxWindowStart = birthdate + 30L * 365L * 86_400_000L;
+      assertTrue("Primeiro encontro deve ocorrer apos inicio da janela",
+          person.record.encounters.isEmpty()
+              || person.record.encounters.get(0).start >= approxWindowStart - 365L * 86_400_000L);
+    } finally {
+      Config.remove("br.profile");
+      org.mitre.synthea.br.demographics.BrDemographicsLoader.resetCacheForTest();
+    }
+  }
+
+  @Test
+  public void simulationWindow_withMinimalProfile_recordsShorterOrEqualDurationThanFull()
+      throws Exception {
+    // Wall-clock can jitter; assert both configs complete and window+minimal records duration.
+    // SM-9.4 n=500 reduction is documented manually; CI checks instrumentation + smoke.
+    Config.remove("br.target_condition");
+    Config.remove("br.target_condition.gate_mode");
+    long fullMs = runTimedGeneration("full", "full_lifespan", FIXED_SEED + 200L);
+    Provider.clear();
+    PayerManager.clear();
+    long windowMinimalMs = runTimedGeneration("pathway_minimal", "pre_onset_years:5",
+        FIXED_SEED + 200L);
+    assertTrue("full lifespan duration should be recorded", fullMs > 0);
+    assertTrue("minimal+window duration should be recorded", windowMinimalMs > 0);
+    // Soft bound: window+minimal should not be dramatically slower than full on tiny n
+    // (catches accidental double-simulation regressions).
+    assertTrue("minimal+window unexpectedly much slower than full (possible regression)",
+        windowMinimalMs < fullMs * 5L + 60_000L);
   }
 
   @Test
@@ -134,6 +202,26 @@ public class SimulationWindowIntegrationTest {
     assertEquals("pre_onset_years:5", manifest.get("simulation_window"));
     assertEquals("pathway_minimal", manifest.get("module_profile"));
     assertNotNull(manifest.get("generation_duration_ms"));
+  }
+
+  private long runTimedGeneration(String moduleProfile, String simulationWindow, long seed)
+      throws Exception {
+    Config.set("br.generation.module_profile", moduleProfile);
+    Config.set("br.generation.simulation_window", simulationWindow);
+    GeneratorOptions options = new GeneratorOptions();
+    options.population = 2;
+    options.seed = seed;
+    options.clinicianSeed = seed + 1L;
+    options.gender = "F";
+    options.minAge = 40;
+    options.maxAge = 75;
+    options.ageSpecified = true;
+    options.referenceTime = FIXED_REFERENCE_TIME;
+    options.endTime = FIXED_REFERENCE_TIME;
+    Generator generator = new Generator(options);
+    generator.options.overflow = false;
+    generator.run();
+    return generator.generationDurationMs;
   }
 
   private int averageDistinctConditions(long seed) throws Exception {

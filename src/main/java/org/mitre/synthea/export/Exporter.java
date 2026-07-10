@@ -67,6 +67,12 @@ public abstract class Exporter {
   private static final List<Pair<Person, Long>> deferredExports =
           Collections.synchronizedList(new LinkedList<>());
 
+  /**
+   * Pre-pathway-focus person snapshot for HTML export (Story 9.4).
+   * Thread-local avoids polluting {@link Person#attributes} (JSONExporter safety).
+   */
+  private static final ThreadLocal<Person> HTML_SOURCE_PERSON = new ThreadLocal<>();
+
   private static final ConcurrentHashMap<Path, PrintWriter> fileWriters =
           new ConcurrentHashMap<Path, PrintWriter>();
 
@@ -236,28 +242,45 @@ public abstract class Exporter {
       if (options.yearsOfHistory > 0) {
         person = filterForExport(person, options.yearsOfHistory, stopTime);
       }
+      // Capture pre-pathway-focus person for HTML (Story 9.4): pesquisador/full need
+      // out-of-pathway events; orientador re-filters inside HtmlExporter.
+      Person htmlSourcePerson = person;
       if (PathwayExportFilter.isEnabled()) {
         person = PathwayExportFilter.filterForExport(person);
       }
       if (!person.alive(stopTime)) {
         filterAfterDeath(person);
       }
-      if (person.hasMultipleRecords) {
-        int i = 0;
-        for (String key : person.records.keySet()) {
-          person.record = person.records.get(key);
-          if (person.attributes.get(Person.ENTITY) != null) {
-            Entity entity = (Entity) person.attributes.get(Person.ENTITY);
-            Seed seed = entity.seedAt(person.record.lastEncounterTime());
-            Variant variant = seed.selectVariant(person);
-            person.attributes.putAll(variant.demographicAttributesForPerson());
+      // Keep HTML snapshot consistent with death filtering when it is a distinct object.
+      if (htmlSourcePerson != person && !htmlSourcePerson.alive(stopTime)) {
+        filterAfterDeath(htmlSourcePerson);
+      }
+      HTML_SOURCE_PERSON.set(htmlSourcePerson);
+      try {
+        if (person.hasMultipleRecords) {
+          int i = 0;
+          for (String key : person.records.keySet()) {
+            person.record = person.records.get(key);
+            // Keep HTML pre-focus snapshot on the same record key (Story 9.4).
+            if (htmlSourcePerson != person && htmlSourcePerson.hasMultipleRecords
+                && htmlSourcePerson.records.containsKey(key)) {
+              htmlSourcePerson.record = htmlSourcePerson.records.get(key);
+            }
+            if (person.attributes.get(Person.ENTITY) != null) {
+              Entity entity = (Entity) person.attributes.get(Person.ENTITY);
+              Seed seed = entity.seedAt(person.record.lastEncounterTime());
+              Variant variant = seed.selectVariant(person);
+              person.attributes.putAll(variant.demographicAttributesForPerson());
+            }
+            boolean exported = exportRecord(person, Integer.toString(i), stopTime, options);
+            wasExported = wasExported || exported;
+            i++;
           }
-          boolean exported = exportRecord(person, Integer.toString(i), stopTime, options);
-          wasExported = wasExported || exported;
-          i++;
+        } else {
+          wasExported = exportRecord(person, "", stopTime, options);
         }
-      } else {
-        wasExported = exportRecord(person, "", stopTime, options);
+      } finally {
+        HTML_SOURCE_PERSON.remove();
       }
     }
     return wasExported;
@@ -285,7 +308,7 @@ public abstract class Exporter {
    */
   private static boolean exportRecord(Person person, String fileTag, long stopTime,
           ExporterRuntimeOptions options) {
-    boolean wasExported = true;
+    final boolean[] wasExported = { true };
     if (options.terminologyService) {
       // Resolve any coded values within the record that are specified using a ValueSet URI.
       ValueSetCodeResolver valueSetCodeResolver = new ValueSetCodeResolver(person);
@@ -327,118 +350,112 @@ public abstract class Exporter {
       }
     }
     if (Config.getAsBoolean("exporter.fhir.export")) {
-      File outDirectory = getOutputFolder("fhir", person);
-      org.hl7.fhir.r4.model.Bundle bundle = FhirR4.convertToFHIR(person, stopTime);
-
-      if (options.flexporterMappings != null) {
-        FlexporterJavascriptContext fjContext = null;
-
-        for (Mapping mapping : options.flexporterMappings) {
-          if (FhirPathUtils.appliesToBundle(bundle, mapping.applicability, mapping.variables)) {
-            if (fjContext == null) {
-              // only set this the first time it is actually used
-              // TODO: figure out how to silence the truffle warnings
-              fjContext = new FlexporterJavascriptContext();
-            }
-            bundle = Actions.applyMapping(bundle, mapping, person, fjContext);
-          }
-        }
-      }
-
-      IParser parser = FhirR4.getContext().newJsonParser();
-      if (Config.getAsBoolean("exporter.fhir.bulk_data")) {
-        parser.setPrettyPrint(false);
-        for (org.hl7.fhir.r4.model.Bundle.BundleEntryComponent entry : bundle.getEntry()) {
-          String filename = entry.getResource().getResourceType().toString() + ".ndjson";
-          Path outFilePath = outDirectory.toPath().resolve(filename);
-          String entryJson = parser.encodeResourceToString(entry.getResource());
-          appendToFile(outFilePath, entryJson);
-        }
-      } else {
-        parser.setPrettyPrint(true);
-        String bundleJson = parser.encodeResourceToString(bundle);
-        Path outFilePath = outDirectory.toPath().resolve(filename(person, fileTag, "json"));
-        writeNewFile(outFilePath, bundleJson);
-      }
-      FhirGroupExporterR4.addPatient((String) person.attributes.get(Person.ID));
+      runExportStep("fhir", () -> exportFhirR4(person, fileTag, stopTime, options));
     }
     if (Config.getAsBoolean("exporter.ccda.export")) {
-      String ccdaXml = CCDAExporter.export(person, stopTime);
-      File outDirectory = getOutputFolder("ccda", person);
-      Path outFilePath = outDirectory.toPath().resolve(filename(person, fileTag, "xml"));
-      writeNewFile(outFilePath, ccdaXml);
+      runExportStep("ccda", () -> {
+        String ccdaXml = CCDAExporter.export(person, stopTime);
+        File outDirectory = getOutputFolder("ccda", person);
+        Path outFilePath = outDirectory.toPath().resolve(filename(person, fileTag, "xml"));
+        writeNewFile(outFilePath, ccdaXml);
+      });
     }
     if (Config.getAsBoolean("exporter.json.export")) {
-      String json = JSONExporter.export(person);
-      File outDirectory = getOutputFolder("json", person);
-      Path outFilePath = outDirectory.toPath().resolve(filename(person, fileTag, "json"));
-      writeNewFile(outFilePath, json);
+      runExportStep("json", () -> {
+        String json = JSONExporter.export(person);
+        File outDirectory = getOutputFolder("json", person);
+        Path outFilePath = outDirectory.toPath().resolve(filename(person, fileTag, "json"));
+        writeNewFile(outFilePath, json);
+      });
     }
     if (Config.getAsBoolean("exporter.csv.export")) {
-      try {
-        CSVExporter.getInstance().export(person, stopTime);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      runExportStep("csv", () -> {
+        try {
+          CSVExporter.getInstance().export(person, stopTime);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
     }
     if (Config.getAsBoolean("exporter.bfd.export")) {
-      try {
-        BB2RIFExporter exporter = BB2RIFExporter.getInstance();
-        wasExported = exporter.export(person, stopTime, options.yearsOfHistory);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      runExportStep("bfd", () -> {
+        try {
+          BB2RIFExporter exporter = BB2RIFExporter.getInstance();
+          if (!exporter.export(person, stopTime, options.yearsOfHistory)) {
+            wasExported[0] = false;
+          }
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
     }
     if (Config.getAsBoolean("exporter.cpcds.export")) {
-      try {
-        CPCDSExporter.getInstance().export(person, stopTime);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      runExportStep("cpcds", () -> {
+        try {
+          CPCDSExporter.getInstance().export(person, stopTime);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
     }
     if (Config.getAsBoolean("exporter.text.export")) {
-      try {
-        TextExporter.exportAll(person, fileTag, stopTime);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      runExportStep("text", () -> {
+        try {
+          TextExporter.exportAll(person, fileTag, stopTime);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
     }
     if (Config.getAsBoolean("exporter.html.export")) {
-      HtmlExporter.getInstance().appendPatient(person, stopTime);
+      runExportStep("html", () -> {
+        Person htmlPerson = resolveHtmlSourcePerson(person);
+        HtmlExporter.getInstance().appendPatient(htmlPerson, stopTime);
+      });
     }
     if (Config.getAsBoolean("exporter.text.per_encounter_export")) {
-      try {
-        TextExporter.exportEncounter(person, stopTime);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      runExportStep("text_per_encounter", () -> {
+        try {
+          TextExporter.exportEncounter(person, stopTime);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
     }
     if (Config.getAsBoolean("exporter.symptoms.csv.export")) {
-      try {
-        SymptomCSVExporter.getInstance().export(person, stopTime);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      runExportStep("symptoms_csv", () -> {
+        try {
+          SymptomCSVExporter.getInstance().export(person, stopTime);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
     }
     if (Config.getAsBoolean("exporter.symptoms.text.export")) {
-      try {
-        SymptomTextExporter.exportAll(person, fileTag, stopTime);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      runExportStep("symptoms_text", () -> {
+        try {
+          SymptomTextExporter.exportAll(person, fileTag, stopTime);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
     }
     if (Config.getAsBoolean("exporter.cdw.export")) {
-      try {
-        CDWExporter.getInstance().export(person, stopTime);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      runExportStep("cdw", () -> {
+        try {
+          CDWExporter.getInstance().export(person, stopTime);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
     }
     if (Config.getAsBoolean("exporter.clinical_note.export")) {
-      File outDirectory = getOutputFolder("notes", person);
-      Path outFilePath = outDirectory.toPath().resolve(filename(person, fileTag, "txt"));
-      String consolidatedNotes = ClinicalNoteExporter.export(person);
-      writeNewFile(outFilePath, consolidatedNotes);
+      runExportStep("clinical_note", () -> {
+        File outDirectory = getOutputFolder("notes", person);
+        Path outFilePath = outDirectory.toPath().resolve(filename(person, fileTag, "txt"));
+        String consolidatedNotes = ClinicalNoteExporter.export(person);
+        writeNewFile(outFilePath, consolidatedNotes);
+      });
     }
 
     if (Config.getAsBoolean("exporter.custom.export", true)
@@ -467,7 +484,43 @@ public abstract class Exporter {
         e.printStackTrace();
       }
     }
-    return wasExported;
+    return wasExported[0];
+  }
+
+  private static void exportFhirR4(Person person, String fileTag, long stopTime,
+      ExporterRuntimeOptions options) {
+    File outDirectory = getOutputFolder("fhir", person);
+    org.hl7.fhir.r4.model.Bundle bundle = FhirR4.convertToFHIR(person, stopTime);
+
+    if (options.flexporterMappings != null) {
+      FlexporterJavascriptContext fjContext = null;
+
+      for (Mapping mapping : options.flexporterMappings) {
+        if (FhirPathUtils.appliesToBundle(bundle, mapping.applicability, mapping.variables)) {
+          if (fjContext == null) {
+            fjContext = new FlexporterJavascriptContext();
+          }
+          bundle = Actions.applyMapping(bundle, mapping, person, fjContext);
+        }
+      }
+    }
+
+    IParser parser = FhirR4.getContext().newJsonParser();
+    if (Config.getAsBoolean("exporter.fhir.bulk_data")) {
+      parser.setPrettyPrint(false);
+      for (org.hl7.fhir.r4.model.Bundle.BundleEntryComponent entry : bundle.getEntry()) {
+        String filename = entry.getResource().getResourceType().toString() + ".ndjson";
+        Path outFilePath = outDirectory.toPath().resolve(filename);
+        String entryJson = parser.encodeResourceToString(entry.getResource());
+        appendToFile(outFilePath, entryJson);
+      }
+    } else {
+      parser.setPrettyPrint(true);
+      String bundleJson = parser.encodeResourceToString(bundle);
+      Path outFilePath = outDirectory.toPath().resolve(filename(person, fileTag, "json"));
+      writeNewFile(outFilePath, bundleJson);
+    }
+    FhirGroupExporterR4.addPatient((String) person.attributes.get(Person.ID));
   }
 
   /**
@@ -551,9 +604,39 @@ public abstract class Exporter {
    * Clears the HTML cohort accumulator before a new generation run when HTML export is enabled.
    */
   public static void prepareHtmlCohortExport() {
+    ExportFailureTracker.reset();
     if (Config.getAsBoolean("exporter.html.export")) {
       HtmlExporter.getInstance().reset();
     }
+  }
+
+  /**
+   * Runs one export step, recording failures without aborting subsequent exporters.
+   *
+   * @param format export format key for failure tracking
+   * @param step export action
+   */
+  static void runExportStep(String format, Runnable step) {
+    try {
+      step.run();
+    } catch (Exception e) {
+      ExportFailureTracker.recordFailure(format);
+      e.printStackTrace();
+    }
+  }
+
+  /**
+   * Returns the person snapshot for HTML export. When pathway focus filtered the
+   * clinical record for CSV/FHIR, HTML still needs the pre-focus snapshot so
+   * {@code pesquisador}/{@code full} modes can show out-of-pathway events (Story 9.4).
+   * Uses a thread-local set in {@link #export} — never stored on {@link Person#attributes}.
+   *
+   * @param person possibly pathway-filtered person
+   * @return HTML source person (pre-focus when available)
+   */
+  private static Person resolveHtmlSourcePerson(Person person) {
+    Person stashed = HTML_SOURCE_PERSON.get();
+    return stashed != null ? stashed : person;
   }
 
   /**
@@ -561,6 +644,7 @@ public abstract class Exporter {
    * (E.g., an aggregate statistical exporter)
    *
    * @param generator Generator that generated the patients
+   * @param options Runtime exporter options
    */
   public static void runPostCompletionExports(Generator generator, ExporterRuntimeOptions options) {
 

@@ -74,6 +74,35 @@
         </button>
       </section>
 
+      <section id="trajectory-section" class="hidden">
+        <h2>Trajetória clínica focada</h2>
+        <p class="help" id="trajectory-section-help"></p>
+        <label class="checkbox">
+          <input type="checkbox" id="pathwayFocus" name="pathwayFocus">
+          Foco na trajetória (<code>br.pathway.focus</code>)
+        </label>
+        <label>
+          Modo HTML
+          <select id="htmlPathwayMode" name="htmlPathwayMode"></select>
+        </label>
+        <label>
+          Perfil de módulos
+          <select id="moduleProfile" name="moduleProfile"></select>
+        </label>
+        <label>
+          Modo de trajetória
+          <select id="trajectoryMode" name="trajectoryMode"></select>
+        </label>
+        <label>
+          Janela de simulação
+          <select id="simulationWindow" name="simulationWindow"></select>
+        </label>
+        <label>
+          Arquétipo de trajetória
+          <select id="pathwayArchetype" name="pathwayArchetype"></select>
+        </label>
+      </section>
+
       <section>
         <h2>Exportações</h2>
         <div id="export-options"></div>
@@ -115,7 +144,11 @@
       <div id="status-links" class="hidden">
         <p><a id="link-output" href="#" target="_blank" rel="noopener">Pasta de output</a></p>
         <p id="manifest-line" class="hidden">Manifest: <code>manifest.json</code> gerado.</p>
+        <p id="trajectory-summary-line" class="hidden"><strong>Trajetória:</strong> <span id="trajectory-summary"></span></p>
+        <p id="plausibility-line" class="hidden"><a id="link-plausibility" href="#" target="_blank" rel="noopener">Abrir relatório de plausibilidade</a></p>
         <p id="html-line" class="hidden"><a id="link-html" href="#" target="_blank" rel="noopener">Abrir HTML narrativo</a></p>
+        <p id="html-missing-line" class="errors hidden"></p>
+        <p id="export-partial-line" class="errors hidden"></p>
       </div>
       <pre id="log-tail" aria-live="polite"></pre>
     </section>

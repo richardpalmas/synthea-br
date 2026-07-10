@@ -25,6 +25,9 @@ public final class HealthRecordScan {
    * @return patient ID string
    */
   public static String patientId(Person person) {
+    if (person == null || person.attributes == null) {
+      return "unknown";
+    }
     Object id = person.attributes.get(Person.ID);
     if (id != null) {
       return String.valueOf(id);
@@ -76,17 +79,20 @@ public final class HealthRecordScan {
   }
 
   /**
-   * Check whether an entry matches a clinical code (type field or codes list).
+   * Check whether an entry matches a clinical code.
+   *
+   * <p>When coded concepts are available on the entry, matching requires exact system+code.
+   * The {@code type} field is used only as a legacy fallback for entries without coded concepts.
    *
    * @param entry health record entry
    * @param clinicalCode expected code
    * @return true when matched
    */
   public static boolean matchesCode(Entry entry, ClinicalCode clinicalCode) {
-    if (clinicalCode.getCode().equals(entry.type)) {
-      return true;
+    if (entry.codes != null && !entry.codes.isEmpty()) {
+      return entry.containsCode(clinicalCode.getCode(), clinicalCode.getSystem());
     }
-    return entry.containsCode(clinicalCode.getCode(), clinicalCode.getSystem());
+    return clinicalCode.getCode().equals(entry.type);
   }
 
   /**

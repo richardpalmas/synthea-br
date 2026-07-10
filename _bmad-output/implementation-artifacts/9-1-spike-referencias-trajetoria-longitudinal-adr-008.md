@@ -4,7 +4,7 @@ baseline_commit: c1247106c03fa57ace54d269af98c7833f4006a6
 
 # Story 9.1: Spike — Referências de Trajetória Longitudinal + ADR-008
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -171,3 +171,8 @@ Nenhum — story documental, sem execução de `./gradlew check` (ver Testing St
 
 - 2026-07-08: Story 9.1 implementada e movida para `review` — ADR-008 aceito com todas as
   seções exigidas pelos ACs (spike documental, sem código de produção).
+- 2026-07-10: CR — patches ADR (citações, tensão OncoSynth, invariantes schema, sequenciamento, path PRD) → done.
+
+### Senior Developer Review (AI)
+
+**Date:** 2026-07-10 · **Outcome:** approve → done

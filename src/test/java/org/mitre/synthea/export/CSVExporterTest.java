@@ -22,6 +22,7 @@ import org.mitre.synthea.engine.Generator.GeneratorOptions;
 import org.mitre.synthea.export.Exporter.ExporterRuntimeOptions;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.SimpleCSV;
+import org.mitre.synthea.world.agents.Person;
 
 public class CSVExporterTest {
   /**
@@ -54,6 +55,11 @@ public class CSVExporterTest {
     Config.set("exporter.csv.max_lines_per_file", "");
     Config.set("exporter.csv.append_mode", "false");
     Config.set("exporter.csv.file_number_digits", "");
+    Config.remove("br.generation.module_profile");
+    Config.remove("br.generation.simulation_window");
+    Config.remove("br.target_condition");
+    Config.remove("br.target_condition.gate_mode");
+    Config.remove("br.pathway.focus");
   }
 
   @Test
@@ -487,6 +493,25 @@ public class CSVExporterTest {
       fail("CSV exporter should not throw an exception when "
              + "only included files are set");
     }
+  }
+
+  @Test
+  public void exportWithoutGbdMetricsDoesNotThrow() throws Exception {
+    Config.set("br.generation.module_profile", "pathway_minimal");
+    CSVExporter.getInstance().init();
+
+    GeneratorOptions generatorOpts = new GeneratorOptions();
+    generatorOpts.population = 1;
+    generatorOpts.seed = 42L;
+    Generator generator = new Generator(generatorOpts);
+    generator.options.overflow = false;
+    Person person = generator.generatePerson(0);
+    long stopTime = person.lastUpdated + generator.timestep;
+
+    CSVExporter.getInstance().export(person, stopTime);
+
+    File patientsCsv = exportDir.toPath().resolve("csv/patients.csv").toFile();
+    assertTrue("patients.csv should be written without GBD metrics", patientsCsv.exists());
   }
 
   @Test

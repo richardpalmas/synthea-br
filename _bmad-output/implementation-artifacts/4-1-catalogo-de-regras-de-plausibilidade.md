@@ -4,7 +4,7 @@ baseline_commit: c1247106c03fa57ace54d269af98c7833f4006a6
 
 # Story 4.1: Catálogo de Regras de Plausibilidade
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -75,6 +75,13 @@ para definir e evoluir critérios de qualidade de forma rastreável, independent
   - [x] Subtask 5.1: Criar `src/test/java/org/mitre/synthea/br/plausibility/Plaus001Test.java` (e equivalentes para 002/003) — construir `Person`/`HealthRecord` manualmente via API existente (`person.record.encounterStart(...)`, `encounter.conditions.add(...)`, etc.) para os casos de violação e conformidade
   - [x] Subtask 5.2: Teste de `PlausibilityCatalog.evaluateAll` agregando múltiplas violações de um mesmo paciente fixture
   - [x] Subtask 5.3: Rodar `./gradlew check`
+
+### Review Findings
+
+- [x] [Review][Patch] Evitar duplicidade entre `PLAUS-001` e `PLAUS-003` para quimioterapia sem diagnóstico — aplicar decisão: `PLAUS-001` cobre procedimentos; `PLAUS-003` cobre medicações, sem dupla contagem por mesmo evento clínico.
+- [x] [Review][Patch] Ajustar matching para priorizar `system+code` e usar fallback por `type` apenas sem `codes` — aplicar decisão para reduzir falsos positivos por colisão de terminologia mantendo compatibilidade com registros incompletos.
+- [x] [Review][Patch] Reclassificar biópsia de mama fora de `treatmentProcedures` para reduzir falso positivo nas regras de tratamento [`src/main/resources/br/plausibility/catalog_breast_cancer.json`]
+- [x] [Review][Patch] Validar IDs duplicados no parser do catálogo e falhar explicitamente em vez de sobrescrever silenciosamente [`src/main/java/org/mitre/synthea/br/plausibility/PlausibilityCatalogLoader.java`]
 
 ## Dev Notes
 

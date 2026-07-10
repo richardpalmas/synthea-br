@@ -4,7 +4,7 @@ baseline_commit: c1247106c03fa57ace54d269af98c7833f4006a6
 
 # Story 5.2: Metadados de Proveniência no Export
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -143,3 +143,17 @@ Composer (Cursor)
 ### Change Log
 
 - 2026-07-08: Story 5.2 — metadados de proveniência no manifest.json e documentação de citação acadêmica.
+- 2026-07-10: CR — docs AC #6 (Bundle sem Provenance), resolve resiliente, testes com serializeNulls/version/commit, isolamento Config.
+
+### Senior Developer Review (AI)
+
+**Date:** 2026-07-10
+**Outcome:** approve → done
+
+| ID | Finding | Action |
+|----|---------|--------|
+| 1 | AC #6 não documentada para pesquisador | patch ✓ |
+| 2 | Config BR não isolado nos testes | patch ✓ |
+| 3 | resolveConfigured pode abortar manifest | patch ✓ |
+| 4 | Asserts fracos version/null JSON | patch ✓ |
+| 5 | generation_duration_ms condicional | defer |

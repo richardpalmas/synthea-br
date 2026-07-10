@@ -20,25 +20,59 @@ public final class AiNarrativeSummarizer {
   }
 
   /**
-   * Summarizes enrichment actions for one patient using the same LLM client.
+   * Summarizes enrichment actions for one patient using the default narrative style.
    *
    * @param client LLM client from the enrichment run
    * @param result patient enrichment audit
    * @return narrative summary in Portuguese
    */
   public static String summarizePatient(LlmClient client, PatientEnrichmentResult result) {
+    return summarizePatient(client, result, NarrativeWritingPersona.NARRATIVE, null);
+  }
+
+  /**
+   * Summarizes enrichment actions for one patient with a writing persona.
+   *
+   * @param client LLM client from the enrichment run
+   * @param result patient enrichment audit
+   * @param persona writing style persona
+   * @return narrative summary in Portuguese
+   */
+  public static String summarizePatient(LlmClient client, PatientEnrichmentResult result,
+      NarrativeWritingPersona persona) {
+    return summarizePatient(client, result, persona, null);
+  }
+
+  /**
+   * Summarizes enrichment with optional demographic context (for bias testing).
+   *
+   * @param client LLM client
+   * @param result patient enrichment audit
+   * @param persona writing style
+   * @param demographicBlock optional demographic prompt fragment (may be null)
+   * @return narrative summary in Portuguese
+   */
+  public static String summarizePatient(LlmClient client, PatientEnrichmentResult result,
+      NarrativeWritingPersona persona, String demographicBlock) {
     if (result.getAppliedOperations().isEmpty() && result.getFlags().isEmpty()) {
       return "Nenhuma inconsistência clínica, regional ou de perfil exigiu correção neste paciente.";
     }
     if (result.getAppliedOperations().isEmpty()) {
       return fallbackPatientSummary(result);
     }
-    String userPrompt = "Paciente: " + result.getPatientId() + "\n"
+    NarrativeWritingPersona style = persona == null
+        ? NarrativeWritingPersona.NARRATIVE : persona;
+    String userPrompt = "";
+    if (demographicBlock != null && !demographicBlock.isEmpty()) {
+      userPrompt += demographicBlock + "\n";
+    }
+    userPrompt += "Paciente: " + result.getPatientId() + "\n"
         + "Correções aplicadas: " + GSON.toJson(result.getAppliedOperations()) + "\n"
         + "Limitações sinalizadas: " + GSON.toJson(result.getFlags()) + "\n"
         + "Debate finalizado: " + result.isFinalized();
     try {
-      String raw = client.complete(loadPrompt("narrative_patient_summary"), userPrompt);
+      String raw = client.complete(composeSystemPrompt("narrative_patient_summary", style),
+          userPrompt);
       return sanitizeNarrative(raw, fallbackPatientSummary(result));
     } catch (LlmException ex) {
       System.err.println("AiNarrativeSummarizer: falha no resumo do paciente "
@@ -55,6 +89,19 @@ public final class AiNarrativeSummarizer {
    * @return cohort narrative summary in Portuguese
    */
   public static String summarizeCohort(LlmClient client, CohortEnrichmentLog log) {
+    return summarizeCohort(client, log, NarrativeWritingPersona.NARRATIVE);
+  }
+
+  /**
+   * Summarizes cohort-level enrichment with a writing persona.
+   *
+   * @param client LLM client
+   * @param log cohort log
+   * @param persona writing style
+   * @return cohort narrative summary
+   */
+  public static String summarizeCohort(LlmClient client, CohortEnrichmentLog log,
+      NarrativeWritingPersona persona) {
     List<Map<String, Object>> patients = log.getPatients();
     if (patients.isEmpty()) {
       return "Nenhum paciente foi submetido ao enriquecimento por IA nesta execução.";
@@ -71,18 +118,36 @@ public final class AiNarrativeSummarizer {
       return fallbackCohortSummary(log, appliedTotal, flagTotal);
     }
 
+    NarrativeWritingPersona style = persona == null
+        ? NarrativeWritingPersona.NARRATIVE : persona;
     String userPrompt = "Metadados: " + GSON.toJson(log.getMetadata()) + "\n"
         + "Pacientes enriquecidos: " + patients.size() + "\n"
         + "Total de correções aplicadas: " + appliedTotal + "\n"
         + "Total de limitações sinalizadas: " + flagTotal + "\n"
         + "Resumo por paciente: " + GSON.toJson(patients);
     try {
-      String raw = client.complete(loadPrompt("narrative_cohort_summary"), userPrompt);
+      String raw = client.complete(composeSystemPrompt("narrative_cohort_summary", style),
+          userPrompt);
       return sanitizeNarrative(raw, fallbackCohortSummary(log, appliedTotal, flagTotal));
     } catch (LlmException ex) {
       System.err.println("AiNarrativeSummarizer: falha no resumo da cohort: " + ex.getMessage());
       return fallbackCohortSummary(log, appliedTotal, flagTotal);
     }
+  }
+
+  /**
+   * Composes base narrative instructions with a writing-style persona overlay.
+   *
+   * @param basePromptName resource name without path/extension
+   * @param persona writing persona
+   * @return combined system prompt
+   */
+  static String composeSystemPrompt(String basePromptName, NarrativeWritingPersona persona) {
+    NarrativeWritingPersona style = persona == null
+        ? NarrativeWritingPersona.NARRATIVE : persona;
+    String base = loadPrompt(basePromptName);
+    return base + "\n\nInstrução de estilo (" + style.getId() + "):\n"
+        + style.loadStylePrompt();
   }
 
   private static String fallbackPatientSummary(PatientEnrichmentResult result) {
@@ -153,7 +218,10 @@ public final class AiNarrativeSummarizer {
     if (text.startsWith("{") && text.endsWith("}")) {
       return fallback;
     }
-    text = text.replaceAll("\\s+", " ").trim();
+    // Preserve newlines for bullet_points / abcde personas; collapse spaces/tabs only.
+    text = text.replaceAll("[ \\t\\x0B\\f\\r]+", " ");
+    text = text.replaceAll(" *\\n *", "\n");
+    text = text.replaceAll("\\n{3,}", "\n\n").trim();
     return text.isEmpty() ? fallback : text;
   }
 

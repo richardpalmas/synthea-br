@@ -400,6 +400,73 @@
     "Diagnose Hormone Receptors": {
       "type": "CallSubmodule",
       "submodule": "breast_cancer/hormone_diagnosis",
+      "direct_transition": "Staging Imaging Studies"
+    },
+    "Staging Imaging Studies": {
+      "type": "CallSubmodule",
+      "submodule": "breast_cancer/staging_imaging_breast",
+      "direct_transition": "Archetype TNM Override"
+    },
+    "Archetype TNM Override": {
+      "type": "Simple",
+      "conditional_transition": [
+        {
+          "transition": "Set Remission TNM T",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "remission"
+          }
+        },
+        {
+          "transition": "Set Progression TNM T",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "progression"
+          }
+        },
+        {
+          "transition": "Staging"
+        }
+      ]
+    },
+    "Set Remission TNM T": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_T",
+      "value": "T2",
+      "direct_transition": "Set Remission TNM N"
+    },
+    "Set Remission TNM N": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_N",
+      "value": "N1",
+      "direct_transition": "Set Remission TNM M"
+    },
+    "Set Remission TNM M": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_M",
+      "value": "M0",
+      "direct_transition": "Staging"
+    },
+    "Set Progression TNM T": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_T",
+      "value": "T3",
+      "direct_transition": "Set Progression TNM N"
+    },
+    "Set Progression TNM N": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_N",
+      "value": "N2",
+      "direct_transition": "Set Progression TNM M"
+    },
+    "Set Progression TNM M": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_M",
+      "value": "M0",
       "direct_transition": "Staging"
     },
     "Staging": {
@@ -598,14 +665,27 @@
     },
     "Stage III Treatment": {
       "type": "Simple",
-      "distributed_transition": [
+      "conditional_transition": [
         {
           "transition": "Treatment Successful",
-          "distribution": 0.72
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "remission"
+          }
         },
         {
           "transition": "Treatment Unsuccessful",
-          "distribution": 0.28
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "progression"
+          }
+        },
+        {
+          "transition": "Stage III Treatment Random"
         }
       ],
       "remarks": [
@@ -615,6 +695,19 @@
         "Stage 3: Relative survival rate of 72 percent. Many women with this stage breast cancer are treated successfully.",
         "Stage 4: Relative survival rate of 22 percent. Many different treatment options are available:",
         "https://www.medicalnewstoday.com/articles/316867.php"
+      ]
+    },
+    "Stage III Treatment Random": {
+      "type": "Simple",
+      "distributed_transition": [
+        {
+          "transition": "Treatment Successful",
+          "distribution": 0.72
+        },
+        {
+          "transition": "Treatment Unsuccessful",
+          "distribution": 0.28
+        }
       ]
     },
     "Nonaggressive": {
@@ -848,14 +941,18 @@
     },
     "Stage II Treatment": {
       "type": "Simple",
-      "distributed_transition": [
+      "conditional_transition": [
         {
           "transition": "Treatment Successful",
-          "distribution": 0.93
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "remission"
+          }
         },
         {
-          "transition": "Treatment Unsuccessful",
-          "distribution": 0.07
+          "transition": "Stage II Treatment Random"
         }
       ],
       "remarks": [
@@ -865,6 +962,19 @@
         "Stage 3: Relative survival rate of 72 percent. Many women with this stage breast cancer are treated successfully.",
         "Stage 4: Relative survival rate of 22 percent. Many different treatment options are available:",
         "https://www.medicalnewstoday.com/articles/316867.php"
+      ]
+    },
+    "Stage II Treatment Random": {
+      "type": "Simple",
+      "distributed_transition": [
+        {
+          "transition": "Treatment Successful",
+          "distribution": 0.93
+        },
+        {
+          "transition": "Treatment Unsuccessful",
+          "distribution": 0.07
+        }
       ]
     },
     "End Initial Follow-Up Doctor Visit": {
@@ -1822,7 +1932,113 @@
     },
     "Post-Treatment Surveillance": {
       "type": "Simple",
-      "direct_transition": "Initialize Initial Follow-Up Counter"
+      "conditional_transition": [
+        {
+          "transition": "Delay Before Metastatic Progression",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "progression"
+          }
+        },
+        {
+          "transition": "Initialize Initial Follow-Up Counter"
+        }
+      ]
+    },
+    "Delay Before Metastatic Progression": {
+      "type": "Delay",
+      "range": {
+        "low": 4,
+        "high": 8,
+        "unit": "months"
+      },
+      "direct_transition": "Metastatic Progression Encounter"
+    },
+    "Metastatic Progression Encounter": {
+      "type": "Encounter",
+      "encounter_class": "ambulatory",
+      "reason": "breast_cancer_condition",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "185347001",
+          "display": "Encounter for problem (procedure)"
+        }
+      ],
+      "direct_transition": "Progression Chest CT"
+    },
+    "Progression Chest CT": {
+      "type": "Procedure",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "418891003",
+          "display": "Computed tomography of chest and abdomen (procedure)"
+        }
+      ],
+      "duration": {
+        "low": 20,
+        "high": 60,
+        "unit": "minutes"
+      },
+      "reason": "breast_cancer_condition",
+      "direct_transition": "Progression PET CT"
+    },
+    "Progression PET CT": {
+      "type": "Procedure",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "78899008",
+          "display": "Positron emission tomography (procedure)"
+        }
+      ],
+      "duration": {
+        "low": 45,
+        "high": 90,
+        "unit": "minutes"
+      },
+      "reason": "breast_cancer_condition",
+      "direct_transition": "Pulmonary Metastasis Onset"
+    },
+    "Pulmonary Metastasis Onset": {
+      "type": "ConditionOnset",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "94222008",
+          "display": "Secondary malignant neoplasm of lung (disorder)"
+        }
+      ],
+      "assign_to_attribute": "breast_cancer_metastasis",
+      "direct_transition": "End Metastatic Progression Encounter"
+    },
+    "End Metastatic Progression Encounter": {
+      "type": "EncounterEnd",
+      "direct_transition": "Enable Progression Hospice"
+    },
+    "Enable Progression Hospice": {
+      "type": "SetAttribute",
+      "attribute": "hospice",
+      "value": true,
+      "direct_transition": "Progression Hospice Reason"
+    },
+    "Progression Hospice Reason": {
+      "type": "SetAttribute",
+      "attribute": "hospice_reason",
+      "value_attribute": "breast_cancer_condition",
+      "direct_transition": "Impending Death from Progression"
+    },
+    "Impending Death from Progression": {
+      "type": "Death",
+      "referenced_by_attribute": "breast_cancer_condition",
+      "range": {
+        "low": 2,
+        "high": 16,
+        "unit": "weeks"
+      }
     },
     "Age 85-140": {
       "type": "Delay",

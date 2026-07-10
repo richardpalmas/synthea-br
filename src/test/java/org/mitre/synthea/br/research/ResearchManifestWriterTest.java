@@ -2,6 +2,7 @@ package org.mitre.synthea.br.research;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.gson.Gson;
@@ -30,6 +31,7 @@ import org.mitre.synthea.engine.Generator.GeneratorOptions;
 import org.mitre.synthea.export.Exporter;
 import org.mitre.synthea.export.Exporter.ExporterRuntimeOptions;
 import org.mitre.synthea.helpers.Config;
+import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.PayerManager;
 import org.mitre.synthea.world.agents.Provider;
 
@@ -51,6 +53,9 @@ public class ResearchManifestWriterTest {
     Config.set("exporter.metadata.export", "false");
     Config.set("exporter.custom.export", "true");
     Config.set("br.manifest.enabled", "true");
+    Config.remove("br.target_condition");
+    Config.remove("br.pathway.focus");
+    Config.set("br.profile", "");
   }
 
   @Test
@@ -110,14 +115,21 @@ public class ResearchManifestWriterTest {
 
   @Test
   public void testProvenanceFieldsNullWhenBrFeaturesInactive() throws Exception {
-    Map<String, Object> manifest = runGenerationAndReadManifest(tempFolder.newFolder(), 42L);
+    File exportDir = tempFolder.newFolder();
+    Map<String, Object> manifest = runGenerationAndReadManifest(exportDir, 42L);
+    String json = new String(Files.readAllBytes(new File(exportDir, "manifest.json").toPath()),
+        StandardCharsets.UTF_8);
 
     assertEquals("Synthea-br", manifest.get("forkName"));
-    assertTrue(manifest.containsKey("version"));
+    assertEquals(Utilities.SYNTHEA_VERSION, manifest.get("version"));
     assertTrue(manifest.containsKey("profile"));
     assertTrue(manifest.containsKey("targetCondition"));
     assertEquals(null, manifest.get("profile"));
     assertEquals(null, manifest.get("targetCondition"));
+    assertTrue(json.contains("\"profile\": null"));
+    assertTrue(json.contains("\"targetCondition\": null"));
+    assertNotNull(manifest.get("commit_sha"));
+    assertNotEquals("", manifest.get("commit_sha"));
   }
 
   @Test
@@ -136,15 +148,16 @@ public class ResearchManifestWriterTest {
         new TypeToken<Map<String, Object>>() { }.getType());
 
     assertEquals("Synthea-br", manifest.get("forkName"));
+    assertEquals(Utilities.SYNTHEA_VERSION, manifest.get("version"));
     assertTrue(BrProfile.isActive());
     assertEquals("br", manifest.get("profile"));
     assertEquals("breast_cancer", manifest.get("targetCondition"));
     assertTrue(manifest.containsKey("seed"));
     assertTrue(manifest.containsKey("config_hash"));
-    assertTrue(manifest.containsKey("commit_sha"));
+    assertNotNull(manifest.get("commit_sha"));
+    assertNotEquals("", manifest.get("commit_sha"));
     assertTrue(manifest.containsKey("output_checksum"));
     assertTrue(manifest.containsKey("generated_at_iso8601"));
-    assertTrue(manifest.containsKey("version"));
   }
 
   @Test
@@ -231,6 +244,9 @@ public class ResearchManifestWriterTest {
     Config.set("exporter.metadata.export", "false");
     Config.set("exporter.custom.export", "true");
     Config.set("br.manifest.enabled", "true");
+    Config.remove("br.target_condition");
+    Config.remove("br.pathway.focus");
+    Config.set("br.profile", "");
   }
 
   private void cleanExportDir(File exportDir) throws IOException {

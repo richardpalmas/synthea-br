@@ -54,6 +54,22 @@ public final class ModuleProfileConfig {
   }
 
   /**
+   * Version string of the active curated profile data pack, or {@code null} when {@code full}.
+   *
+   * @return {@code profile_version} from JSON, or {@code null}
+   */
+  public static String getActiveProfileVersion() {
+    String profileKey = getActiveProfileKey();
+    if (PROFILE_FULL.equalsIgnoreCase(profileKey)) {
+      return null;
+    }
+    if (!PROFILE_PATHWAY_MINIMAL.equalsIgnoreCase(profileKey)) {
+      return null;
+    }
+    return loadProfile(PROFILE_PATHWAY_MINIMAL).profileVersion;
+  }
+
+  /**
    * Whether the active profile restricts module loading.
    *
    * @return {@code true} when a curated profile (not {@code full}) is active

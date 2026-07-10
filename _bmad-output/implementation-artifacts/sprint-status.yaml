@@ -1,5 +1,5 @@
 # generated: 2026-06-30
-# last_updated: 2026-07-08 (Stories 4.1 e 4.2 dev-story — review)
+# last_updated: 2026-07-10 (Story 7.2 — done após code review)
 # project: synthea
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-30
-last_updated: 2026-07-08 (Stories 4.1 e 4.2 dev-story — review)
+last_updated: 2026-07-10 (Story 7.2 — done após code review)
 project: synthea
 project_key: NOKEY
 tracking_system: file-system
@@ -70,35 +70,36 @@ development_status:
   epic-3-retrospective: optional
 
   epic-4: in-progress
-  4-1-catalogo-de-regras-de-plausibilidade: review
+  4-1-catalogo-de-regras-de-plausibilidade: done
   4-2-relatorio-de-validacao-pos-geracao: review
   epic-4-retrospective: optional
 
   epic-5: in-progress
-  5-1-preservar-export-fhir-r4-para-cohorts-direcionadas: review
-  5-2-metadados-de-proveniencia-no-export: review
+  5-1-preservar-export-fhir-r4-para-cohorts-direcionadas: done
+  5-2-metadados-de-proveniencia-no-export: done
   epic-5-retrospective: optional
 
   epic-6: done
   6-1-cohort-narrative-viewer-export-html-mvp: done
   epic-6-retrospective: optional
 
-  epic-8: backlog
-  8-1-robustez-parsing-llm-maidxo: backlog
-  8-2-personas-estilo-narrativo-e-teste-vies-demografico: backlog
+  epic-8: done
+  8-1-robustez-parsing-llm-maidxo: done
+  8-2-personas-estilo-narrativo-e-teste-vies-demografico: done
   epic-8-retrospective: optional
 
   epic-7: in-progress
   7-1-interface-web-geracao-sintetica-mvp: done
+  7-2-interface-web-trajetoria-focada-e-artefatos-pos-geracao: done
   epic-7-retrospective: optional
 
   epic-9: in-progress
-  9-1-spike-referencias-trajetoria-longitudinal-adr-008: review
-  9-2-catalogo-fases-trajetoria-clinica: review
-  9-3-export-focado-trajetoria-abordagem-c: review
-  9-4-html-narrativo-por-fase-modo-orientador: backlog
-  9-5-perfil-geracao-enxuto-abordagem-d: review
-  9-6-janela-temporal-simulacao-abordagem-d: backlog
-  9-7-modulo-gmf-trajetoria-episodica-abordagem-e: review
-  9-8-calibracao-timings-referencias-externas: backlog
+  9-1-spike-referencias-trajetoria-longitudinal-adr-008: done
+  9-2-catalogo-fases-trajetoria-clinica: done
+  9-3-export-focado-trajetoria-abordagem-c: done
+  9-4-html-narrativo-por-fase-modo-orientador: done
+  9-5-perfil-geracao-enxuto-abordagem-d: done
+  9-6-janela-temporal-simulacao-abordagem-d: done
+  9-7-modulo-gmf-trajetoria-episodica-abordagem-e: done
+  9-8-calibracao-timings-referencias-externas: done
   epic-9-retrospective: optional

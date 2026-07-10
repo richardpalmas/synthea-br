@@ -1,6 +1,6 @@
 # Story 9.7: Módulo GMF de Trajetória Episódica — Abordagem E
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -142,10 +142,23 @@ JUnit 4. Testes de integração com seed fixo e n pequeno. `./gradlew check` obr
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
-
-### Debug Log References
+Amelia (CR adversarial 2026-07-10)
 
 ### Completion Notes List
 
+- MVP explícito: módulo E = **marcador de fase** (`pathway_phase`) em paralelo ao `breast_cancer` upstream (não substitui eventos clínicos).
+- CR: `lifespan` exclui `breast_cancer_trajectory_br`; `episodic` força include + fail-fast de modo inválido.
+
+### Senior Developer Review (AI)
+
+**Date:** 2026-07-10 · **Outcome:** approve → done (MVP marcador)
+
+| Finding | Action |
+|---------|--------|
+| vazamento em lifespan+minimal | patch ✓ |
+| escopo marcador vs trajetória clínica | decision A — MVP documentado |
+| fail-fast modo inválido | patch ✓ |
+
 ### File List
+
+- `TrajectoryModeConfig.java`, `Generator.java`, `pathway_minimal.json`, testes

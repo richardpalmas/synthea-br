@@ -109,6 +109,31 @@ public class PathwayExportFilterTest {
     assertTrue(PathwayExportFilter.isEnabled());
   }
 
+  @Test
+  public void filterForExport_removesOutOfAllowlistImagingStudies() {
+    Person original = buildPerson();
+    long encounterTime = (long) original.attributes.get(Person.BIRTHDATE) + 86_400_000L;
+    Encounter encounter = original.record.encounterStart(encounterTime, EncounterType.OUTPATIENT);
+    original.record.conditionStart(encounterTime, BREAST_CANCER_CODE);
+    encounter.conditions.get(0).codes.add(new Code("SNOMED-CT", BREAST_CANCER_CODE,
+        "Malignant neoplasm of breast (disorder)"));
+
+    String noiseImagingCode = "241620005"; // MRI of heart — not in pathway allowlist
+    HealthRecord.ImagingStudy noise =
+        original.record.new ImagingStudy(original, encounterTime, noiseImagingCode);
+    noise.codes.clear();
+    noise.codes.add(new Code("SNOMED-CT", noiseImagingCode, "Magnetic resonance imaging of heart"));
+    encounter.imagingStudies.add(noise);
+    assertEquals("fixture must include noise imaging", 1, encounter.imagingStudies.size());
+
+    Person filtered = PathwayExportFilter.filterForExport(original);
+    assertEquals("original imaging must remain (AD-2)", 1,
+        original.record.encounters.get(0).imagingStudies.size());
+    assertTrue("filtered imaging must be removed",
+        filtered.record.encounters.get(0).imagingStudies.isEmpty());
+    assertEquals(1, countConditions(filtered));
+  }
+
   private Person buildPersonWithBreastCancerAndDentalNoise() {
     Person person = buildPerson();
     long encounterTime = (long) person.attributes.get(Person.BIRTHDATE) + 86_400_000L;

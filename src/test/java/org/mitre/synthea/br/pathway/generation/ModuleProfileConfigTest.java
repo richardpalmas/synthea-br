@@ -1,5 +1,6 @@
 package org.mitre.synthea.br.pathway.generation;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -45,6 +46,20 @@ public class ModuleProfileConfigTest {
     assertTrue(ModuleProfileConfig.buildPathPredicate().test("wellness_encounters"));
     assertTrue(ModuleProfileConfig.buildPathPredicate().test("breast_cancer"));
     assertTrue(ModuleProfileConfig.buildPathPredicate().test("core/Lifecycle Module"));
+    assertFalse("episodic marker must not be in pathway_minimal allowlist",
+        ModuleProfileConfig.buildPathPredicate().test("breast_cancer_trajectory_br"));
+  }
+
+  @Test
+  public void getActiveProfileVersion_pathwayMinimal_exposesDataPackVersion() {
+    Config.set("br.generation.module_profile", "pathway_minimal");
+    assertEquals("1.0.0", ModuleProfileConfig.getActiveProfileVersion());
+  }
+
+  @Test
+  public void getActiveProfileVersion_full_returnsNull() {
+    Config.set("br.generation.module_profile", "full");
+    assertEquals(null, ModuleProfileConfig.getActiveProfileVersion());
   }
 
   @Test

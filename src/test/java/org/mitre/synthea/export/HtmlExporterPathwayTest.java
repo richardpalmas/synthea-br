@@ -2,8 +2,10 @@ package org.mitre.synthea.export;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
@@ -83,8 +85,8 @@ public class HtmlExporterPathwayTest {
     String html = readIndexHtml(tempOutputFolder);
     assertTrue(html.contains("class=\"pathway-phase\""));
     assertTrue(html.contains("Rastreio"));
-    assertTrue(html.contains("Diagnostico"));
-    assertTrue(html.indexOf("Rastreio") < html.indexOf("Diagnostico"));
+    assertTrue(html.contains("Diagnóstico"));
+    assertTrue(html.indexOf("Rastreio") < html.indexOf("Diagnóstico"));
     assertTrue(html.contains("target-badge"));
     assertTrue(html.contains("primary-highlight"));
     assertFalse(html.contains("Dental caries"));
@@ -120,6 +122,58 @@ public class HtmlExporterPathwayTest {
     String html = readIndexHtml(tempOutputFolder);
     assertFalse(html.contains("class=\"pathway-phase\""));
     assertTrue(html.contains("Dental caries") || html.contains("Caries dental"));
+  }
+
+  @Test
+  public void defaultMode_orientadorWhenFocusTrueAndModeAbsent() throws Exception {
+    File tempOutputFolder = tempFolder.newFolder();
+    Config.set("exporter.baseDirectory", tempOutputFolder.toString());
+    Config.set("exporter.html.export", "true");
+    Config.set("br.pathway.focus", "true");
+    Config.remove("exporter.html.pathway_mode");
+
+    Person person = buildPathwayPerson();
+    exportSinglePatient(person, tempOutputFolder);
+
+    String html = readIndexHtml(tempOutputFolder);
+    assertTrue(html.contains("class=\"pathway-phase\""));
+    assertFalse(html.contains("Dental caries") || html.contains("Caries dental"));
+    // Orientador hides empty clinical accordion sections (trajectory + demografia only).
+    assertFalse(html.contains(">Condições</"));
+  }
+
+  @Test
+  public void pesquisadorWithFocus_stillShowsOutOfPathwaySection() throws Exception {
+    File tempOutputFolder = tempFolder.newFolder();
+    Config.set("exporter.baseDirectory", tempOutputFolder.toString());
+    Config.set("exporter.html.export", "true");
+    Config.set("br.pathway.focus", "true");
+    Config.set("exporter.html.pathway_mode", PathwayHtmlModeConfig.MODE_PESQUISADOR);
+
+    Person person = buildPathwayPerson();
+    exportSinglePatient(person, tempOutputFolder);
+
+    String html = readIndexHtml(tempOutputFolder);
+    assertTrue(html.contains("Fora da trajetória"));
+    assertTrue(html.contains("Dental caries") || html.contains("Caries dental"));
+  }
+
+  @Test
+  public void encounterLabel_prefersEncounterCodeOverReason() throws Exception {
+    Person person = buildPathwayPerson();
+    Encounter encounter = person.record.encounterStart(TIME + 1000L, EncounterType.OUTPATIENT);
+    encounter.reason = new Code("SNOMED-CT", BREAST_CANCER_CODE,
+        "Malignant neoplasm of breast (disorder)");
+    encounter.codes.clear();
+    encounter.codes.add(new Code("SNOMED-CT", "439740005",
+        "Postoperative follow-up visit (procedure)"));
+
+    Method method = HtmlExporter.class.getDeclaredMethod("encounterLabel",
+        Encounter.class, boolean.class);
+    method.setAccessible(true);
+    String label = (String) method.invoke(null, encounter, false);
+
+    assertEquals("Postoperative follow-up visit (procedure)", label);
   }
 
   private static Person buildPathwayPerson() throws Exception {

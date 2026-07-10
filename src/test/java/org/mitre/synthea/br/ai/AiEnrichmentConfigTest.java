@@ -69,6 +69,28 @@ public class AiEnrichmentConfigTest {
   }
 
   @Test
+  public void testDefaultRobustnessProperties() {
+    assertEquals(1, AiEnrichmentConfig.getJsonParseRetries());
+    assertEquals(1, AiEnrichmentConfig.getTruncationContinuationMax());
+  }
+
+  @Test
+  public void testNegativeRobustnessRejected() {
+    Config.set("br.ai.enrichment.enabled", "true");
+    Config.set("br.ai.api_key", "sk-test");
+    Config.set("br.ai.json_parse_retries", "-1");
+    try {
+      AiEnrichmentConfig.validateWhenEnabled();
+      org.junit.Assert.fail("expected IllegalStateException");
+    } catch (IllegalStateException expected) {
+      assertTrue(expected.getMessage().contains("json_parse_retries"));
+    } finally {
+      Config.remove("br.ai.json_parse_retries");
+      Config.remove("br.ai.api_key");
+    }
+  }
+
+  @Test
   public void testGeminiDefaultModel() {
     Config.set("br.ai.provider", "gemini");
     Config.remove("br.ai.model");

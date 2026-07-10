@@ -34,6 +34,7 @@ import org.mitre.synthea.br.condition.TargetConditionIntegration;
 import org.mitre.synthea.br.demographics.BrDemographicsLoader;
 import org.mitre.synthea.br.demographics.BrRaceMapper;
 import org.mitre.synthea.br.geography.BrGeographyResolver;
+import org.mitre.synthea.br.pathway.PathwayArchetypeConfig;
 import org.mitre.synthea.br.pathway.TrajectoryModeConfig;
 import org.mitre.synthea.br.pathway.generation.ModuleProfileConfig;
 import org.mitre.synthea.br.pathway.generation.SimulationWindowConfig;
@@ -837,17 +838,29 @@ public class Generator {
     person.lastUpdated = birthdate;
     if (SimulationWindowConfig.isActive() && demoAttributes.containsKey(TARGET_AGE)) {
       int targetAge = ((Number) demoAttributes.get(TARGET_AGE)).intValue();
-      person.lastUpdated = SimulationWindowConfig.simulationStartTime(birthdate, targetAge);
+      long windowStart = SimulationWindowConfig.simulationStartTime(birthdate, targetAge);
+      if (windowStart < birthdate) {
+        throw new IllegalStateException(String.format(
+            "br.generation.simulation_window produziu inicio anterior ao nascimento "
+                + "(target_age=%d). Use -a com idade minima > N.",
+            targetAge));
+      }
+      person.lastUpdated = windowStart;
     }
     location.setSocialDeterminants(person);
+
+    PathwayArchetypeConfig.validateForcedPrerequisites();
+    PathwayArchetypeConfig.applyToPerson(person);
 
     LifecycleModule.birth(person, birthdate);
 
     if (SimulationWindowConfig.isActive()) {
       person.coverage.setPlanToNoInsurance(birthdate);
-      long coverageThrough = this.stop + this.timestep + 1L;
-      person.coverage.getLastPlanRecord().updateStopTime(coverageThrough);
-      person.coverage.deferEnrollmentUntil(coverageThrough);
+      // Defer enrollment until window start (not simulation end) so coverage resumes
+      // when clinical modules begin (Story 9.6 / ADR-008).
+      long windowStart = person.lastUpdated;
+      person.coverage.getLastPlanRecord().updateStopTime(windowStart);
+      person.coverage.deferEnrollmentUntil(windowStart);
     }
 
     if (SimulationWindowConfig.isActive() && person.lastUpdated > birthdate) {
@@ -1220,7 +1233,9 @@ public class Generator {
     }
     Predicate<String> profileFilter = ModuleProfileConfig.buildPathPredicate();
     Predicate<String> trajectoryFilter = TrajectoryModeConfig.buildPathPredicate();
-    return path -> cliFilter.test(path) && profileFilter.test(path) && trajectoryFilter.test(path);
+    return path -> cliFilter.test(path)
+        && (profileFilter.test(path) || TrajectoryModeConfig.forceInclude(path))
+        && trajectoryFilter.test(path);
   }
 
   /**

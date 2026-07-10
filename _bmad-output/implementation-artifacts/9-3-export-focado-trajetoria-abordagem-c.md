@@ -1,6 +1,6 @@
 # Story 9.3: Export Focado em Trajetória — Abordagem C
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -139,10 +139,23 @@ JUnit 4. Preferir fixtures `Person` manuais para velocidade. Integração lenta 
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
-
-### Debug Log References
+Amelia (CR adversarial 2026-07-10)
 
 ### Completion Notes List
 
+- CR: filtro passa a remover `imagingStudies`/`devices`/`supplies`; SM-9.2 documentado em `docs/research/experiments/2026-07-10-pathway-focus-sm92/`.
+
+### Senior Developer Review (AI)
+
+**Date:** 2026-07-10 · **Outcome:** approve → done
+
+| Finding | Action |
+|---------|--------|
+| imaging/devices/supplies não filtrados | patch ✓ |
+| SM-9.2 sem evidência | patch ✓ (experimento) |
+| Claims órfãos pós-filtro | defer |
+
 ### File List
+
+- `PathwayExportFilter.java`, `PathwayExportFilterTest.java`
+- `docs/research/experiments/2026-07-10-pathway-focus-sm92/experiment.md`

@@ -1,6 +1,5 @@
 package org.mitre.synthea.br.web;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -95,5 +94,84 @@ public class GenerationRequestValidationTest {
     request.aiProvider = "medgemma";
     request.aiModel = "google/medgemma-4b-it";
     assertTrue(request.validate().isEmpty());
+  }
+
+  @Test
+  public void testPathwayFocusWithoutTargetConditionRejected() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.pathwayFocus = true;
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("condição clínica alvo")));
+  }
+
+  @Test
+  public void testEpisodicRequiresTargetCondition() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.trajectoryMode = "episodic";
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("condição clínica alvo")));
+
+    request.targetCondition = "breast_cancer";
+    assertTrue(request.validate().isEmpty());
+  }
+
+  @Test
+  public void testEpisodicRejectsNonBreastCancerCondition() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.targetCondition = "appendicitis";
+    request.trajectoryMode = "episodic";
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("apenas breast_cancer")));
+  }
+
+  @Test
+  public void testSimulationWindowRequiresAgeRange() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.targetCondition = "breast_cancer";
+    request.simulationWindow = "pre_onset_years:10";
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("idade mínima e máxima")));
+
+    request.minAge = 45;
+    request.maxAge = 75;
+    assertTrue(request.validate().isEmpty());
+  }
+
+  @Test
+  public void testSimulationWindowPreOnsetIncompatibleWithMinAge() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.targetCondition = "breast_cancer";
+    request.minAge = 10;
+    request.maxAge = 75;
+    request.simulationWindow = "pre_onset_years:10";
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("incompatível")));
+  }
+
+  @Test
+  public void testSimulationWindowPreOnsetOutsideBreastCancerRangeRejected() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.targetCondition = "breast_cancer";
+    request.minAge = 45;
+    request.maxAge = 75;
+    request.simulationWindow = "pre_onset_years:16";
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("fora do intervalo piloto")));
+  }
+
+  @Test
+  public void testPathwayMinimalWithoutTargetConditionRejected() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.moduleProfile = "pathway_minimal";
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("condição clínica alvo")));
+  }
+
+  @Test
+  public void testInvalidHtmlPathwayModeRejected() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.htmlPathwayMode = "invalid";
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("Modo HTML inválido")));
   }
 }

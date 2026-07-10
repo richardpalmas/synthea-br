@@ -2,11 +2,14 @@ package org.mitre.synthea.br.web;
 
 import java.io.File;
 import java.util.UUID;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.mitre.synthea.br.ai.AiEnrichmentConfig;
 import org.mitre.synthea.br.ai.AiEnrichmentProgress;
+import org.mitre.synthea.br.plausibility.PlausibilityReportWriter;
 import org.mitre.synthea.engine.Generator;
+import org.mitre.synthea.export.ExportFailureTracker;
 import org.mitre.synthea.helpers.Config;
 
 /**
@@ -27,6 +30,10 @@ public final class GenerationJobManager {
   private volatile boolean htmlExportEnabled;
   private volatile boolean aiEnrichmentRequested;
   private volatile String htmlIndexPath;
+  private volatile boolean plausibilityReportPresent;
+  private volatile String plausibilityReportPath;
+  private volatile long currentJobStartedAtMs;
+  private volatile String trajectorySummary;
   private volatile String errorMessage;
   private volatile LogCaptureStream logCapture;
   private final AtomicReference<Generator> activeGenerator = new AtomicReference<>();
@@ -64,6 +71,10 @@ public final class GenerationJobManager {
       htmlExportEnabled = request.exportHtml;
       aiEnrichmentRequested = request.aiEnrichment;
       htmlIndexPath = null;
+      plausibilityReportPresent = false;
+      plausibilityReportPath = null;
+      trajectorySummary = TrajectoryWebConstants.buildTrajectorySummary(request);
+      currentJobStartedAtMs = System.currentTimeMillis();
       outputDirectory = null;
       logCapture = new LogCaptureStream(System.out);
       activeGenerator.set(null);
@@ -88,6 +99,12 @@ public final class GenerationJobManager {
           htmlIndexPath = htmlIndex.getPath();
         }
       }
+      File plausibilityReport =
+          new File(outputDir, PlausibilityReportWriter.getReportFilename());
+      plausibilityReportPresent = plausibilityReport.exists()
+          && plausibilityReport.lastModified() >= currentJobStartedAtMs;
+      plausibilityReportPath =
+          plausibilityReportPresent ? plausibilityReport.getPath() : null;
       state = "completed";
     } catch (IllegalStateException | IllegalArgumentException ex) {
       // GenerationService already translates these into user-friendly PT-BR messages.
@@ -130,6 +147,9 @@ public final class GenerationJobManager {
     status.htmlExportEnabled = htmlExportEnabled;
     status.htmlIndexPath = htmlIndexPath;
     status.errorMessage = errorMessage;
+    status.plausibilityReportPresent = plausibilityReportPresent;
+    status.plausibilityReportPath = plausibilityReportPath;
+    status.trajectorySummary = trajectorySummary;
 
     AiEnrichmentProgress aiProgress = AiEnrichmentProgress.getInstance();
     status.aiEnrichmentEnabled = aiEnrichmentRequested;
@@ -156,7 +176,79 @@ public final class GenerationJobManager {
         status.generatedCount = capture.parsedTotal();
       }
     }
+    status.exportFailureCounts = ExportFailureTracker.snapshot();
+    status.htmlMissingReason = inferHtmlMissingReason(status);
+    status.exportPartialWarning = buildExportPartialWarning(status);
     return status;
+  }
+
+  private static String buildExportPartialWarning(GenerationStatus status) {
+    if (status.exportFailureCounts == null || status.exportFailureCounts.isEmpty()) {
+      return null;
+    }
+    if (!"completed".equals(status.state)) {
+      return null;
+    }
+    StringBuilder message = new StringBuilder("Exportação parcial: ");
+    boolean first = true;
+    for (Map.Entry<String, Integer> entry : status.exportFailureCounts.entrySet()) {
+      if (entry.getValue() == null || entry.getValue() <= 0) {
+        continue;
+      }
+      if (!first) {
+        message.append("; ");
+      }
+      message.append(formatExportLabel(entry.getKey()))
+          .append(" falhou para ")
+          .append(entry.getValue())
+          .append(" paciente(s)");
+      first = false;
+    }
+    if (first) {
+      return null;
+    }
+    message.append(". Outros formatos podem estar incompletos.");
+    return message.toString();
+  }
+
+  private static String formatExportLabel(String formatKey) {
+    switch (formatKey) {
+      case "csv":
+        return "CSV";
+      case "html":
+        return "HTML";
+      case "fhir":
+        return "FHIR R4";
+      case "json":
+        return "JSON";
+      case "ccda":
+        return "CCDA";
+      default:
+        return formatKey.toUpperCase();
+    }
+  }
+
+  private static String inferHtmlMissingReason(GenerationStatus status) {
+    if (!status.htmlExportEnabled || status.htmlIndexPath != null) {
+      return null;
+    }
+    if (!"completed".equals(status.state)) {
+      return null;
+    }
+    if (status.logTail != null) {
+      for (String line : status.logTail) {
+        if (line != null && line.contains("gate (exclude)")
+            && (line.contains("exported=0") || line.contains("conforming=0,0%"))) {
+          return "HTML solicitado, mas nenhum paciente conforme foi exportado (gate exclude: exported=0).";
+        }
+      }
+    }
+    if (status.exportFailureCounts != null && status.exportFailureCounts.getOrDefault("csv", 0) > 0) {
+      int csvFailures = status.exportFailureCounts.get("csv");
+      return "HTML solicitado, mas a exportação CSV falhou para "
+          + csvFailures + " paciente(s) antes do HTML ser composto.";
+    }
+    return "HTML solicitado, mas nenhum paciente foi exportado para compor o index.html.";
   }
 
   /**
@@ -188,6 +280,10 @@ public final class GenerationJobManager {
       errorMessage = null;
       logCapture = null;
       aiEnrichmentRequested = false;
+      plausibilityReportPresent = false;
+      plausibilityReportPath = null;
+      currentJobStartedAtMs = 0L;
+      trajectorySummary = null;
       activeGenerator.set(null);
     }
   }

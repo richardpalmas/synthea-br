@@ -35,6 +35,19 @@ public class GenerationRequest {
   public String aiModel;
   public String aiApiKey;
 
+  /** Epic 9 — pathway-focused export (default off for backward compatibility). */
+  public boolean pathwayFocus = false;
+  /** {@code auto}, {@code orientador}, {@code pesquisador}, or {@code full}. */
+  public String htmlPathwayMode = TrajectoryWebConstants.HTML_MODE_AUTO;
+  /** {@code full} or {@code pathway_minimal}. */
+  public String moduleProfile = TrajectoryWebConstants.MODULE_PROFILE_FULL;
+  /** {@code lifespan} or {@code episodic}. */
+  public String trajectoryMode = TrajectoryWebConstants.TRAJECTORY_MODE_LIFESPAN;
+  /** {@code full_lifespan} or {@code pre_onset_years:N}. */
+  public String simulationWindow = TrajectoryWebConstants.SIMULATION_WINDOW_FULL;
+  /** {@code auto}, {@code remission}, or {@code progression}. */
+  public String pathwayArchetype = TrajectoryWebConstants.ARCHETYPE_AUTO;
+
   /**
    * Validate request fields.
    *
@@ -102,6 +115,7 @@ public class GenerationRequest {
             + AiEnrichmentConfig.getMaxPatients() + " (br.ai.max_patients).");
       }
     }
+    TrajectoryWebConstants.validateTrajectoryFields(this, errors);
     return errors;
   }
 

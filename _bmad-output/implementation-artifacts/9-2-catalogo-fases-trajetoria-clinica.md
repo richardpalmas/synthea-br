@@ -1,6 +1,6 @@
 # Story 9.2: Catálogo de Fases de Trajetória Clínica (Data Pack)
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -134,9 +134,19 @@ JUnit 4. Testes rápidos, sem geração de cohort. `./gradlew check` deve passar
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Amelia (CR adversarial 2026-07-10)
 
-### Debug Log References
+### Completion Notes List
+
+- CR: validação Gson (`phases`/`condition`/`catalog_version`), imutabilidade de allowlists, blank condition rejeitado.
+
+### Senior Developer Review (AI)
+
+**Date:** 2026-07-10 · **Outcome:** approve → done
+
+### File List
+
+- `PathwayCatalog.java`, `PathwayPhase.java`, `PathwayCodeEntry.java`, `PathwayCatalogTest.java`
 
 ### Completion Notes List
 

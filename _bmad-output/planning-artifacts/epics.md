@@ -130,6 +130,11 @@ Pesquisadores exportam datasets em FHIR R4 com metadados de proveniência (fork 
 Pesquisadores validam casos clínicos com orientadores via HTML estático offline — timeline e seções aninhadas por paciente, complementando FHIR/CSV.
 **FRs cobertos:** FR17
 
+### Epic 7: Interface Web de Geração Sintética
+Pesquisadores e estudantes configuram e disparam geração via formulário local PT-BR — mesmo pipeline `Generator` + `Config` da CLI, sem barreira de terminal (ADR-006). Story 7.2 estende o MVP para expor flags Epic 9 e artefatos Epic 4.
+**Origem:** course correction PO (ADR-006); lacuna UI identificada 2026-07-10
+**Depende de:** Epic 2, Epic 6; Story 7.2 depende de Epic 9 (backend)
+
 ### Epic 8: Enriquecimento Clínico por IA (MAI-DxO)
 Pesquisadores enriquecem cohorts opcionalmente com painel de personas clínicas (BYOK), resumos narrativos PT-BR no HTML e salvaguardas de robustez/viés — **complementar** ao motor determinístico, nunca substituto.
 **Origem:** ADR-007 (implementação core já presente no código)
@@ -436,6 +441,47 @@ para apresentar casos ao orientador com timeline e seções clínicas estruturad
 **When** HTML export roda
 **Then** implementação é read-only sobre `HealthRecord` (AD-2) e usa FreeMarker em `resources/templates/html/` (padrão CCDA)
 **And** `./gradlew check` passa incluindo testes novos de `HtmlExporter`
+
+---
+
+## Epic 7: Interface Web de Geração Sintética
+
+Formulário **localhost** para parâmetros de cohort e execução assíncrona (ADR-006). Complementa a CLI — não a substitui para papers/reprodutibilidade.
+
+### Story 7.1: Interface Web de Geração — MVP
+
+**Status:** done — ver `_bmad-output/implementation-artifacts/7-1-interface-web-geracao-sintetica-mvp.md`
+
+Como PO / pesquisador,
+quero interface HTML local para selecionar parâmetros e disparar geração,
+para usar o gerador sem CMD ou edição manual de properties.
+
+**Escopo entregue:** seed, população, gênero, idade, perfil BR, condição alvo, gate, exports, IA opcional; preset demográfico breast_cancer **sem** flags Epic 9.
+
+### Story 7.2: Interface Web — Trajetória Focada e Artefatos Pós-Geração
+
+Como pesquisador usando a interface web,
+quero configurar trajetória clínica focada (Epic 9) e acessar `plausibility_report.json` após a geração,
+para obter o mesmo resultado da receita CLI §11 receita H sem flags manuais.
+
+**Acceptance Criteria (resumo):**
+
+**Given** formulário web carregado
+**When** seção “Trajetória clínica focada” está visível (condição alvo selecionada)
+**Then** controles expõem: `br.pathway.focus`, `exporter.html.pathway_mode`, `br.generation.module_profile`, `br.generation.trajectory_mode`, `br.generation.simulation_window`
+
+**Given** preset “cohort câncer de mama”
+**When** aplicado
+**Then** ativa receita H (focus + pathway_minimal + episodic + pre_onset_years:10 + HTML auto/orientador)
+
+**Given** geração concluída
+**When** status é consultado
+**Then** UI linka `plausibility_report.json` quando presente e resume modos de trajetória ativos
+
+**Given** defaults de trajetória não alterados
+**Then** comportamento idêntico ao Story 7.1 (regressão)
+
+**Detalhe completo:** `_bmad-output/implementation-artifacts/7-2-interface-web-trajetoria-focada-e-artefatos-pos-geracao.md`
 
 ---
 
