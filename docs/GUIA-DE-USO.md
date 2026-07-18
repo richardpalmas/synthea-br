@@ -929,6 +929,8 @@ Decisões de arquitetura detalhadas: [`docs/research/adr/README.md`](research/ad
 
 | Documento | Conteúdo |
 |-----------|----------|
+| [`MAPA-DO-MOTOR-DE-GERACAO.md`](MAPA-DO-MOTOR-DE-GERACAO.md) | Onde e como os dados sintéticos são gerados (pipeline App → Generator → GMF → export) |
+| [`mapa-motor-geracao.html`](mapa-motor-geracao.html) | Relatório executivo visual do mapa do motor (abrir no browser) |
 | [`CONTRIBUTING-ACADEMICO.md`](CONTRIBUTING-ACADEMICO.md) | Workflow de contribuição, citação de proveniência, disclaimer ético |
 | [`research/adr/ADR-008-trajetoria-clinica-focada.md`](research/adr/ADR-008-trajetoria-clinica-focada.md) | Abordagens C/D/E (Epic 9) |
 | [`research/adr/ADR-006-interface-web-localhost-mvp.md`](research/adr/ADR-006-interface-web-localhost-mvp.md) | Decisão da interface web (Epic 7) |

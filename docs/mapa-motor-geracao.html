@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mapa do motor de geração — Synthea-br</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0f1c24;
+      --ink-soft: #3a4f5c;
+      --muted: #5e7380;
+      --line: rgba(15, 28, 36, 0.12);
+      --teal: #0d7377;
+      --teal-deep: #095456;
+      --teal-soft: #e6f3f3;
+      --slate: #1a2e38;
+      --paper: #f4f7f8;
+      --white: #fbfcfc;
+      --accent: #c45c26;
+      --max: 720px;
+      --wide: 920px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.65;
+      background:
+        radial-gradient(ellipse 80% 50% at 10% -10%, rgba(13, 115, 119, 0.14), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 90% 0%, rgba(26, 46, 56, 0.1), transparent 50%),
+        linear-gradient(180deg, #eef4f5 0%, var(--paper) 35%, #e8eef0 100%);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.035;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: var(--wide);
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+    }
+
+    /* Nav */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(12px);
+      background: rgba(244, 247, 248, 0.82);
+      border-bottom: 1px solid var(--line);
+      margin: 0 -1.5rem;
+      padding: 0.75rem 1.5rem;
+    }
+
+    .nav-inner {
+      max-width: var(--wide);
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      font-family: "Fraunces", Georgia, serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--teal-deep);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem 0.85rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .nav-links a {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .nav-links a:hover { color: var(--teal); }
+
+    /* Hero */
+    .hero {
+      max-width: var(--max);
+      padding: 3.5rem 0 2.5rem;
+    }
+
+    .eyebrow {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin: 0 0 1rem;
+    }
+
+    h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(2.2rem, 5vw, 3.15rem);
+      font-weight: 700;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin: 0 0 1rem;
+      color: var(--slate);
+    }
+
+    .verdict {
+      font-size: 1.15rem;
+      color: var(--ink-soft);
+      margin: 0 0 1.5rem;
+      max-width: 38em;
+      border-left: 3px solid var(--teal);
+      padding-left: 1rem;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .meta code {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.8rem;
+      background: var(--teal-soft);
+      color: var(--teal-deep);
+      padding: 0.15em 0.45em;
+      border-radius: 3px;
+    }
+
+    /* Sections */
+    section {
+      max-width: var(--max);
+      padding: 2.75rem 0 0;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    section.wide { max-width: var(--wide); }
+
+    h2 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35rem;
+      color: var(--slate);
+    }
+
+    .section-lead {
+      color: var(--muted);
+      margin: 0 0 1.5rem;
+      font-size: 0.98rem;
+    }
+
+    .rule {
+      height: 1px;
+      background: linear-gradient(90deg, var(--teal), transparent 70%);
+      border: 0;
+      margin: 0 0 1.5rem;
+    }
+
+    /* Executive summary */
+    .summary-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .summary-list li {
+      display: grid;
+      grid-template-columns: 2.25rem 1fr;
+      gap: 0.75rem;
+      align-items: start;
+    }
+
+    .summary-list .n {
+      font-family: "Fraunces", Georgia, serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--teal);
+      line-height: 1.3;
+    }
+
+    .summary-list strong { color: var(--ink); font-weight: 600; }
+
+    /* Pipeline */
+    .pipeline {
+      display: grid;
+      gap: 0;
+      counter-reset: step;
+    }
+
+    .pipe-step {
+      display: grid;
+      grid-template-columns: 3rem 1fr;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--line);
+      position: relative;
+    }
+
+    .pipe-step:last-child { border-bottom: 0; }
+
+    .pipe-num {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: var(--slate);
+      color: var(--white);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .pipe-step:nth-child(odd) .pipe-num { background: var(--teal); }
+
+    .pipe-body h3 {
+      margin: 0 0 0.25rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .pipe-body p {
+      margin: 0;
+      font-size: 0.92rem;
+      color: var(--ink-soft);
+    }
+
+    .pipe-body code {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+      background: rgba(13, 115, 119, 0.08);
+      padding: 0.1em 0.35em;
+      border-radius: 2px;
+    }
+
+    /* Tables */
+    .table-scroll {
+      overflow-x: auto;
+      margin: 0 -0.25rem;
+      padding: 0 0.25rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.7rem 0.85rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 700;
+      background: rgba(13, 115, 119, 0.06);
+    }
+
+    td:first-child { font-weight: 600; color: var(--slate); }
+
+    code.path {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+      color: var(--teal-deep);
+      word-break: break-all;
+    }
+
+    /* Highlight table */
+    .intent-table tbody tr:hover td {
+      background: rgba(13, 115, 119, 0.05);
+    }
+
+    /* Timeline walkthrough */
+    .timeline {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-left: 2px solid var(--teal);
+    }
+
+    .timeline li {
+      position: relative;
+      padding: 0 0 1.25rem 1.35rem;
+    }
+
+    .timeline li:last-child { padding-bottom: 0; }
+
+    .timeline li::before {
+      content: "";
+      position: absolute;
+      left: -0.4rem;
+      top: 0.45rem;
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      background: var(--white);
+      border: 2px solid var(--teal);
+    }
+
+    .timeline .t-label {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin: 0 0 0.2rem;
+    }
+
+    .timeline p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+    }
+
+    /* Borders / callouts */
+    .border-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 640px) {
+      .border-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .border-item {
+      padding: 1rem 1.1rem;
+      border-top: 2px solid var(--accent);
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    .border-item h3 {
+      margin: 0 0 0.35rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .border-item p {
+      margin: 0;
+      font-size: 0.88rem;
+      color: var(--ink-soft);
+    }
+
+    /* Anchor classes */
+    .class-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .class-list li {
+      display: grid;
+      grid-template-columns: 8.5rem 1fr;
+      gap: 0.75rem;
+      font-size: 0.88rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .class-list .role {
+      font-weight: 700;
+      color: var(--slate);
+    }
+
+    /* Footer */
+    footer {
+      max-width: var(--max);
+      margin-top: 3.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--line);
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    footer a {
+      color: var(--teal-deep);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    footer .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      margin: 0.75rem 0 1.25rem;
+    }
+
+    .canon {
+      font-size: 0.8rem;
+      font-style: italic;
+    }
+
+    @media (max-width: 560px) {
+      .class-list li { grid-template-columns: 1fr; gap: 0.15rem; }
+      .nav-links { display: none; }
+    }
+
+    @media print {
+      body::before, .nav { display: none; }
+      section { opacity: 1 !important; transform: none !important; }
+      body { background: white; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav class="nav" aria-label="Navegação do relatório">
+      <div class="nav-inner">
+        <a class="nav-brand" href="#topo">Synthea-br · Motor</a>
+        <ul class="nav-links">
+          <li><a href="#sumario">Sumário</a></li>
+          <li><a href="#pipeline">Pipeline</a></li>
+          <li><a href="#repo">Repositório</a></li>
+          <li><a href="#alterar">Alterar</a></li>
+          <li><a href="#walkthrough">Walkthrough</a></li>
+          <li><a href="#fronteiras">Fronteiras</a></li>
+          <li><a href="#ancoras">Âncoras</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="hero" id="topo">
+      <p class="eyebrow">Relatório executivo · Julho 2026</p>
+      <h1>Mapa do motor de geração</h1>
+      <p class="verdict">
+        Pacientes sintéticos nascem no <strong>Generator</strong> (loop semanal GMF → HealthRecord);
+        o fork BR localiza demografia e filtra trajetórias — sem substituir o motor upstream.
+      </p>
+      <div class="meta">
+        <span>Público: estudante / programador</span>
+        <span>Leitura: ~5–10 min</span>
+        <span>Canônico: <code>MAPA-DO-MOTOR-DE-GERACAO.md</code></span>
+      </div>
+    </header>
+
+    <section id="sumario">
+      <h2>Sumário executivo</h2>
+      <hr class="rule" />
+      <p class="section-lead">Cinco achados para navegar o código sem se perder.</p>
+      <ol class="summary-list">
+        <li>
+          <span class="n">01</span>
+          <span><strong>O dado nasce na simulação</strong>, não no export: módulos GMF escrevem no <code>HealthRecord</code> da <code>Person</code>; FHIR/CSV/HTML só materializam depois.</span>
+        </li>
+        <li>
+          <span class="n">02</span>
+          <span><strong>Entry única de motor:</strong> CLI (<code>App.main</code>) e Web (<code>GenerationService</code>) chamam o mesmo <code>Generator.run()</code>.</span>
+        </li>
+        <li>
+          <span class="n">03</span>
+          <span><strong>Clínica = JSON GMF</strong> em <code>src/main/resources/modules/</code>; Java em <code>engine/</code> orquestra — altere doença nos módulos, não reinventando o loop.</span>
+        </li>
+        <li>
+          <span class="n">04</span>
+          <span><strong>BR é envoltório:</strong> demografia IBGE, providers, gate e pathway profiles em <code>org.mitre.synthea.br</code> + <code>resources/br/</code>.</span>
+        </li>
+        <li>
+          <span class="n">05</span>
+          <span><strong>Primeiro ponto de mudança</strong> depende da intenção: doença → módulos JSON; Brasil → <code>br.*</code>; saída → <code>export.*</code> / exporters.</span>
+        </li>
+      </ol>
+    </section>
+
+    <section id="pipeline" class="wide">
+      <h2>Pipeline visual</h2>
+      <hr class="rule" />
+      <p class="section-lead">Fluxo in-process por paciente. Timestep padrão: 1 semana.</p>
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pipe-num">1</div>
+          <div class="pipe-body">
+            <h3>Entry</h3>
+            <p><code>App.main</code> ou Web <code>GenerationService</code> → monta <code>Config</code> + <code>GeneratorOptions</code>.</p>
+          </div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">2</div>
+          <div class="pipe-body">
+            <h3>Generator.run</h3>
+            <p>Pool de threads; por slot chama <code>generatePerson</code> (seed derivada da master).</p>
+          </div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">3</div>
+          <div class="pipe-body">
+            <h3>Demografia</h3>
+            <p><code>pickDemographics</code> — com <code>br.profile=br</code>, IBGE + geografia BR substituem o pack EUA.</p>
+          </div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">4</div>
+          <div class="pipe-body">
+            <h3>createPerson + birth</h3>
+            <p><code>LifecycleModule.birth</code> instancia a <code>Person</code> e carrega módulos ativos.</p>
+          </div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">5</div>
+          <div class="pipe-body">
+            <h3>updatePerson (loop)</h3>
+            <p>Insurance → Encounter → <code>Module.process</code> (GMF) → editores → avança o tempo.</p>
+          </div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">6</div>
+          <div class="pipe-body">
+            <h3>HealthRecord</h3>
+            <p>Conditions, procedures, meds e observations acumulam em <code>Person.record</code>.</p>
+          </div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">7</div>
+          <div class="pipe-body">
+            <h3>Gate / critérios</h3>
+            <p>Keep modules e <code>br.target_condition</code> aceitam ou rejeitam o paciente.</p>
+          </div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num">8</div>
+          <div class="pipe-body">
+            <h3>Exporter.export</h3>
+            <p>FHIR, CSV, HTML em <code>output/</code>; pathway focus pode filtrar a saída; pós: manifest, plausibilidade, IA opcional.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="repo" class="wide">
+      <h2>Mapa do repositório</h2>
+      <hr class="rule" />
+      <p class="section-lead">Pastas de topo e o papel de cada uma na geração.</p>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Pasta / arquivo</th>
+              <th>Papel</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="path">src/main/java/App.java</code></td>
+              <td>Entry CLI; <code>--web</code> sobe a UI BR</td>
+            </tr>
+            <tr>
+              <td><code class="path">…/engine/</code></td>
+              <td>Motor: Generator, Module, State</td>
+            </tr>
+            <tr>
+              <td><code class="path">…/modules/</code></td>
+              <td>Módulos Java core (Lifecycle, Encounter, Death)</td>
+            </tr>
+            <tr>
+              <td><code class="path">…/world/</code></td>
+              <td>Person, HealthRecord, geografia, providers</td>
+            </tr>
+            <tr>
+              <td><code class="path">…/export/</code></td>
+              <td>Materializa FHIR, CSV, HTML</td>
+            </tr>
+            <tr>
+              <td><code class="path">…/br/</code></td>
+              <td>Extensões Brasil (gate, pathway, web, IA)</td>
+            </tr>
+            <tr>
+              <td><code class="path">resources/modules/</code></td>
+              <td>GMF JSON — clínica</td>
+            </tr>
+            <tr>
+              <td><code class="path">resources/br/</code></td>
+              <td>Dados e config BR</td>
+            </tr>
+            <tr>
+              <td><code class="path">synthea.properties</code></td>
+              <td>Config padrão (generate, export, br.*)</td>
+            </tr>
+            <tr>
+              <td><code class="path">docs/</code> · <code class="path">_bmad-output/</code> · <code class="path">output/</code></td>
+              <td>Docs / planejamento / saídas — não geram pacientes</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="alterar" class="wide">
+      <h2>Onde alterar o quê</h2>
+      <hr class="rule" />
+      <p class="section-lead">Tabela de intenção → local. Comece aqui antes de abrir o Diff.</p>
+      <div class="table-scroll">
+        <table class="intent-table">
+          <thead>
+            <tr>
+              <th>Quero mudar…</th>
+              <th>Onde olhar primeiro</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Doença / trajetória clínica</td>
+              <td><code class="path">src/main/resources/modules/**/*.json</code></td>
+            </tr>
+            <tr>
+              <td>Demografia / UF / raça BR</td>
+              <td><code class="path">resources/br/demographics/</code>, <code class="path">br/geography/</code> + loaders BR</td>
+            </tr>
+            <tr>
+              <td>Providers BR</td>
+              <td><code class="path">resources/br/providers/</code> + <code class="path">BrProviderLoader</code></td>
+            </tr>
+            <tr>
+              <td>Filtro de módulos</td>
+              <td><code class="path">ModuleProfileConfig</code> + <code class="path">br/generation/module_profiles/</code></td>
+            </tr>
+            <tr>
+              <td>Modo de trajetória</td>
+              <td><code class="path">TrajectoryModeConfig</code> (lifespan vs episodic)</td>
+            </tr>
+            <tr>
+              <td>Gate de condição</td>
+              <td><code class="path">br.target_condition</code> + <code class="path">TargetConditionIntegration</code></td>
+            </tr>
+            <tr>
+              <td>Foco no export</td>
+              <td><code class="path">PathwayExportFilter</code> + <code class="path">br.pathway.focus</code></td>
+            </tr>
+            <tr>
+              <td>Formato de saída</td>
+              <td>flags <code class="path">exporter.*</code> + classes em <code class="path">export/</code></td>
+            </tr>
+            <tr>
+              <td>UI de geração</td>
+              <td><code class="path">resources/br/web/</code> + <code class="path">br/web/*</code></td>
+            </tr>
+            <tr>
+              <td>Config global</td>
+              <td><code class="path">synthea.properties</code> / CLI <code>-c</code> / <code>--chave=valor</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="walkthrough">
+      <h2>Walkthrough: breast cancer + BR</h2>
+      <hr class="rule" />
+      <p class="section-lead">Arquivos tocados numa geração acadêmica típica.</p>
+      <ol class="timeline">
+        <li>
+          <p class="t-label">Entry</p>
+          <p><code>App.main</code> ou <code>GenerationService</code> — CLI / Web.</p>
+        </li>
+        <li>
+          <p class="t-label">Perfil BR</p>
+          <p><code>br.profile=br</code> → demografia IBGE, geografia, <code>BrProviderLoader</code>.</p>
+        </li>
+        <li>
+          <p class="t-label">Gate de cohort</p>
+          <p><code>br.target_condition=breast_cancer</code> + keep modules.</p>
+        </li>
+        <li>
+          <p class="t-label">Módulo clínico</p>
+          <p><code>modules/breast_cancer.json</code> + submódulos em <code>modules/breast_cancer/</code>.</p>
+        </li>
+        <li>
+          <p class="t-label">Simulação</p>
+          <p><code>Generator.updatePerson</code> grava eventos em <code>Person.record</code>.</p>
+        </li>
+        <li>
+          <p class="t-label">Export + pós</p>
+          <p><code>Exporter</code> → FHIR/HTML; manifest / plausibilidade; IA só se <code>br.ai.*</code> ativo.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="fronteiras">
+      <h2>Fronteiras — o que não é geração</h2>
+      <hr class="rule" />
+      <p class="section-lead">Evite gastar tempo no lugar errado.</p>
+      <div class="border-grid">
+        <div class="border-item">
+          <h3>config/simulations/</h3>
+          <p>Fisiologia — fora do fluxo normal de pacientes.</p>
+        </div>
+        <div class="border-item">
+          <h3>Enrichment IA (br.ai.*)</h3>
+          <p>Pós-geração opcional; não substitui GMF.</p>
+        </div>
+        <div class="border-item">
+          <h3>PathwayExportFilter</h3>
+          <p>Filtra saída; o prontuário simulado pode continuar completo.</p>
+        </div>
+        <div class="border-item">
+          <h3>_bmad-output/ e docs/</h3>
+          <p>Planejamento e documentação — não rodam na JVM.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="ancoras">
+      <h2>Classes âncora</h2>
+      <hr class="rule" />
+      <p class="section-lead">Abra estes arquivos primeiro ao depurar o pipeline.</p>
+      <ul class="class-list">
+        <li><span class="role">CLI</span><code class="path">src/main/java/App.java</code></li>
+        <li><span class="role">Generator</span><code class="path">…/engine/Generator.java</code></li>
+        <li><span class="role">GMF</span><code class="path">…/engine/Module.java</code> + <code class="path">State.java</code></li>
+        <li><span class="role">Person</span><code class="path">…/world/agents/Person.java</code></li>
+        <li><span class="role">HealthRecord</span><code class="path">…/world/concepts/HealthRecord.java</code></li>
+        <li><span class="role">Exporter</span><code class="path">…/export/Exporter.java</code></li>
+        <li><span class="role">Web</span><code class="path">…/br/web/GenerationService.java</code></li>
+        <li><span class="role">Config</span><code class="path">…/helpers/Config.java</code></li>
+      </ul>
+    </section>
+
+    <footer>
+      <div class="links">
+        <a href="MAPA-DO-MOTOR-DE-GERACAO.md">Mapa completo (Markdown)</a>
+        <a href="GUIA-DE-USO.md">Guia de uso</a>
+        <a href="FONTES-CONTEXTO-BR.md">Fontes de contexto BR</a>
+        <a href="CONTRIBUTING-ACADEMICO.md">Contributing acadêmico</a>
+        <a href="research/adr/ADR-008-trajetoria-clinica-focada.md">ADR-008 Trajetória</a>
+      </div>
+      <p class="canon">Fonte da verdade: o Markdown canônico prevalece se divergir deste HTML.</p>
+      <p>Synthea-br · Relatório de mapeamento do motor · 2026</p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var sections = document.querySelectorAll("section");
+      if (!("IntersectionObserver" in window)) {
+        sections.forEach(function (s) { s.classList.add("visible"); });
+        return;
+      }
+      var io = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) {
+              e.target.classList.add("visible");
+              io.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      );
+      sections.forEach(function (s, i) {
+        s.style.transitionDelay = Math.min(i * 0.06, 0.3) + "s";
+        io.observe(s);
+      });
+      // Hero already visible; reveal first section soon
+      requestAnimationFrame(function () {
+        var first = document.querySelector("section");
+        if (first) first.classList.add("visible");
+      });
+    })();
+  </script>
+</body>
+</html>

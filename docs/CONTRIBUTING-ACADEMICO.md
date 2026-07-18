@@ -8,11 +8,12 @@ Checklist mínimo para novos membros:
 
 1. [ ] Clonar o repositório e instalar pré-requisitos (Java 17, Gradle wrapper)
 2. [ ] Executar `./gradlew check` e confirmar que todos os testes passam
-3. [ ] Ler o índice de ADRs em [`docs/research/adr/README.md`](research/adr/README.md)
-4. [ ] Copiar o [`template de experimento`](research/experiments/experiment-template.md) para uma pasta datada
-5. [ ] Rodar uma geração simples: `./run_synthea -s 42 -p 5 Massachusetts`
-6. [ ] Copiar `output/manifest.json` para a pasta do experimento
-7. [ ] Preencher `experiment.md` com resultados e conclusão
+3. [ ] Ler o mapa do motor — [`MAPA-DO-MOTOR-DE-GERACAO.md`](MAPA-DO-MOTOR-DE-GERACAO.md) e o relatório [`mapa-motor-geracao.html`](mapa-motor-geracao.html) — para entender onde os dados sintéticos são gerados antes de alterar o código
+4. [ ] Ler o índice de ADRs em [`docs/research/adr/README.md`](research/adr/README.md)
+5. [ ] Copiar o [`template de experimento`](research/experiments/experiment-template.md) para uma pasta datada
+6. [ ] Rodar uma geração simples: `./run_synthea -s 42 -p 5 Massachusetts`
+7. [ ] Copiar `output/manifest.json` para a pasta do experimento
+8. [ ] Preencher `experiment.md` com resultados e conclusão
 
 ---
 
