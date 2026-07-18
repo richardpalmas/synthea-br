@@ -59,6 +59,10 @@ public class WebServerTest {
     assertEquals(200, response.statusCode());
     assertTrue(response.body().contains("Synthea-br"));
     assertTrue(response.body().contains("Gerar cohort"));
+    assertTrue(response.body().contains("pathwayArchetype"));
+    assertTrue(response.body().contains("br.pathway.archetype"));
+    assertTrue(response.body().contains("<details"));
+    assertTrue(response.body().contains("Configurações avançadas de trajetória"));
   }
 
   @Test
@@ -118,8 +122,17 @@ public class WebServerTest {
     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
     assertEquals(200, response.statusCode());
     assertTrue(response.body().contains("\"trajectory\""));
+    assertTrue(response.body().contains("\"defaultBrProfile\":true"));
+    assertTrue(response.body().contains("\"defaultPathwayFocus\":true"));
+    assertTrue(response.body().contains("\"defaultHtmlPathwayMode\":\"orientador\""));
+    assertTrue(response.body().contains("\"defaultModuleProfile\":\"pathway_minimal\""));
+    assertTrue(response.body().contains("\"defaultTrajectoryMode\":\"episodic\""));
+    assertTrue(response.body().contains("\"defaultSimulationWindow\":\"pre_onset_years:10\""));
     assertTrue(response.body().contains("pathway_minimal"));
     assertTrue(response.body().contains("pre_onset_years:10"));
+    assertTrue(response.body().contains("remission"));
+    assertTrue(response.body().contains("progression"));
+    assertTrue(response.body().contains("br.pathway.archetype"));
   }
 
   @Test
@@ -153,6 +166,40 @@ public class WebServerTest {
         .build();
     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
     assertTrue("Accepted job start", response.statusCode() == 200 || response.statusCode() == 202);
+  }
+
+  @Test
+  public void testPostForcedArchetypeWithoutBreastCancerReturns400() throws Exception {
+    int port = server.getBoundPort();
+    String body = "{\"population\":1,\"seed\":42,\"pathwayArchetype\":\"remission\","
+        + "\"exportFhir\":false,\"exportCsv\":false,\"exportHtml\":false}";
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create("http://127.0.0.1:" + port + "/api/generate"))
+        .header("Content-Type", "application/json")
+        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build();
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    assertEquals(400, response.statusCode());
+    assertTrue(response.body().contains("apenas breast_cancer"));
+  }
+
+  @Test
+  public void testPostRemissionArchetypeAccepted() throws Exception {
+    int port = server.getBoundPort();
+    String body = "{\"population\":1,\"seed\":42,\"brProfile\":true,"
+        + "\"targetCondition\":\"breast_cancer\",\"gender\":\"F\","
+        + "\"minAge\":45,\"maxAge\":75,\"pathwayFocus\":true,"
+        + "\"moduleProfile\":\"pathway_minimal\",\"pathwayArchetype\":\"remission\","
+        + "\"simulationWindow\":\"pre_onset_years:10\","
+        + "\"exportFhir\":false,\"exportCsv\":false,\"exportHtml\":false}";
+    HttpRequest request = HttpRequest.newBuilder()
+        .uri(URI.create("http://127.0.0.1:" + port + "/api/generate"))
+        .header("Content-Type", "application/json")
+        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build();
+    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    assertTrue("Accepted remission archetype job", response.statusCode() == 200
+        || response.statusCode() == 202);
   }
 
   @Test

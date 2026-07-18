@@ -284,6 +284,27 @@ O paper valida dois padrões reaproveitáveis na **camada opcional de IA** (ADR-
 
 O paper da NHS England é evidência **a favor** da arquitetura C+D+E deste ADR: quando a trajetória clínica precisa ser longitudinal e coerente, **simulação determinística na origem** (GMF episódico) supera pipeline LLM-heavy como fonte primária. A camada LLM permanece útil para **narrativa, validação opcional e augmentação** — exatamente onde o ADR-007 posiciona o MAI-DxO.
 
+## Adendo B — Epic 10: cobertura no nível Eventos (2026-07-10)
+
+O Epic 10 estende o piloto de câncer de mama sem alterar o papel do módulo episódico (marcador de fases):
+
+- **Geração:** enriquecimento do GMF upstream (`breast_cancer` + submódulos) — imagem de estadiamento, mastectomia tipada, ramos `remission`/`progression` via `br.pathway.archetype`.
+- **Catálogo:** `breast_cancer_phases.json` v2.0.0 — fases `progression` e `palliative`; allowlists de TC/cintilografia; remoção de ruído ginecológico do `follow_up`.
+- **Classificação HTML:** encontros com `reason` = condição-alvo não caem mais em Diagnóstico quando não há código de encontro na allowlist.
+- **Fidelidade:** nível **Eventos** apenas — marcos validados por fixtures (`PathwayArchetypeMilestoneTest`); prontuário textual permanece fora de escopo (Epic 8 opcional).
+
+## Adendo C — Qualidade da timeline Eventos (2026-07-10)
+
+Melhoria C.1 (sem prontuário narrativo):
+
+- **Timing GMF:** delays entre biópsia/IHC → imagem de estadiamento (7–21d), entre exames de imagem (1–7d) e staging→decisão (7–21d).
+- **Estádio clínico:** subestádio AJCC emite LOINC `21908-9`; estágios pai (`Stage I/II/III`) viram estados Simple (PriorState preservado, sem observação duplicada).
+- **Calendário radioterápico:** feixe externo convencional usa 25 frações, hipofracionada 15 e IORT uma sessão; os cursos fracionados seguem blocos 5+2, sem o antigo atraso aleatório de 24–36 horas.
+- **HTML orientador:** dedup exato, painéis molecular/TNM consolidados e séries representadas por início, mudança e término. Respostas iguais e mamografias de seguimento exibem primeira/mudanças/última ocorrência. O `HealthRecord`/FHIR/CSV permanece completo.
+- **HTML pesquisador:** preserva todas as sessões, ciclos e avaliações periódicas, aplicando apenas deduplicação técnica exata.
+- **Labels:** `display_pt` para TNM, receptores, resposta, status e procedimentos; medidas numéricas usam uma casa decimal e unidade.
+- **Fora de escopo (C.2):** texto de consulta (queixa, HDA, exame físico, conduta) no estilo `example1.md` / `example2.md`.
+
 ## Referências
 
 ### Revisão bibliográfica — três famílias (âncoras do spike)

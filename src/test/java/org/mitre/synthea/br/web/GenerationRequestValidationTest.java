@@ -25,6 +25,16 @@ public class GenerationRequestValidationTest {
   }
 
   @Test
+  public void testPopulationLimitAccepts500AndRejects501() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 500;
+    assertTrue(request.validate().isEmpty());
+
+    request.population = 501;
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("500")));
+  }
+
+  @Test
   public void testMinAgeGreaterThanMaxAgeRejected() {
     GenerationRequest request = new GenerationRequest();
     request.population = 5;
@@ -173,5 +183,27 @@ public class GenerationRequestValidationTest {
     request.population = 5;
     request.htmlPathwayMode = "invalid";
     assertTrue(request.validate().stream().anyMatch(m -> m.contains("Modo HTML inválido")));
+  }
+
+  @Test
+  public void testForcedArchetypeRequiresBreastCancer() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.pathwayArchetype = "remission";
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("apenas breast_cancer")));
+
+    request.targetCondition = "breast_cancer";
+    request.minAge = 45;
+    request.maxAge = 75;
+    assertTrue(request.validate().isEmpty());
+  }
+
+  @Test
+  public void testInvalidPathwayArchetypeRejected() {
+    GenerationRequest request = new GenerationRequest();
+    request.population = 5;
+    request.targetCondition = "breast_cancer";
+    request.pathwayArchetype = "metastatic";
+    assertTrue(request.validate().stream().anyMatch(m -> m.contains("Arquétipo de trajetória inválido")));
   }
 }

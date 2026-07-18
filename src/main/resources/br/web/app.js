@@ -9,6 +9,8 @@
   const statusLinks = document.getElementById("status-links");
   const logTail = document.getElementById("log-tail");
   const gateModeGroup = document.getElementById("gate-mode-group");
+  const trajectoryAdvanced = document.getElementById("trajectory-advanced");
+  const trajectorySummaryLabel = document.getElementById("trajectory-summary-label");
   const trajectorySection = document.getElementById("trajectory-section");
   const trajectorySectionHelp = document.getElementById("trajectory-section-help");
   const targetCondition = document.getElementById("targetCondition");
@@ -26,11 +28,45 @@
   const trajectoryMode = document.getElementById("trajectoryMode");
   const simulationWindow = document.getElementById("simulationWindow");
   const pathwayArchetype = document.getElementById("pathwayArchetype");
+  const pathwayArchetypeHelp = document.getElementById("pathway-archetype-help");
+  const archetypePresets = document.getElementById("archetype-presets");
+  const presetArchetypeRemission = document.getElementById("preset-archetype-remission");
+  const presetArchetypeProgression = document.getElementById("preset-archetype-progression");
 
   const aiApiKeyLabel = document.getElementById("aiApiKeyLabel");
 
   let pollTimer = null;
   let uiOptions = null;
+
+  const REPORT_TRAJECTORY_DEFAULTS = {
+    pathwayFocus: true,
+    htmlPathwayMode: "orientador",
+    moduleProfile: "pathway_minimal",
+    trajectoryMode: "episodic",
+    simulationWindow: "pre_onset_years:10",
+    pathwayArchetype: "auto"
+  };
+
+  function updateTrajectorySummaryLabel() {
+    if (!trajectorySummaryLabel) {
+      return;
+    }
+    const parts = [];
+    parts.push(pathwayFocus.checked ? "focus" : "sem focus");
+    parts.push(htmlPathwayMode.value || "orientador");
+    parts.push(moduleProfile.value || "pathway_minimal");
+    parts.push(trajectoryMode.value || "episodic");
+    parts.push(simulationWindow.value || "pre_onset_years:10");
+    parts.push(pathwayArchetype.value || "auto");
+    trajectorySummaryLabel.textContent =
+        "Configurações avançadas de trajetória (" + parts.join(" · ") + ")";
+  }
+
+  function expandTrajectoryAdvanced() {
+    if (trajectoryAdvanced) {
+      trajectoryAdvanced.open = true;
+    }
+  }
 
   function populateSelect(selectEl, options, defaultValue) {
     selectEl.innerHTML = "";
@@ -45,18 +81,36 @@
     }
   }
 
-  function applyFocusedTrajectoryPreset(preset) {
+  function applyTrajectoryPreset(preset) {
     if (!preset) {
       return;
     }
     pathwayFocus.checked = !!preset.pathwayFocus;
-    htmlPathwayMode.value = preset.htmlPathwayMode || "auto";
-    moduleProfile.value = preset.moduleProfile || "full";
-    trajectoryMode.value = preset.trajectoryMode || "lifespan";
-    simulationWindow.value = preset.simulationWindow || "full_lifespan";
+    htmlPathwayMode.value = preset.htmlPathwayMode || REPORT_TRAJECTORY_DEFAULTS.htmlPathwayMode;
+    moduleProfile.value = preset.moduleProfile || REPORT_TRAJECTORY_DEFAULTS.moduleProfile;
+    trajectoryMode.value = preset.trajectoryMode || REPORT_TRAJECTORY_DEFAULTS.trajectoryMode;
+    simulationWindow.value = preset.simulationWindow || REPORT_TRAJECTORY_DEFAULTS.simulationWindow;
     if (preset.pathwayArchetype) {
       pathwayArchetype.value = preset.pathwayArchetype;
+    } else {
+      pathwayArchetype.value = REPORT_TRAJECTORY_DEFAULTS.pathwayArchetype;
     }
+    if (preset.exportHtml && document.getElementById("exportHtml")) {
+      document.getElementById("exportHtml").checked = true;
+    }
+    updateArchetypeAvailability();
+    updateTrajectorySummaryLabel();
+  }
+
+  function applyBreastCancerDemographics() {
+    if (!uiOptions || !uiOptions.breastCancerPreset) {
+      return;
+    }
+    document.getElementById("gender").value = uiOptions.breastCancerPreset.gender;
+    document.getElementById("minAge").value = uiOptions.breastCancerPreset.minAge;
+    document.getElementById("maxAge").value = uiOptions.breastCancerPreset.maxAge;
+    document.getElementById("brProfile").checked = true;
+    targetCondition.value = "breast_cancer";
   }
 
   function populateAiModels(providerId) {
@@ -104,7 +158,13 @@
 
   function updateAiVisibility() {
     const enabled = aiEnrichment.checked;
+    const populationInput = document.getElementById("population");
     aiFields.classList.toggle("hidden", !enabled);
+    if (uiOptions) {
+      populationInput.max = enabled && uiOptions.aiEnrichment
+          ? uiOptions.aiEnrichment.maxPatients
+          : uiOptions.maxPopulation;
+    }
     if (enabled && !document.getElementById("brProfile").checked) {
       document.getElementById("brProfile").checked = true;
     }
@@ -118,6 +178,8 @@
     uiOptions = await response.json();
     document.getElementById("seed").value = uiOptions.defaultSeed;
     document.getElementById("population").value = uiOptions.defaultPopulation;
+    document.getElementById("brProfile").checked =
+        uiOptions.defaultBrProfile !== undefined ? uiOptions.defaultBrProfile : true;
 
     uiOptions.supportedConditions.forEach(function (key) {
       const option = document.createElement("option");
@@ -132,6 +194,9 @@
 
     if (uiOptions.trajectory) {
       trajectorySectionHelp.textContent = uiOptions.trajectory.sectionHelpText;
+      if (uiOptions.trajectory.archetypeHelpText) {
+        pathwayArchetypeHelp.innerHTML = uiOptions.trajectory.archetypeHelpText;
+      }
       populateSelect(htmlPathwayMode, uiOptions.trajectory.htmlPathwayModes,
           uiOptions.trajectory.defaultHtmlPathwayMode);
       populateSelect(moduleProfile, uiOptions.trajectory.moduleProfiles,
@@ -143,6 +208,15 @@
       populateSelect(pathwayArchetype, uiOptions.trajectory.pathwayArchetypes,
           uiOptions.trajectory.defaultPathwayArchetype);
       pathwayFocus.checked = uiOptions.trajectory.defaultPathwayFocus;
+      if (uiOptions.trajectory.remissionExample) {
+        presetArchetypeRemission.textContent = uiOptions.trajectory.remissionExample.label;
+        presetArchetypeRemission.title = uiOptions.trajectory.remissionExample.helpText || "";
+      }
+      if (uiOptions.trajectory.progressionExample) {
+        presetArchetypeProgression.textContent = uiOptions.trajectory.progressionExample.label;
+        presetArchetypeProgression.title = uiOptions.trajectory.progressionExample.helpText || "";
+      }
+      updateTrajectorySummaryLabel();
     }
 
     uiOptions.exportOptions.forEach(function (opt) {
@@ -162,7 +236,6 @@
 
     if (uiOptions.aiEnrichment) {
       aiHelp.textContent = uiOptions.aiEnrichment.helpText;
-      document.getElementById("population").max = uiOptions.aiEnrichment.maxPatients;
       uiOptions.aiEnrichment.providers.forEach(function (p) {
         const option = document.createElement("option");
         option.value = p.id;
@@ -175,25 +248,62 @@
     updateAiVisibility();
   }
 
+  function updateArchetypeAvailability() {
+    const isBreastCancer = targetCondition.value === "breast_cancer";
+    archetypePresets.classList.toggle("hidden", !isBreastCancer);
+    Array.prototype.forEach.call(pathwayArchetype.options, function (option) {
+      const forced = option.value === "remission" || option.value === "progression";
+      option.disabled = forced && !isBreastCancer;
+    });
+    if (!isBreastCancer
+        && (pathwayArchetype.value === "remission" || pathwayArchetype.value === "progression")) {
+      pathwayArchetype.value = "auto";
+    }
+  }
+
   function updateGateVisibility() {
     const hasCondition = targetCondition.value !== "";
     gateModeGroup.classList.toggle("hidden", !hasCondition);
-    trajectorySection.classList.toggle("hidden", !hasCondition);
     presetBtn.classList.toggle("hidden", targetCondition.value !== "breast_cancer");
+    updateArchetypeAvailability();
   }
 
   targetCondition.addEventListener("change", updateGateVisibility);
+
+  [pathwayFocus, htmlPathwayMode, moduleProfile, trajectoryMode, simulationWindow, pathwayArchetype]
+      .forEach(function (el) {
+        el.addEventListener("change", updateTrajectorySummaryLabel);
+      });
 
   presetBtn.addEventListener("click", function () {
     if (!uiOptions || !uiOptions.breastCancerPreset) {
       return;
     }
-    document.getElementById("gender").value = uiOptions.breastCancerPreset.gender;
-    document.getElementById("minAge").value = uiOptions.breastCancerPreset.minAge;
-    document.getElementById("maxAge").value = uiOptions.breastCancerPreset.maxAge;
-    document.getElementById("brProfile").checked = true;
-    targetCondition.value = "breast_cancer";
-    applyFocusedTrajectoryPreset(uiOptions.breastCancerPreset.focusedTrajectory);
+    applyBreastCancerDemographics();
+    applyTrajectoryPreset(uiOptions.breastCancerPreset.focusedTrajectory);
+    if (uiOptions.breastCancerPreset.defaultExportHtml && document.getElementById("exportHtml")) {
+      document.getElementById("exportHtml").checked = true;
+    }
+    updateGateVisibility();
+  });
+
+  presetArchetypeRemission.addEventListener("click", function () {
+    if (!uiOptions || !uiOptions.trajectory || !uiOptions.trajectory.remissionExample) {
+      return;
+    }
+    applyBreastCancerDemographics();
+    applyTrajectoryPreset(uiOptions.trajectory.remissionExample);
+    expandTrajectoryAdvanced();
+    updateGateVisibility();
+  });
+
+  presetArchetypeProgression.addEventListener("click", function () {
+    if (!uiOptions || !uiOptions.trajectory || !uiOptions.trajectory.progressionExample) {
+      return;
+    }
+    applyBreastCancerDemographics();
+    applyTrajectoryPreset(uiOptions.trajectory.progressionExample);
+    expandTrajectoryAdvanced();
     updateGateVisibility();
   });
 
@@ -204,6 +314,8 @@
     const maxAgeVal = document.getElementById("maxAge").value;
     if (isNaN(population) || population < 1) {
       errors.push("População deve ser ≥ 1.");
+    } else if (uiOptions && population > uiOptions.maxPopulation) {
+      errors.push("População máxima é " + uiOptions.maxPopulation + ".");
     }
     if (minAgeVal && maxAgeVal && parseInt(minAgeVal, 10) > parseInt(maxAgeVal, 10)) {
       errors.push("Idade mínima não pode ser maior que a máxima.");
@@ -225,6 +337,10 @@
     }
     if (trajectoryMode.value === "episodic" && targetCondition.value !== "breast_cancer") {
       errors.push("Modo episodic suporta apenas breast_cancer no MVP.");
+    }
+    if ((pathwayArchetype.value === "remission" || pathwayArchetype.value === "progression")
+        && targetCondition.value !== "breast_cancer") {
+      errors.push("Arquétipo forçado suporta apenas breast_cancer no MVP.");
     }
     if (simulationWindow.value && simulationWindow.value !== "full_lifespan") {
       if (!minAgeVal || !maxAgeVal) {

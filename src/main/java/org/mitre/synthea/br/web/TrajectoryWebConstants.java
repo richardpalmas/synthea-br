@@ -200,9 +200,7 @@ public final class TrajectoryWebConstants {
       summary.append(" · Janela: ").append(window);
     }
     String archetype = normalizedPathwayArchetype(request.pathwayArchetype);
-    if (!ARCHETYPE_AUTO.equals(archetype)) {
-      summary.append(" · Arquétipo: ").append(archetype);
-    }
+    summary.append(" · Arquétipo: ").append(archetype);
     summary.append(" · HTML: ").append(htmlLabel);
     return summary.toString();
   }

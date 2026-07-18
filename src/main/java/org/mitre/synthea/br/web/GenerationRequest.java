@@ -13,7 +13,8 @@ import org.mitre.synthea.br.condition.SupportedConditions;
  */
 public class GenerationRequest {
 
-  private static final int MAX_POPULATION = 100_000;
+  /** Maximum cohort size accepted by the local web UI/API. */
+  public static final int MAX_POPULATION = 500;
 
   public long seed = 42L;
   public int population = 10;

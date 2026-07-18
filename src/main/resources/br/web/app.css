@@ -131,6 +131,48 @@ button.secondary:hover:not(:disabled) {
   background: #d8e0e8;
 }
 
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.preset-row button.secondary {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-width: 10rem;
+}
+
+.advanced-details {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.advanced-details summary {
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  list-style-position: outside;
+}
+
+.advanced-details summary::-webkit-details-marker {
+  color: var(--accent);
+}
+
+.advanced-body {
+  margin-top: 1rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.advanced-body label:first-of-type {
+  margin-top: 0.5rem;
+}
+
 .errors {
   color: var(--error);
   font-size: 0.95rem;

@@ -224,17 +224,42 @@ public class HtmlExporter {
     return new PathwayHtmlModelBuilder.TimelineEventFactory() {
       @Override
       public TimelineEvent fromEntry(Entry entry, String type, boolean targetHighlight) {
-        TimelineEvent event = new TimelineEvent(entry.start, type, formatEntryLabel(entry, brProfile));
+        TimelineEvent event =
+            new TimelineEvent(entry.start, type, formatEntryLabel(entry, brProfile));
         event.targetConditionHighlight = targetHighlight;
+        event.codeKey = codeKeyOf(entry);
+        if (entry instanceof Observation) {
+          Observation observation = (Observation) entry;
+          event.valueLabel = formatObservationValue(observation, brProfile);
+          event.unit = observation.unit;
+          if (observation.value instanceof Code) {
+            Code valueCode = (Code) observation.value;
+            String system = valueCode.system != null ? valueCode.system : "";
+            String code = valueCode.code != null ? valueCode.code : "";
+            event.valueKey = system + "|" + code;
+          }
+        }
         return event;
       }
 
       @Override
       public TimelineEvent fromEncounter(Encounter encounter) {
-        return new TimelineEvent(encounter.start, "Encontro",
+        TimelineEvent event = new TimelineEvent(encounter.start, "Encontro",
             encounterLabel(encounter, brProfile));
+        event.codeKey = codeKeyOf(encounter);
+        return event;
       }
     };
+  }
+
+  private static String codeKeyOf(Entry entry) {
+    if (entry == null || entry.codes == null || entry.codes.isEmpty()) {
+      return null;
+    }
+    Code code = entry.codes.get(0);
+    String system = code.system != null ? code.system : "";
+    String value = code.code != null ? code.code : "";
+    return system + "|" + value;
   }
 
   private static Map<String, Map<String, Object>> aiEnrichmentByPatientId() {
@@ -549,10 +574,46 @@ public class HtmlExporter {
       return "Registro clínico";
     }
     Code code = entry.codes.get(0);
-    if (brProfile) {
-      return BrTerminologyResolver.resolveDisplay(code);
+    String base = brProfile
+        ? BrTerminologyResolver.resolveDisplay(code)
+        : (code.display != null ? code.display : code.code);
+    if (entry instanceof Observation) {
+      String valueLabel = formatObservationValue((Observation) entry, brProfile);
+      if (valueLabel != null && !valueLabel.isEmpty()) {
+        return base + " — " + valueLabel;
+      }
     }
-    return code.display != null ? code.display : code.code;
+    return base;
+  }
+
+  private static String formatObservationValue(Observation observation, boolean brProfile) {
+    if (observation.value == null) {
+      return null;
+    }
+    if (observation.value instanceof Code) {
+      Code valueCode = (Code) observation.value;
+      if (brProfile) {
+        return BrTerminologyResolver.resolveDisplay(valueCode);
+      }
+      return valueCode.display != null ? valueCode.display : valueCode.code;
+    }
+    String text;
+    if (observation.value instanceof Number) {
+      text = String.format(Locale.ROOT, "%.1f", ((Number) observation.value).doubleValue())
+          .replaceAll("\\.0$", "");
+      if (observation.unit != null && !observation.unit.isBlank()) {
+        text += " " + observation.unit;
+      }
+    } else {
+      text = observation.value.toString();
+    }
+    if (brProfile) {
+      String mapped = BrTerminologyResolver.resolveDisplayText(text);
+      if (mapped != null && !mapped.isEmpty()) {
+        return mapped;
+      }
+    }
+    return text;
   }
 
   private static String encounterLabel(Encounter encounter, boolean brProfile) {
@@ -690,8 +751,14 @@ public class HtmlExporter {
     public String label;
     public String phaseId;
     public boolean targetConditionHighlight;
+    /** Stable key {@code system|code} for HTML dedup/collapse (Story C.1). */
+    public String codeKey;
+    /** Structured observation value used by orientador panel aggregation. */
+    public String valueKey;
+    public String valueLabel;
+    public String unit;
 
-    TimelineEvent(long timestamp, String type, String label) {
+    public TimelineEvent(long timestamp, String type, String label) {
       this.timestamp = timestamp;
       this.type = type;
       this.label = label;

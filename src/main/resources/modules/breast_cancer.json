@@ -400,7 +400,19 @@
     "Diagnose Hormone Receptors": {
       "type": "CallSubmodule",
       "submodule": "breast_cancer/hormone_diagnosis",
-      "direct_transition": "Staging Imaging Studies"
+      "direct_transition": "Delay Before Staging Imaging"
+    },
+    "Delay Before Staging Imaging": {
+      "type": "Delay",
+      "range": {
+        "low": 7,
+        "high": 21,
+        "unit": "days"
+      },
+      "direct_transition": "Staging Imaging Studies",
+      "remarks": [
+        "Story C.1 — espaça diagnóstico (biópsia/IHC) e imagem de estadiamento (~2 semanas, alinhado a example1/priors)."
+      ]
     },
     "Staging Imaging Studies": {
       "type": "CallSubmodule",
@@ -592,40 +604,18 @@
       ]
     },
     "Stage III": {
-      "type": "Observation",
-      "category": "laboratory",
-      "unit": "",
-      "codes": [
-        {
-          "system": "LOINC",
-          "code": "21908-9",
-          "display": "Stage group.clinical Cancer"
-        }
-      ],
-      "value_code": {
-        "system": "SNOMED-CT",
-        "code": "258224005",
-        "display": "Stage 3 (qualifier value)"
-      },
-      "direct_transition": "End the Initial Encounter"
+      "type": "Simple",
+      "direct_transition": "End the Initial Encounter",
+      "remarks": [
+        "Story C.1 — estágio pai sem observação LOINC 21908-9; subestádio AJCC (IIIA/IIIB/IIIC) já emitiu o estádio clínico."
+      ]
     },
     "Stage I": {
-      "type": "Observation",
-      "category": "laboratory",
-      "unit": "",
-      "codes": [
-        {
-          "system": "LOINC",
-          "code": "21908-9",
-          "display": "Stage group.clinical Cancer"
-        }
-      ],
-      "value_code": {
-        "system": "SNOMED-CT",
-        "code": "258215001",
-        "display": "Stage 1 (qualifier value)"
-      },
-      "direct_transition": "End the Initial Encounter"
+      "type": "Simple",
+      "direct_transition": "End the Initial Encounter",
+      "remarks": [
+        "Story C.1 — estágio pai sem observação LOINC 21908-9; subestádio AJCC (IA/IB) já emitiu o estádio clínico."
+      ]
     },
     "IIIB": {
       "type": "Observation",
@@ -922,22 +912,11 @@
       ]
     },
     "Stage II": {
-      "type": "Observation",
-      "category": "laboratory",
-      "unit": "",
-      "codes": [
-        {
-          "system": "LOINC",
-          "code": "21908-9",
-          "display": "Stage group.clinical Cancer"
-        }
-      ],
-      "value_code": {
-        "system": "SNOMED-CT",
-        "code": "258219007",
-        "display": "Stage 2 (qualifier value)"
-      },
-      "direct_transition": "End the Initial Encounter"
+      "type": "Simple",
+      "direct_transition": "End the Initial Encounter",
+      "remarks": [
+        "Story C.1 — estágio pai sem observação LOINC 21908-9; subestádio AJCC (IIA/IIB) já emitiu o estádio clínico."
+      ]
     },
     "Stage II Treatment": {
       "type": "Simple",
@@ -1408,8 +1387,25 @@
     "Treatment Unsuccessful": {
       "type": "SetAttribute",
       "attribute": "breast_cancer_survival",
-      "direct_transition": "Impending Death from Cancer Complications",
+      "direct_transition": "Treatment Unsuccessful Route",
       "value": "no"
+    },
+    "Treatment Unsuccessful Route": {
+      "type": "Simple",
+      "conditional_transition": [
+        {
+          "transition": "Sit-Down with Oncologist to Discuss Treatment Options",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "progression"
+          }
+        },
+        {
+          "transition": "Impending Death from Cancer Complications"
+        }
+      ]
     },
     "Treatment Successful": {
       "type": "SetAttribute",
@@ -1484,11 +1480,14 @@
     "Delay for Analysis of Possible Treatments": {
       "type": "Delay",
       "range": {
-        "low": 1,
-        "high": 7,
+        "low": 7,
+        "high": 21,
         "unit": "days"
       },
-      "direct_transition": "Breast Cancer Treatment Success Rate"
+      "direct_transition": "Breast Cancer Treatment Success Rate",
+      "remarks": [
+        "Story C.1 — janela staging→decisão terapêutica ampliada (7–21 dias)."
+      ]
     },
     "Sit-Down with Oncologist to Discuss Treatment Options": {
       "type": "Encounter",
@@ -1546,6 +1545,12 @@
           "condition": {
             "condition_type": "Or",
             "conditions": [
+              {
+                "condition_type": "Attribute",
+                "attribute": "pathway_archetype",
+                "operator": "==",
+                "value": "remission"
+              },
               {
                 "condition_type": "Attribute",
                 "attribute": "breast_cancer_triple_negative",
@@ -2029,11 +2034,25 @@
       "type": "SetAttribute",
       "attribute": "hospice_reason",
       "value_attribute": "breast_cancer_condition",
+      "direct_transition": "Progression Hospice Admission"
+    },
+    "Progression Hospice Admission": {
+      "type": "Encounter",
+      "encounter_class": "hospice",
+      "reason": "hospice_reason",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "305336008",
+          "display": "Admission to hospice (procedure)"
+        }
+      ],
       "direct_transition": "Impending Death from Progression"
     },
     "Impending Death from Progression": {
       "type": "Death",
       "referenced_by_attribute": "breast_cancer_condition",
+      "direct_transition": "Terminal",
       "range": {
         "low": 2,
         "high": 16,

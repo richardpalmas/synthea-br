@@ -15,6 +15,9 @@ public class WebUiOptions {
 
   public long defaultSeed = 42L;
   public int defaultPopulation = 10;
+  public int maxPopulation = GenerationRequest.MAX_POPULATION;
+  /** Default checked state for {@code br.profile=br} on the web form. */
+  public boolean defaultBrProfile = true;
   public List<String> supportedConditions = new ArrayList<>(SupportedConditions.supportedKeys());
   public List<String> gateModes = Arrays.asList("retry", "exclude");
   public List<ExportOption> exportOptions = Arrays.asList(
@@ -99,20 +102,20 @@ public class WebUiOptions {
     public int maxAge = 75;
     public String helpText =
         "Para câncer de mama, recomenda-se gênero F e idade 45–75 para reduzir tentativas do gate. "
-            + "O preset também ativa trajetória focada (receita CLI §11 receita H): focus, "
-            + "pathway_minimal, episodic e janela pre_onset_years:10.";
+            + "Perfil BR e trajetória focada já vêm pré-aplicados na UI; este preset preenche a demografia.";
     public FocusedTrajectoryPreset focusedTrajectory = new FocusedTrajectoryPreset();
+    public boolean defaultExportHtml = true;
   }
 
   /**
    * Epic 9 trajectory form metadata and preset values (Story 7.2).
    */
   public static final class TrajectoryOptions {
-    public boolean defaultPathwayFocus = false;
-    public String defaultHtmlPathwayMode = TrajectoryWebConstants.HTML_MODE_AUTO;
-    public String defaultModuleProfile = TrajectoryWebConstants.MODULE_PROFILE_FULL;
-    public String defaultTrajectoryMode = TrajectoryWebConstants.TRAJECTORY_MODE_LIFESPAN;
-    public String defaultSimulationWindow = TrajectoryWebConstants.SIMULATION_WINDOW_FULL;
+    public boolean defaultPathwayFocus = true;
+    public String defaultHtmlPathwayMode = TrajectoryWebConstants.HTML_MODE_ORIENTADOR;
+    public String defaultModuleProfile = TrajectoryWebConstants.MODULE_PROFILE_PATHWAY_MINIMAL;
+    public String defaultTrajectoryMode = TrajectoryWebConstants.TRAJECTORY_MODE_EPISODIC;
+    public String defaultSimulationWindow = TrajectoryWebConstants.SIMULATION_WINDOW_PRE_ONSET_10;
     public String defaultPathwayArchetype = TrajectoryWebConstants.ARCHETYPE_AUTO;
     public List<SelectOption> htmlPathwayModes = buildHtmlModes();
     public List<SelectOption> moduleProfiles = buildModuleProfiles();
@@ -120,9 +123,15 @@ public class WebUiOptions {
     public List<SelectOption> simulationWindows = buildSimulationWindows();
     public List<SelectOption> pathwayArchetypes = buildPathwayArchetypes();
     public String sectionHelpText =
-        "Configurações Epic 9 (trajetória focada). Requer condição clínica alvo. "
-            + "Modo HTML auto = orientador quando focus está ligado, senão full.";
+        "Overrides opcionais da receita padrão de relatório (focus, orientador, pathway_minimal, "
+            + "episodic, pre_onset_years:10, archetype auto). Requer condição clínica alvo para "
+            + "episodic. Arquétipo forçado (remission/progression) — apenas breast_cancer.";
+    public String archetypeHelpText =
+        "Epic 10 — <code>br.pathway.archetype</code>: auto usa ramos probabilísticos; "
+            + "remission e progression alinham marcos de eventos aos prontuários example1/example2.";
     public FocusedTrajectoryPreset focusedTrajectoryPreset = new FocusedTrajectoryPreset();
+    public ArchetypeExamplePreset remissionExample = ArchetypeExamplePreset.remission();
+    public ArchetypeExamplePreset progressionExample = ArchetypeExamplePreset.progression();
 
     private static List<SelectOption> buildHtmlModes() {
       return Arrays.asList(
@@ -172,10 +181,45 @@ public class WebUiOptions {
    */
   public static final class FocusedTrajectoryPreset {
     public boolean pathwayFocus = true;
-    public String htmlPathwayMode = TrajectoryWebConstants.HTML_MODE_AUTO;
+    public String htmlPathwayMode = TrajectoryWebConstants.HTML_MODE_ORIENTADOR;
     public String moduleProfile = TrajectoryWebConstants.MODULE_PROFILE_PATHWAY_MINIMAL;
     public String trajectoryMode = TrajectoryWebConstants.TRAJECTORY_MODE_EPISODIC;
     public String simulationWindow = TrajectoryWebConstants.SIMULATION_WINDOW_PRE_ONSET_10;
+    public String pathwayArchetype = TrajectoryWebConstants.ARCHETYPE_AUTO;
+    public boolean exportHtml = true;
+  }
+
+  /**
+   * Epic 10 preset aligned to example1 (remission) or example2 (progression) event milestones.
+   */
+  public static final class ArchetypeExamplePreset {
+    public String label;
+    public String helpText;
+    public String pathwayArchetype;
+    public boolean pathwayFocus = true;
+    public String htmlPathwayMode = TrajectoryWebConstants.HTML_MODE_ORIENTADOR;
+    public String moduleProfile = TrajectoryWebConstants.MODULE_PROFILE_PATHWAY_MINIMAL;
+    public String trajectoryMode = TrajectoryWebConstants.TRAJECTORY_MODE_LIFESPAN;
+    public String simulationWindow = TrajectoryWebConstants.SIMULATION_WINDOW_PRE_ONSET_10;
+    public boolean exportHtml = true;
+
+    static ArchetypeExamplePreset remission() {
+      ArchetypeExamplePreset preset = new ArchetypeExamplePreset();
+      preset.label = "Example1 — remission";
+      preset.helpText =
+          "Luminal, desfecho favorável (neoadjuvância, mastectomia, quimio/radio, seguimento).";
+      preset.pathwayArchetype = TrajectoryWebConstants.ARCHETYPE_REMISSION;
+      return preset;
+    }
+
+    static ArchetypeExamplePreset progression() {
+      ArchetypeExamplePreset preset = new ArchetypeExamplePreset();
+      preset.label = "Example2 — progression";
+      preset.helpText =
+          "Metástase, paliativo e óbito (estadiamento por imagem, hospice, terminal).";
+      preset.pathwayArchetype = TrajectoryWebConstants.ARCHETYPE_PROGRESSION;
+      return preset;
+    }
   }
 
   /**

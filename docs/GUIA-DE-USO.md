@@ -254,6 +254,8 @@ run_synthea.bat -p 10 --exporter.baseDirectory=./output_experimento/
 
 Ative o perfil de localização brasileiro quando precisar de contexto BR em vez de defaults EUA.
 
+> **Fontes de dados:** inventário completo das origens IBGE, curadoria e limitações do MVP em [`FONTES-CONTEXTO-BR.md`](FONTES-CONTEXTO-BR.md).
+
 ```bash
 run_synthea.bat -s 42 -p 100 --br.profile=br
 ```
@@ -380,6 +382,33 @@ run_synthea.bat -s 42 -cs 42 -p 10 -g F -a 45-75 ^
 
 Evidência SM-9.2 (redução CSV com focus): [`docs/research/experiments/2026-07-10-pathway-focus-sm92/`](research/experiments/2026-07-10-pathway-focus-sm92/experiment.md).
 
+### Cobertura de trajetória no nível Eventos (Epic 10)
+
+Fidelidade **Eventos** = códigos clínicos + datas + fases (sem texto de prontuário). Matriz de marcos: [`docs/research/experiments/2026-07-10-breast-cancer-event-milestones/`](research/experiments/2026-07-10-breast-cancer-event-milestones/milestone-matrix-breast-cancer-eventos.md).
+
+| Property | Valores | Default |
+|----------|---------|---------|
+| `br.pathway.archetype` | `auto`, `remission`, `progression` | `auto` |
+
+- **`auto`:** ramos probabilísticos do GMF upstream (`breast_cancer`).
+- **`remission`:** perfil luminal + neoadjuvância + cirurgia conservadora + radioterapia + hormonioterapia + seguimento (arquétipo `example1`).
+- **`progression`:** triplo-negativo + estadiamento avançado + mastectomia + progressão metastática + hospice + óbito (arquétipo `example2`).
+- Requer `br.target_condition=breast_cancer`. Disponível na Web UI (select **Arquétipo de trajetória**).
+
+Exemplo CLI (desfecho favorável):
+
+```bash
+run_synthea.bat -s 51001 -p 1 -g F -a 50-65 ^
+  --br.target_condition=breast_cancer ^
+  --br.generation.module_profile=pathway_minimal ^
+  --br.generation.simulation_window=pre_onset_years:10 ^
+  --br.pathway.focus=true ^
+  --br.pathway.archetype=remission ^
+  --exporter.html.export=true
+```
+
+Catálogo de fases v2.0.0 inclui **progressão** e **cuidados paliativos**; seguimento oncológico não inclui mais exame pélvico/citopatologia na allowlist.
+
 ### Janela temporal de simulação (Story 9.6)
 
 | Property | Valores | Default |
@@ -410,11 +439,15 @@ Evidência SM-9.2 (redução CSV com focus): [`docs/research/experiments/2026-07
 |----------|---------|---------|
 | `exporter.html.pathway_mode` | `orientador`, `pesquisador`, `full` | `orientador` se `br.pathway.focus=true`; senão `full` |
 
-- **orientador:** timeline agrupada por fase (catálogo 9.2); oculta ruído e seções clínicas fora da trajetória (mantém demografia)
-- **pesquisador:** timeline por fase + seção colapsável “Fora da trajetória”
+- **orientador:** timeline agrupada por fase (catálogo 9.2) e orientada a marcos. Consolida perfil molecular e TNM, mostra início/mudança/conclusão de quimio e radioterapia, e reduz séries iguais de resposta e mamografia à primeira, mudanças e última ocorrência. Remove encontros genéricos redundantes e deduplica observações idênticas no mesmo instante.
+- **pesquisador:** timeline por fase + seção colapsável “Fora da trajetória”; preserva todas as sessões, ciclos e avaliações periódicas (exceto duplicatas técnicas exatas).
 - **full:** HTML integral do Epic 6 (timeline plana)
 
 CSV/FHIR continuam filtrados por `br.pathway.focus`; o HTML usa snapshot pré-filtro para permitir o modo pesquisador mesmo com focus ativo.
+
+**Calendário radioterápico C.1:** feixe externo convencional = 25 frações, hipofracionada = 15 e IORT = 1. Cursos fracionados seguem blocos de 5 dias de tratamento + 2 dias de pausa. O FHIR/CSV mantém todas as frações; o orientador mostra os marcos do curso.
+
+**Nota:** fidelidade Eventos ≠ prontuário narrativo (`example1.md` / `example2.md`). Texto de consulta (queixa, HDA, conduta) permanece fora de escopo nesta fase.
 
 ---
 
@@ -510,29 +543,43 @@ Navegue para **http://127.0.0.1:8080** (host `br.web.bind`, porta `br.web.port`)
 | Campo | Equivalente CLI / config |
 |-------|--------------------------|
 | Seed | `-s` (a web também fixa `-cs` com o mesmo valor) |
-| Tamanho da população | `-p` — **exatamente N exportados** (1 por slot). Pacientes que falecem durante a simulação **contam** entre os N; a UI web desativa `overflow` para não gerar mortos *extras* além do tamanho pedido. |
+| Tamanho da população | `-p` — **1 a 500** na UI/API web e exatamente N exportados (1 por slot). Pacientes que falecem durante a simulação **contam** entre os N; a UI web desativa `overflow` para não gerar mortos *extras* além do tamanho pedido. Com IA ativa, aplica-se o limite menor de `br.ai.max_patients` (padrão 10). |
 | Gênero | `-g` (`M`, `F` ou qualquer) |
 | Idade mín./máx. | `-a min-max` (ambos preenchidos) |
-| Perfil brasileiro | `--br.profile=br` |
+| Perfil brasileiro | `--br.profile=br` (marcado por padrão na UI) |
 | Condição clínica alvo | `--br.target_condition=...` (MVP: `breast_cancer`) |
 | Modo de gate | `--br.target_condition.gate_mode=retry\|exclude` (visível só com condição alvo) |
 | Exportações | checkboxes → `exporter.fhir.export`, `exporter.csv.export`, `exporter.html.export` |
 | Enriquecimento por IA | `--br.ai.enrichment.enabled=true` + provedor/modelo + API key (BYOK) — ver [§10.1](#101-enriquecimento-por-ia-epic-8) |
-| **Trajetória clínica focada** (visível com condição alvo) | Epic 9 — ver tabela abaixo |
+| **Configurações avançadas de trajetória** (`<details>`, recolhido) | Overrides opcionais — ver tabela abaixo |
 | Foco na trajetória | `--br.pathway.focus=true` |
-| Modo HTML | `--exporter.html.pathway_mode=auto\|orientador\|pesquisador\|full` (`auto` = default condicional) |
+| Modo HTML | `--exporter.html.pathway_mode=auto\|orientador\|pesquisador\|full` |
 | Perfil de módulos | `--br.generation.module_profile=full\|pathway_minimal` |
 | Modo de trajetória | `--br.generation.trajectory_mode=lifespan\|episodic` |
 | Janela de simulação | `--br.generation.simulation_window=full_lifespan\|pre_onset_years:N` |
+| Arquétipo de trajetória | `--br.pathway.archetype=auto\|remission\|progression` (Epic 10) |
 
-**Preset “cohort câncer de mama”:** preenche F, idade 45–75, perfil BR, condição `breast_cancer` **e** a receita trajetória focada (Story 7.2): `pathway.focus`, `pathway_minimal`, `episodic`, `pre_onset_years:10`, HTML `auto` (→ orientador).  
-**Importante:** o preset **não** marca exportações automaticamente (`FHIR`/`CSV`/`HTML`); esses checkboxes continuam decisão explícita do usuário.
+**Receita padrão de relatório (pré-aplicada ao abrir a UI):**
+
+| Parâmetro | Valor padrão web |
+|-----------|------------------|
+| Perfil brasileiro | `br.profile=br` (checkbox marcado) |
+| Foco na trajetória | `true` |
+| Modo HTML | `orientador` |
+| Perfil de módulos | `pathway_minimal` |
+| Modo de trajetória | `episodic` |
+| Janela de simulação | `pre_onset_years:10` |
+| Arquétipo | `auto` |
+
+O painel **Configurações avançadas de trajetória** fica sempre visível, recolhido; expanda-o apenas para alterar esses valores. O resumo no `<summary>` mostra a configuração ativa.
+
+**Preset “cohort câncer de mama”:** preenche demografia recomendada (F, idade 45–75) e condição `breast_cancer`. Perfil BR e trajetória focada já vêm pré-aplicados; exportações (`FHIR`/`CSV`/`HTML`) continuam decisão explícita do usuário.
 
 **Artefatos pós-geração na UI:** além de `manifest.json` e link para HTML narrativo, a UI exibe link para `plausibility_report.json` quando gerado (Epic 4, default ligado) e um resumo textual dos modos de trajetória ativos.
 
-**Defaults web (compatibilidade):** trajetória focada **desligada** — mesmo comportamento do MVP Story 7.1 até o usuário alterar os campos ou usar o preset.
+**Defaults API REST (`GenerationRequest`):** permanecem conservadores (`focus=false`, `full`, `lifespan`, etc.) para clientes que omitam campos no JSON. A UI web sempre envia o payload completo com a receita padrão acima.
 
-**Nota histórica (AC #9):** até a Story 7.1, web **não equivalia** à receita CLI H para trajetória focada. A partir da Story 7.2, o preset cobre as flags de trajetória (Epic 9), mantendo exportações como escolha manual.
+**Nota histórica (AC #9):** até a Story 7.1, web **não equivalia** à receita CLI H para trajetória focada. A partir da Story 7.2, o preset cobre demografia; a partir desta melhoria, a receita de relatório é default silencioso na UI.
 
 ### 10.1 Enriquecimento por IA (Epic 8)
 

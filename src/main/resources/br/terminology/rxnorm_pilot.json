@@ -28,6 +28,22 @@
     "system": "RxNorm",
     "display_pt": "Doxorrubicina cloridrato 2 mg/mL — injetável 10 mL"
   },
+  "1732186": {
+    "system": "RxNorm",
+    "display_pt": "Epirrubicina cloridrato 2 mg/mL — injetável 100 mL"
+  },
+  "583214": {
+    "system": "RxNorm",
+    "display_pt": "Paclitaxel 100 mg — injetável"
+  },
+  "1734919": {
+    "system": "RxNorm",
+    "display_pt": "Ciclofosfamida 1.000 mg — injetável"
+  },
+  "1791701": {
+    "system": "RxNorm",
+    "display_pt": "Fluorouracila 50 mg/mL — injetável 10 mL"
+  },
   "1946840": {
     "system": "RxNorm",
     "display_pt": "Abemaciclibe 100 mg — comprimido oral [Verzenio]"

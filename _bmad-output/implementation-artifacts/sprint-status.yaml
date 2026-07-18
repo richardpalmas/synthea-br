@@ -93,7 +93,7 @@ development_status:
   7-2-interface-web-trajetoria-focada-e-artefatos-pos-geracao: done
   epic-7-retrospective: optional
 
-  epic-9: in-progress
+  epic-9: done
   9-1-spike-referencias-trajetoria-longitudinal-adr-008: done
   9-2-catalogo-fases-trajetoria-clinica: done
   9-3-export-focado-trajetoria-abordagem-c: done
@@ -103,3 +103,12 @@ development_status:
   9-7-modulo-gmf-trajetoria-episodica-abordagem-e: done
   9-8-calibracao-timings-referencias-externas: done
   epic-9-retrospective: optional
+
+  epic-10: done
+  10-1-matriz-marcos-eventos-breast-cancer: done
+  10-2-gmf-eventos-estadiamento-progressao: done
+  10-3-flag-pathway-archetype: done
+  10-4-catalogo-fases-v2-progressao-paliativo: done
+  10-5-classificador-encontros-follow-up: done
+  10-6-testes-e2e-arquetipos-docs: done
+  epic-10-retrospective: optional

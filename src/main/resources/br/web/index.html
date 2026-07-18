@@ -27,7 +27,7 @@
         </label>
         <label>
           Tamanho da população
-          <input type="number" id="population" name="population" min="1" required>
+          <input type="number" id="population" name="population" min="1" max="500" required>
         </label>
         <label>
           Gênero
@@ -74,34 +74,41 @@
         </button>
       </section>
 
-      <section id="trajectory-section" class="hidden">
-        <h2>Trajetória clínica focada</h2>
-        <p class="help" id="trajectory-section-help"></p>
-        <label class="checkbox">
-          <input type="checkbox" id="pathwayFocus" name="pathwayFocus">
-          Foco na trajetória (<code>br.pathway.focus</code>)
-        </label>
-        <label>
-          Modo HTML
-          <select id="htmlPathwayMode" name="htmlPathwayMode"></select>
-        </label>
-        <label>
-          Perfil de módulos
-          <select id="moduleProfile" name="moduleProfile"></select>
-        </label>
-        <label>
-          Modo de trajetória
-          <select id="trajectoryMode" name="trajectoryMode"></select>
-        </label>
-        <label>
-          Janela de simulação
-          <select id="simulationWindow" name="simulationWindow"></select>
-        </label>
-        <label>
-          Arquétipo de trajetória
-          <select id="pathwayArchetype" name="pathwayArchetype"></select>
-        </label>
-      </section>
+      <details id="trajectory-advanced" class="advanced-details">
+        <summary id="trajectory-summary-label">Configurações avançadas de trajetória</summary>
+        <div id="trajectory-section" class="advanced-body">
+          <p class="help" id="trajectory-section-help"></p>
+          <label class="checkbox">
+            <input type="checkbox" id="pathwayFocus" name="pathwayFocus">
+            Foco na trajetória (<code>br.pathway.focus</code>)
+          </label>
+          <label>
+            Modo HTML (<code>br.export.html.pathway_mode</code>)
+            <select id="htmlPathwayMode" name="htmlPathwayMode"></select>
+          </label>
+          <label>
+            Perfil de módulos (<code>br.generation.module_profile</code>)
+            <select id="moduleProfile" name="moduleProfile"></select>
+          </label>
+          <label>
+            Modo de trajetória (<code>br.generation.trajectory_mode</code>)
+            <select id="trajectoryMode" name="trajectoryMode"></select>
+          </label>
+          <label>
+            Janela de simulação (<code>br.generation.simulation_window</code>)
+            <select id="simulationWindow" name="simulationWindow"></select>
+          </label>
+          <label>
+            Arquétipo de trajetória (<code>br.pathway.archetype</code>)
+            <select id="pathwayArchetype" name="pathwayArchetype"></select>
+            <span class="help" id="pathway-archetype-help"></span>
+          </label>
+          <div id="archetype-presets" class="preset-row hidden">
+            <button type="button" id="preset-archetype-remission" class="secondary"></button>
+            <button type="button" id="preset-archetype-progression" class="secondary"></button>
+          </div>
+        </div>
+      </details>
 
       <section>
         <h2>Exportações</h2>
