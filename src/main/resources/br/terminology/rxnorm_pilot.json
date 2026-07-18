@@ -1,0 +1,63 @@
+{
+  "_meta": {
+    "domain": "rxnorm_pilot",
+    "version": "2026-07-02",
+    "source": "Curadoria manual — medicamentos frequentes em cohort câncer de mama e módulos comuns"
+  },
+  "198240": {
+    "system": "RxNorm",
+    "display_pt": "Tamoxifeno 10 mg — comprimido oral"
+  },
+  "313428": {
+    "system": "RxNorm",
+    "display_pt": "Toremifeno 60 mg — comprimido oral"
+  },
+  "310261": {
+    "system": "RxNorm",
+    "display_pt": "Exemestano 25 mg — comprimido oral"
+  },
+  "199224": {
+    "system": "RxNorm",
+    "display_pt": "Anastrozol 1 mg — comprimido oral"
+  },
+  "200064": {
+    "system": "RxNorm",
+    "display_pt": "Letrozol 2,5 mg — comprimido oral"
+  },
+  "1790099": {
+    "system": "RxNorm",
+    "display_pt": "Doxorrubicina cloridrato 2 mg/mL — injetável 10 mL"
+  },
+  "1732186": {
+    "system": "RxNorm",
+    "display_pt": "Epirrubicina cloridrato 2 mg/mL — injetável 100 mL"
+  },
+  "583214": {
+    "system": "RxNorm",
+    "display_pt": "Paclitaxel 100 mg — injetável"
+  },
+  "1734919": {
+    "system": "RxNorm",
+    "display_pt": "Ciclofosfamida 1.000 mg — injetável"
+  },
+  "1791701": {
+    "system": "RxNorm",
+    "display_pt": "Fluorouracila 50 mg/mL — injetável 10 mL"
+  },
+  "1946840": {
+    "system": "RxNorm",
+    "display_pt": "Abemaciclibe 100 mg — comprimido oral [Verzenio]"
+  },
+  "562251": {
+    "system": "RxNorm",
+    "display_pt": "Amoxicilina 250 mg + clavulanato 125 mg — comprimido oral"
+  },
+  "1535362": {
+    "system": "RxNorm",
+    "display_pt": "Flúor de sódio 0,0272 mg/mg — gel oral"
+  },
+  "308182": {
+    "system": "RxNorm",
+    "display_pt": "Amoxicilina 250 mg — cápsula oral"
+  }
+}

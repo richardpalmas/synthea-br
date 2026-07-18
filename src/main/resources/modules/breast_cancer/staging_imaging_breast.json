@@ -1,0 +1,103 @@
+{
+  "name": "Staging_Imaging_Breast",
+  "remarks": [
+    "Story 10.2 — imagem de estadiamento pós-diagnóstico (TC tórax, TC abdome, cintilografia óssea).",
+    "Story C.1 — delays de 1–7 dias entre exames para evitar compressão no mesmo dia."
+  ],
+  "gmf_version": 2,
+  "states": {
+    "Initial": {
+      "type": "Initial",
+      "direct_transition": "Staging Imaging Encounter"
+    },
+    "Terminal": {
+      "type": "Terminal"
+    },
+    "Staging Imaging Encounter": {
+      "type": "Encounter",
+      "encounter_class": "ambulatory",
+      "reason": "breast_cancer_condition",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "185347001",
+          "display": "Encounter for problem (procedure)"
+        }
+      ],
+      "direct_transition": "CT Thorax Staging"
+    },
+    "CT Thorax Staging": {
+      "type": "Procedure",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "169069000",
+          "display": "Computed tomography of thorax (procedure)"
+        }
+      ],
+      "duration": {
+        "low": 20,
+        "high": 45,
+        "unit": "minutes"
+      },
+      "reason": "breast_cancer_condition",
+      "direct_transition": "Delay Before CT Abdomen"
+    },
+    "Delay Before CT Abdomen": {
+      "type": "Delay",
+      "range": {
+        "low": 1,
+        "high": 7,
+        "unit": "days"
+      },
+      "direct_transition": "CT Abdomen Staging"
+    },
+    "CT Abdomen Staging": {
+      "type": "Procedure",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "418714002",
+          "display": "Computed tomography of abdomen (procedure)"
+        }
+      ],
+      "duration": {
+        "low": 20,
+        "high": 45,
+        "unit": "minutes"
+      },
+      "reason": "breast_cancer_condition",
+      "direct_transition": "Delay Before Bone Scintigraphy"
+    },
+    "Delay Before Bone Scintigraphy": {
+      "type": "Delay",
+      "range": {
+        "low": 1,
+        "high": 7,
+        "unit": "days"
+      },
+      "direct_transition": "Bone Scintigraphy Staging"
+    },
+    "Bone Scintigraphy Staging": {
+      "type": "Procedure",
+      "codes": [
+        {
+          "system": "SNOMED-CT",
+          "code": "77477000",
+          "display": "Radionuclide imaging of bone (procedure)"
+        }
+      ],
+      "duration": {
+        "low": 60,
+        "high": 120,
+        "unit": "minutes"
+      },
+      "reason": "breast_cancer_condition",
+      "direct_transition": "End Staging Imaging Encounter"
+    },
+    "End Staging Imaging Encounter": {
+      "type": "EncounterEnd",
+      "direct_transition": "Terminal"
+    }
+  }
+}

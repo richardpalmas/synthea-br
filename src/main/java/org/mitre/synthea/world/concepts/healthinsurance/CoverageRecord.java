@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TimeZone;
 
 import org.mitre.synthea.export.JSONSkip;
 import org.mitre.synthea.helpers.Config;
@@ -123,6 +124,15 @@ public class CoverageRecord implements Serializable {
   }
 
   /**
+   * Defers insurance re-enrollment until the given time (used by simulation window bootstrap).
+   *
+   * @param time earliest time at which {@link #newEnrollmentPeriod(long)} may return true
+   */
+  public void deferEnrollmentUntil(long time) {
+    this.nextEnrollmentPeriod = time;
+  }
+
+  /**
    * Determines whether the person should enter an enrollment period and search for a new insurance
    * plan. If so, the next enrollment period will be accordingly updated.
    * @param time The current time.
@@ -134,7 +144,7 @@ public class CoverageRecord implements Serializable {
       this.nextEnrollmentPeriod = (long) person.attributes.get(Person.BIRTHDATE);
     }
     if (time >= nextEnrollmentPeriod) {
-      Calendar c = Calendar.getInstance();
+      Calendar c = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
       c.setTimeInMillis(nextEnrollmentPeriod);
       c.add(Calendar.YEAR, 1);
       nextEnrollmentPeriod = c.getTimeInMillis();

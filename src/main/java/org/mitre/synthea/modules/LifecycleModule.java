@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.mitre.synthea.br.geography.BrGeographyResolver;
+import org.mitre.synthea.br.profile.BrProfile;
 import org.mitre.synthea.engine.Module;
 import org.mitre.synthea.helpers.Attributes;
 import org.mitre.synthea.helpers.Attributes.Inventory;
@@ -196,22 +198,30 @@ public final class LifecycleModule extends Module {
     Location location = (Location) attributes.get(Person.LOCATION);
     if (location != null) {
       // A null location should never happen in practice, but can happen in unit tests
-      location.assignPoint(person, city);
-      String zipCode = location.getZipCode(city, person);
-      person.attributes.put(Person.ZIP, zipCode);
-      person.attributes.put(Person.FIPS, Location.getFipsCodeByZipCode(zipCode));
-      String[] birthPlace;
-      if ("english".equalsIgnoreCase((String) attributes.get(Person.FIRST_LANGUAGE))) {
-        birthPlace = location.randomBirthPlace(person);
+      if (BrProfile.isActive()) {
+        try {
+          BrGeographyResolver.load().completePersonGeography(person);
+        } catch (java.io.IOException e) {
+          throw new IllegalStateException("Failed to load BR geography data pack", e);
+        }
       } else {
-        birthPlace = location.randomBirthplaceByLanguage(
-            person, (String) person.attributes.get(Person.FIRST_LANGUAGE));
+        location.assignPoint(person, city);
+        String zipCode = location.getZipCode(city, person);
+        person.attributes.put(Person.ZIP, zipCode);
+        person.attributes.put(Person.FIPS, Location.getFipsCodeByZipCode(zipCode));
+        String[] birthPlace;
+        if ("english".equalsIgnoreCase((String) attributes.get(Person.FIRST_LANGUAGE))) {
+          birthPlace = location.randomBirthPlace(person);
+        } else {
+          birthPlace = location.randomBirthplaceByLanguage(
+              person, (String) person.attributes.get(Person.FIRST_LANGUAGE));
+        }
+        attributes.put(Person.BIRTH_CITY, birthPlace[0]);
+        attributes.put(Person.BIRTH_STATE, birthPlace[1]);
+        attributes.put(Person.BIRTH_COUNTRY, birthPlace[2]);
+        // For CSV exports so we don't break any existing schemas
+        attributes.put(Person.BIRTHPLACE, birthPlace[3]);
       }
-      attributes.put(Person.BIRTH_CITY, birthPlace[0]);
-      attributes.put(Person.BIRTH_STATE, birthPlace[1]);
-      attributes.put(Person.BIRTH_COUNTRY, birthPlace[2]);
-      // For CSV exports so we don't break any existing schemas
-      attributes.put(Person.BIRTHPLACE, birthPlace[3]);
     }
 
     attributes.put(Person.ACTIVE_WEIGHT_MANAGEMENT, false);

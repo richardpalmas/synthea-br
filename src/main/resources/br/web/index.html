@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synthea-br — Geração de Dados Sintéticos</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header>
+    <h1>Synthea-br</h1>
+    <p class="subtitle">Interface de geração de cohorts sintéticas</p>
+  </header>
+
+  <aside class="disclaimer" role="note">
+    Dados <strong>100% sintéticos</strong>. Não usar para diagnóstico, tratamento ou decisões clínicas reais.
+    Uso local/lab — sem autenticação no MVP.
+  </aside>
+
+  <main>
+    <form id="generation-form">
+      <section>
+        <h2>Parâmetros básicos</h2>
+        <label>
+          Seed (reprodutibilidade)
+          <input type="number" id="seed" name="seed" min="0" required>
+        </label>
+        <label>
+          Tamanho da população
+          <input type="number" id="population" name="population" min="1" max="500" required>
+        </label>
+        <label>
+          Gênero
+          <select id="gender" name="gender">
+            <option value="">Qualquer</option>
+            <option value="F">Feminino (F)</option>
+            <option value="M">Masculino (M)</option>
+          </select>
+        </label>
+        <div class="age-row">
+          <label>
+            Idade mínima
+            <input type="number" id="minAge" name="minAge" min="0" max="140">
+          </label>
+          <label>
+            Idade máxima
+            <input type="number" id="maxAge" name="maxAge" min="0" max="140">
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Contexto brasileiro</h2>
+        <label class="checkbox">
+          <input type="checkbox" id="brProfile" name="brProfile">
+          Ativar perfil brasileiro (<code>br.profile=br</code>)
+        </label>
+        <label>
+          Condição clínica alvo
+          <select id="targetCondition" name="targetCondition">
+            <option value="">Nenhuma</option>
+          </select>
+          <span class="help" id="breast-cancer-help"></span>
+        </label>
+        <label id="gate-mode-group" class="hidden">
+          Modo de gate
+          <select id="gateMode" name="gateMode">
+            <option value="retry">retry — regenerar até conformar</option>
+            <option value="exclude">exclude — exportar só conformes</option>
+          </select>
+        </label>
+        <button type="button" id="preset-breast-cancer" class="secondary hidden">
+          Aplicar preset: cohort câncer de mama
+        </button>
+      </section>
+
+      <details id="trajectory-advanced" class="advanced-details">
+        <summary id="trajectory-summary-label">Configurações avançadas de trajetória</summary>
+        <div id="trajectory-section" class="advanced-body">
+          <p class="help" id="trajectory-section-help"></p>
+          <label class="checkbox">
+            <input type="checkbox" id="pathwayFocus" name="pathwayFocus">
+            Foco na trajetória (<code>br.pathway.focus</code>)
+          </label>
+          <label>
+            Modo HTML (<code>br.export.html.pathway_mode</code>)
+            <select id="htmlPathwayMode" name="htmlPathwayMode"></select>
+          </label>
+          <label>
+            Perfil de módulos (<code>br.generation.module_profile</code>)
+            <select id="moduleProfile" name="moduleProfile"></select>
+          </label>
+          <label>
+            Modo de trajetória (<code>br.generation.trajectory_mode</code>)
+            <select id="trajectoryMode" name="trajectoryMode"></select>
+          </label>
+          <label>
+            Janela de simulação (<code>br.generation.simulation_window</code>)
+            <select id="simulationWindow" name="simulationWindow"></select>
+          </label>
+          <label>
+            Arquétipo de trajetória (<code>br.pathway.archetype</code>)
+            <select id="pathwayArchetype" name="pathwayArchetype"></select>
+            <span class="help" id="pathway-archetype-help"></span>
+          </label>
+          <div id="archetype-presets" class="preset-row hidden">
+            <button type="button" id="preset-archetype-remission" class="secondary"></button>
+            <button type="button" id="preset-archetype-progression" class="secondary"></button>
+          </div>
+        </div>
+      </details>
+
+      <section>
+        <h2>Exportações</h2>
+        <div id="export-options"></div>
+      </section>
+
+      <section id="ai-section">
+        <h2>Enriquecimento por IA (MAI-DxO)</h2>
+        <label class="checkbox">
+          <input type="checkbox" id="aiEnrichment" name="aiEnrichment">
+          Habilitar enriquecimento clínico por IA
+        </label>
+        <p class="help" id="ai-help"></p>
+        <div id="ai-fields" class="hidden">
+          <label>
+            Provedor
+            <select id="aiProvider" name="aiProvider"></select>
+          </label>
+          <label>
+            Modelo
+            <select id="aiModel" name="aiModel"></select>
+          </label>
+          <label>
+            <span id="aiApiKeyLabel">API key (BYOK — não é armazenada)</span>
+            <input type="password" id="aiApiKey" name="aiApiKey" autocomplete="off">
+          </label>
+        </div>
+      </section>
+
+      <p id="client-errors" class="errors hidden" role="alert"></p>
+
+      <button type="submit" id="submit-btn">Gerar cohort</button>
+    </form>
+
+    <section id="status-panel" class="hidden">
+      <h2>Status da geração</h2>
+      <p><strong>Estado:</strong> <span id="status-state">—</span></p>
+      <p><strong>Progresso:</strong> <span id="status-progress">—</span></p>
+      <p id="status-error" class="errors hidden"></p>
+      <div id="status-links" class="hidden">
+        <p><a id="link-output" href="#" target="_blank" rel="noopener">Pasta de output</a></p>
+        <p id="manifest-line" class="hidden">Manifest: <code>manifest.json</code> gerado.</p>
+        <p id="trajectory-summary-line" class="hidden"><strong>Trajetória:</strong> <span id="trajectory-summary"></span></p>
+        <p id="plausibility-line" class="hidden"><a id="link-plausibility" href="#" target="_blank" rel="noopener">Abrir relatório de plausibilidade</a></p>
+        <p id="html-line" class="hidden"><a id="link-html" href="#" target="_blank" rel="noopener">Abrir HTML narrativo</a></p>
+        <p id="html-missing-line" class="errors hidden"></p>
+        <p id="export-partial-line" class="errors hidden"></p>
+      </div>
+      <pre id="log-tail" aria-live="polite"></pre>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

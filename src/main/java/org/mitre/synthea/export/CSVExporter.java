@@ -27,6 +27,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.mitre.synthea.br.demographics.BrRaceMapper;
+import org.mitre.synthea.br.profile.BrProfile;
+import org.mitre.synthea.br.terminology.BrTerminologyResolver;
 import org.mitre.synthea.export.CSVConstants;
 import org.mitre.synthea.export.CSVFileManager;
 import org.mitre.synthea.helpers.Config;
@@ -68,6 +71,10 @@ public class CSVExporter {
    * System-dependent string for a line break. (\n on Mac, *nix, \r\n on Windows)
    */
   private static final String NEWLINE = System.lineSeparator();
+
+  private static String displayForExport(Code code) {
+    return BrTerminologyResolver.resolveDisplay(code);
+  }
 
   private CSVFileManager fileManager;
 
@@ -288,6 +295,9 @@ public class CSVExporter {
       }
       @SuppressWarnings("unchecked")
       Map<Integer, Double> scores = (Map<Integer, Double>) person.attributes.get(score);
+      if (scores == null || scores.isEmpty()) {
+        continue;
+      }
       for (Integer year : scores.keySet()) {
         birthDay.set(Calendar.YEAR, year);
         if (birthDay.after(cutOff) && birthDay.before(now)) {
@@ -369,7 +379,7 @@ public class CSVExporter {
         Person.FIPS,
         Person.ZIP,
     }) {
-      String value = (String) person.attributes.getOrDefault(attribute, "");
+      String value = csvAttributeValue(person, attribute);
       s.append(',').append(clean(value));
     }
     // LAT,LON
@@ -449,7 +459,7 @@ public class CSVExporter {
     // CODE
     s.append(coding.code).append(',');
     // DESCRIPTION
-    s.append(clean(coding.display)).append(',');
+    s.append(clean(displayForExport(coding))).append(',');
 
     // BASE_ENCOUNTER_COST
     s.append(String.format(Locale.US, "%.2f", encounter.getCost())).append(',');
@@ -462,7 +472,7 @@ public class CSVExporter {
       s.append(",");
     } else {
       s.append(encounter.reason.code).append(',');
-      s.append(clean(encounter.reason.display));
+      s.append(clean(displayForExport(encounter.reason)));
     }
 
     s.append(NEWLINE);
@@ -496,7 +506,7 @@ public class CSVExporter {
 
     s.append(coding.system).append(',');
     s.append(coding.code).append(',');
-    s.append(clean(coding.display));
+    s.append(clean(displayForExport(coding)));
 
     s.append(NEWLINE);
     fileManager.writeResourceLine(s.toString(), CSVConstants.CONDITION_KEY);
@@ -529,7 +539,7 @@ public class CSVExporter {
 
     s.append(coding.code).append(',');
     s.append(getSystemFromURI(coding.system)).append(',');
-    s.append(clean(coding.display)).append(',');
+    s.append(clean(displayForExport(coding))).append(',');
     if (allergy.allergyType != null) {
       s.append(allergy.allergyType);
     }
@@ -547,7 +557,7 @@ public class CSVExporter {
         mapEntry -> {
           StringBuilder reactionBuilder = new StringBuilder();
           reactionBuilder.append(mapEntry.getKey().code).append(',');
-          reactionBuilder.append(clean(mapEntry.getKey().display)).append(',');
+          reactionBuilder.append(clean(displayForExport(mapEntry.getKey()))).append(',');
           reactionBuilder.append(mapEntry.getValue());
           return reactionBuilder.toString();
         };
@@ -611,7 +621,7 @@ public class CSVExporter {
     Code coding = observation.codes.get(0);
 
     s.append(coding.code).append(',');
-    s.append(clean(coding.display)).append(',');
+    s.append(clean(displayForExport(coding))).append(',');
 
     String value = ExportHelper.getObservationValue(observation);
     String type = ExportHelper.getObservationType(observation);
@@ -648,7 +658,7 @@ public class CSVExporter {
     s.append(coding.system).append(',');
     s.append(coding.code).append(',');
     // DESCRIPTION
-    s.append(clean(coding.display)).append(',');
+    s.append(clean(displayForExport(coding))).append(',');
     // BASE_COST
     s.append(String.format(Locale.US, "%.2f", procedure.getCost())).append(',');
     // REASONCODE & REASONDESCRIPTION
@@ -657,7 +667,7 @@ public class CSVExporter {
     } else {
       Code reason = procedure.reasons.get(0);
       s.append(reason.code).append(',');
-      s.append(clean(reason.display));
+      s.append(clean(displayForExport(reason)));
     }
 
     s.append(NEWLINE);
@@ -693,7 +703,7 @@ public class CSVExporter {
     Code coding = medication.codes.get(0);
     s.append(coding.code).append(',');
     // DESCRIPTION
-    s.append(clean(coding.display)).append(',');
+    s.append(clean(displayForExport(coding))).append(',');
     // BASE_COST
     BigDecimal cost = medication.getCost();
     s.append(String.format(Locale.US, "%.2f", cost)).append(',');
@@ -741,7 +751,7 @@ public class CSVExporter {
     } else {
       Code reason = medication.reasons.get(0);
       s.append(reason.code).append(',');
-      s.append(clean(reason.display));
+      s.append(clean(displayForExport(reason)));
     }
 
     s.append(NEWLINE);
@@ -768,7 +778,7 @@ public class CSVExporter {
     Code coding = immunization.codes.get(0);
     s.append(coding.code).append(',');
     // DESCRIPTION
-    s.append(clean(coding.display)).append(',');
+    s.append(clean(displayForExport(coding))).append(',');
     // BASE_COST
     s.append(String.format(Locale.US, "%.2f", immunization.getCost()));
 
@@ -802,14 +812,14 @@ public class CSVExporter {
     Code coding = carePlan.codes.get(0);
 
     s.append(coding.code).append(',');
-    s.append(coding.display).append(',');
+    s.append(displayForExport(coding)).append(',');
 
     if (carePlan.reasons.isEmpty()) {
       s.append(','); // reason code & desc
     } else {
       Code reason = carePlan.reasons.get(0);
       s.append(reason.code).append(',');
-      s.append(clean(reason.display));
+      s.append(clean(displayForExport(reason)));
     }
     s.append(NEWLINE);
 
@@ -849,15 +859,15 @@ public class CSVExporter {
         s.append(seriesDicomUid).append(',');
 
         s.append(bodySite.code).append(',');
-        s.append(bodySite.display).append(',');
+        s.append(displayForExport(bodySite)).append(',');
 
         s.append(modality.code).append(',');
-        s.append(modality.display).append(',');
+        s.append(displayForExport(modality)).append(',');
 
         s.append(instanceDicomUid).append(',');
 
         s.append(sopClass.code).append(',');
-        s.append(sopClass.display).append(',');
+        s.append(displayForExport(sopClass)).append(',');
         s.append(imagingStudy.codes.get(0).code);
 
         s.append(NEWLINE);
@@ -893,7 +903,7 @@ public class CSVExporter {
 
     Code code = device.codes.get(0);
     s.append(code.code).append(',');
-    s.append(clean(code.display)).append(',');
+    s.append(clean(displayForExport(code))).append(',');
 
     s.append(device.udi);
 
@@ -921,7 +931,7 @@ public class CSVExporter {
 
     Code code = supply.codes.get(0);
     s.append(code.code).append(',');
-    s.append(clean(code.display)).append(',');
+    s.append(clean(displayForExport(code))).append(',');
 
     s.append(supply.quantity);
 
@@ -1571,7 +1581,7 @@ public class CSVExporter {
         this.clinicianId = encounter.clinician.getResourceID();
       }
       this.procedureCode = clean(claimEntry.entry.codes.get(0).code);
-      this.procedureDisplay = clean(claimEntry.entry.codes.get(0).display);
+      this.procedureDisplay = clean(displayForExport(claimEntry.entry.codes.get(0)));
     }
 
     public void setAmount(BigDecimal amount) {
@@ -1699,6 +1709,14 @@ public class CSVExporter {
    * Replaces commas and line breaks in the source string with a single space.
    * Null is replaced with the empty string.
    */
+  private static String csvAttributeValue(Person person, String attribute) {
+    String value = (String) person.attributes.getOrDefault(attribute, "");
+    if (Person.RACE.equals(attribute) && BrProfile.isActive() && !value.isEmpty()) {
+      return BrRaceMapper.toBrazilianDisplayRace(value);
+    }
+    return value;
+  }
+
   private static String clean(String src) {
     if (src == null) {
       return "";

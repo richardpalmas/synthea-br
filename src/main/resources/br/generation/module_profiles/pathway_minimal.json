@@ -1,0 +1,37 @@
+{
+  "profile_version": "1.0.0",
+  "profile_id": "pathway_minimal",
+  "source_reference": "docs/research/adr/ADR-008-trajetoria-clinica-focada.md",
+  "remarks_pt_br": "Perfil de geracao enxuta (Abordagem D). Conjunto curado e testado — substitui uso ad hoc de -m. Inclui lifecycle (core), encontros/wellness reduzido e trajetoria oncologica piloto. O modulo breast_cancer_trajectory_br NAO entra aqui: so carrega com br.generation.trajectory_mode=episodic (Story 9.7). Insurance permanece via PayerManager (nao e modulo GMF).",
+  "allowed_module_paths": [
+    "wellness_encounters",
+    "breast_cancer",
+    "hospice_treatment",
+    "med_rec"
+  ],
+  "allowed_core_module_paths": [
+    "core/Lifecycle Module"
+  ],
+  "denied_module_paths": [
+    "dental",
+    "veteran",
+    "veteran_lung_cancer",
+    "veteran_hyperlipidemia",
+    "veteran_mdd",
+    "veteran_ptsd",
+    "veteran_substance_abuse_conditions",
+    "veteran_self_harm",
+    "veteran_substance_abuse_treatment"
+  ],
+  "denied_core_module_paths": [
+    "core/Cardiovascular Disease",
+    "core/Quality Of Life",
+    "core/Weight Loss",
+    "core/COVID-19 Immunization Module"
+  ],
+  "always_include_for_target_condition": {
+    "breast_cancer": [
+      "breast_cancer"
+    ]
+  }
+}

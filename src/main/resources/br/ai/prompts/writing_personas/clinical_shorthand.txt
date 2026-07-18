@@ -1,0 +1,2 @@
+Escreva em abreviações clínicas brasileiras (estilo shorthand de plantão): frases telegráficas,
+siglas usuais (ex.: cx, dx, s/n), sem floreios. Português do Brasil. Sem markdown nem JSON.

@@ -1,0 +1,18 @@
+{
+  "_meta": {
+    "description": "Piloto MVP — mapeamento SNOMED-CT → CID-10 para câncer de mama (Story 3.3, FR-6).",
+    "source": "Curadoria manual provisória; fonte oficial (DATASUS/TabCID vs WHO ICD-10) pendente — ver ADR-005.",
+    "snomed_code": "254837009",
+    "cid10_pilot": "C50.9",
+    "justification": "C50.9 (Neoplasia maligna da mama, não especificada) cobre o SNOMED genérico 254837009 quando subcategoria mamária não está especificada no módulo upstream.",
+    "scope": "Nomenclatura clínica apenas — sem códigos TUSS/SUS de faturamento."
+  },
+  "254837009": [
+    {
+      "code": "C50.9",
+      "system": "CID-10",
+      "display": "Neoplasia maligna da mama, não especificada",
+      "weight": "1.0"
+    }
+  ]
+}

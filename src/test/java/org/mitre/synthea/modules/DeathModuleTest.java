@@ -98,4 +98,25 @@ public class DeathModuleTest {
     assertEquals("Cause of Death [US Standard Certificate of Death]", code.display);
   }
 
+  @Test
+  public void testDeathCertificateBrazilianProfile() {
+    Config.set("br.profile", "br");
+    Code causeOfDeath = new Code("SNOMED-CT", "12345", "Some disease");
+    person.recordDeath(time, causeOfDeath);
+    DeathModule.process(person, time);
+
+    Encounter enc = person.record.encounters.get(0);
+    Code code = enc.codes.get(0);
+    assertEquals("Certificação de óbito", code.display);
+
+    Report report = enc.reports.get(0);
+    code = report.codes.get(0);
+    assertEquals("Declaração de Óbito (DO)", code.display);
+
+    Observation obs = report.observations.get(0);
+    code = obs.codes.get(0);
+    assertEquals("Causa da morte (DO)", code.display);
+    Config.set("br.profile", "");
+  }
+
 }

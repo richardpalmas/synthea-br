@@ -1,0 +1,31 @@
+{
+  "_meta": {
+    "domain": "death_certificate_br",
+    "version": "2026-07-03",
+    "source": "Curadoria manual — Declaração de Óbito (DO/SIM) em substituição ao certificado US"
+  },
+  "308646001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Certificação de óbito"
+  },
+  "69453-9": {
+    "system": "LOINC",
+    "display_pt": "Causa da morte (DO)"
+  },
+  "69409-1": {
+    "system": "LOINC",
+    "display_pt": "Declaração de Óbito (DO)"
+  },
+  "Death Certification": {
+    "system": "LABEL",
+    "display_pt": "Certificação de óbito"
+  },
+  "Cause of Death [US Standard Certificate of Death]": {
+    "system": "LABEL",
+    "display_pt": "Causa da morte (DO)"
+  },
+  "U.S. standard certificate of death - 2003 revision": {
+    "system": "LABEL",
+    "display_pt": "Declaração de Óbito (DO)"
+  }
+}

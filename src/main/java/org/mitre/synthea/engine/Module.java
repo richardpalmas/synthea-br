@@ -222,6 +222,9 @@ public class Module implements Cloneable, Serializable {
     if (overrides != null) {
       jsonString = applyOverrides(jsonString, overrides, path.getFileName().toString());
     }
+    // Story 9.8: inject timing priors into episodic trajectory Delay states (JSON pre-load).
+    jsonString = org.mitre.synthea.br.pathway.PathwayTimingLoader
+        .maybeApplyPriors(path.toString(), jsonString);
     JsonObject object = JsonParser.parseString(jsonString).getAsJsonObject();
     return new Module(object, submodule);
   }
@@ -270,7 +273,7 @@ public class Module implements Cloneable, Serializable {
     modules.forEach((k, v) -> {
       if (v.submodule) {
         v.get(); // ensure submodules get loaded
-      } else if (v.core || pathPredicate.test(v.path)) {
+      } else if (pathPredicate.test(v.path)) {
         list.add(v.get());
       }
     });

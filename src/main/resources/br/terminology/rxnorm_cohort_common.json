@@ -1,0 +1,107 @@
+{
+  "_meta": {
+    "domain": "rxnorm_cohort_common",
+    "version": "2026-07-03",
+    "source": "Curadoria manual — medicamentos frequentes em cohort mama, dor, UTI e dental"
+  },
+  "856987": {
+    "system": "RxNorm",
+    "display_pt": "Paracetamol 300 mg + hidrocodona 5 mg — comprimido oral"
+  },
+  "1049221": {
+    "system": "RxNorm",
+    "display_pt": "Paracetamol 325 mg + oxicodona 5 mg — comprimido oral"
+  },
+  "1049625": {
+    "system": "RxNorm",
+    "display_pt": "Paracetamol 325 mg + oxicodona 10 mg — comprimido oral [Percocet]"
+  },
+  "209387": {
+    "system": "RxNorm",
+    "display_pt": "Paracetamol 325 mg — comprimido oral [Tylenol]"
+  },
+  "1860154": {
+    "system": "RxNorm",
+    "display_pt": "Oxicodona 15 mg — comprimido de liberação prolongada (12 h)"
+  },
+  "1860491": {
+    "system": "RxNorm",
+    "display_pt": "Hidrocodona 10 mg — cápsula de liberação prolongada (12 h)"
+  },
+  "1049504": {
+    "system": "RxNorm",
+    "display_pt": "Oxicodona 5 mg — comprimido oral"
+  },
+  "245134": {
+    "system": "RxNorm",
+    "display_pt": "Buprenorfina 2 mg — comprimido sublingual"
+  },
+  "835603": {
+    "system": "RxNorm",
+    "display_pt": "Naloxona 0,4 mg — spray nasal"
+  },
+  "993770": {
+    "system": "RxNorm",
+    "display_pt": "Paracetamol 300 mg + codeína 15 mg — comprimido oral"
+  },
+  "206905": {
+    "system": "RxNorm",
+    "display_pt": "Ibuprofeno 200 mg — comprimido oral"
+  },
+  "310965": {
+    "system": "RxNorm",
+    "display_pt": "Ibuprofeno 400 mg — comprimido oral"
+  },
+  "197454": {
+    "system": "RxNorm",
+    "display_pt": "Ciprofloxacino 250 mg — comprimido oral"
+  },
+  "308192": {
+    "system": "RxNorm",
+    "display_pt": "Nitrofurantoína 100 mg — cápsula oral"
+  },
+  "834101": {
+    "system": "RxNorm",
+    "display_pt": "Penicilina V 500 mg — comprimido oral"
+  },
+  "1650143": {
+    "system": "RxNorm",
+    "display_pt": "Doxiciclina 100 mg — comprimido oral"
+  },
+  "308460": {
+    "system": "RxNorm",
+    "display_pt": "Amoxicilina 500 mg — cápsula oral"
+  },
+  "197511": {
+    "system": "RxNorm",
+    "display_pt": "Azitromicina 250 mg — comprimido oral"
+  },
+  "197361": {
+    "system": "RxNorm",
+    "display_pt": "Tramadol 50 mg — comprimido oral"
+  },
+  "861007": {
+    "system": "RxNorm",
+    "display_pt": "Metformina 500 mg — comprimido oral"
+  },
+  "314200": {
+    "system": "RxNorm",
+    "display_pt": "Omeprazol 20 mg — cápsula oral"
+  },
+  "314076": {
+    "system": "RxNorm",
+    "display_pt": "Lisinopril 10 mg — comprimido oral"
+  },
+  "197379": {
+    "system": "RxNorm",
+    "display_pt": "Atorvastatina 20 mg — comprimido oral"
+  },
+  "197380": {
+    "system": "RxNorm",
+    "display_pt": "Atorvastatina 40 mg — comprimido oral"
+  },
+  "833036": {
+    "system": "RxNorm",
+    "display_pt": "Levotiroxina 50 mcg — comprimido oral"
+  }
+}

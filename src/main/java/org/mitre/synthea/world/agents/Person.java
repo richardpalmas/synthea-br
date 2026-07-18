@@ -69,6 +69,8 @@ public class Person implements Serializable, RandomNumberGenerator, QuadTreeElem
   public static final String NAME = "name";
   /** Represents the race of the person. */
   public static final String RACE = "race";
+  /** IBGE raça/cor category when {@code br.profile=br} (e.g. {@code parda}). */
+  public static final String RACE_IBGE = "race_ibge";
   /** Represents the ethnicity of the person. */
   public static final String ETHNICITY = "ethnicity";
   /** Represents the first language of the person. */

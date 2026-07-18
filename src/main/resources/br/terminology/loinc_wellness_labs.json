@@ -1,0 +1,163 @@
+{
+  "_meta": {
+    "domain": "loinc_wellness_labs",
+    "version": "2026-07-03",
+    "source": "Curadoria manual — painéis laboratoriais e tabagismo em wellness_encounters.json"
+  },
+  "85354-9": {
+    "system": "LOINC",
+    "display_pt": "Painel de pressão arterial"
+  },
+  "8480-6": {
+    "system": "LOINC",
+    "display_pt": "Pressão arterial sistólica"
+  },
+  "8462-4": {
+    "system": "LOINC",
+    "display_pt": "Pressão arterial diastólica"
+  },
+  "51990-0": {
+    "system": "LOINC",
+    "display_pt": "Painel metabólico básico — sangue"
+  },
+  "2339-0": {
+    "system": "LOINC",
+    "display_pt": "Glicose — sangue"
+  },
+  "6299-2": {
+    "system": "LOINC",
+    "display_pt": "Ureia — sangue"
+  },
+  "38483-4": {
+    "system": "LOINC",
+    "display_pt": "Creatinina — sangue"
+  },
+  "49765-1": {
+    "system": "LOINC",
+    "display_pt": "Cálcio — sangue"
+  },
+  "2947-0": {
+    "system": "LOINC",
+    "display_pt": "Sódio — sangue"
+  },
+  "6298-4": {
+    "system": "LOINC",
+    "display_pt": "Potássio — sangue"
+  },
+  "2069-3": {
+    "system": "LOINC",
+    "display_pt": "Cloreto — sangue"
+  },
+  "20565-8": {
+    "system": "LOINC",
+    "display_pt": "Dióxido de carbono total — sangue"
+  },
+  "57698-3": {
+    "system": "LOINC",
+    "display_pt": "Painel lipídico com LDL direto — soro ou plasma"
+  },
+  "2093-3": {
+    "system": "LOINC",
+    "display_pt": "Colesterol total — soro ou plasma"
+  },
+  "2571-8": {
+    "system": "LOINC",
+    "display_pt": "Triglicerídeos — soro ou plasma"
+  },
+  "18262-6": {
+    "system": "LOINC",
+    "display_pt": "Colesterol LDL — soro ou plasma (ensaio direto)"
+  },
+  "2085-9": {
+    "system": "LOINC",
+    "display_pt": "Colesterol HDL — soro ou plasma"
+  },
+  "14959-1": {
+    "system": "LOINC",
+    "display_pt": "Microalbumina/creatinina — urina"
+  },
+  "33914-3": {
+    "system": "LOINC",
+    "display_pt": "Taxa de filtração glomerular (MDRD) — soro/plasma"
+  },
+  "58410-2": {
+    "system": "LOINC",
+    "display_pt": "Hemograma completo — sangue (contagem automatizada)"
+  },
+  "6690-2": {
+    "system": "LOINC",
+    "display_pt": "Leucócitos — sangue (contagem automatizada)"
+  },
+  "789-8": {
+    "system": "LOINC",
+    "display_pt": "Eritrócitos — sangue (contagem automatizada)"
+  },
+  "718-7": {
+    "system": "LOINC",
+    "display_pt": "Hemoglobina — sangue"
+  },
+  "4544-3": {
+    "system": "LOINC",
+    "display_pt": "Hematócrito — sangue (contagem automatizada)"
+  },
+  "787-2": {
+    "system": "LOINC",
+    "display_pt": "VCM — hemácias (contagem automatizada)"
+  },
+  "785-6": {
+    "system": "LOINC",
+    "display_pt": "HCM — contagem automatizada"
+  },
+  "786-4": {
+    "system": "LOINC",
+    "display_pt": "CHCM — hemácias (contagem automatizada)"
+  },
+  "788-0": {
+    "system": "LOINC",
+    "display_pt": "RDW — eritrócitos (contagem automatizada)"
+  },
+  "777-3": {
+    "system": "LOINC",
+    "display_pt": "Plaquetas — sangue (contagem automatizada)"
+  },
+  "32207-3": {
+    "system": "LOINC",
+    "display_pt": "Amplitude de distribuição plaquetária — sangue"
+  },
+  "32623-1": {
+    "system": "LOINC",
+    "display_pt": "Volume plaquetário médio — sangue"
+  },
+  "72166-2": {
+    "system": "LOINC",
+    "display_pt": "Status tabagismo"
+  },
+  "72514-3": {
+    "system": "LOINC",
+    "display_pt": "Intensidade da dor (escala verbal 0–10) — autorrelato"
+  },
+  "449868002": {
+    "system": "SNOMED-CT",
+    "display_pt": "Fumante diário de tabaco"
+  },
+  "8517006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Ex-fumante"
+  },
+  "266919005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Nunca fumou tabaco"
+  },
+  "44054006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Diabetes mellitus tipo 2"
+  },
+  "714628002": {
+    "system": "SNOMED-CT",
+    "display_pt": "Pré-diabetes"
+  },
+  "38341003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Hipertensão arterial sistêmica"
+  }
+}

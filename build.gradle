@@ -167,6 +167,9 @@ test {
     // showStandardStreams = true
   }
   maxHeapSize = "6144m"
+  // Unique binary results path per run avoids Windows file locks on output.bin
+  binaryResultsDirectory.set(
+      layout.buildDirectory.dir("test-binary-results/" + System.currentTimeMillis()))
   jacoco {
     includes = ["org.mitre.*"]
   }
@@ -312,6 +315,14 @@ task physiology(type: JavaExec) {
     mainClass = "org.mitre.synthea.engine.PhysiologySimulator"
 }
 
+task plausibilityReport(type: JavaExec) {
+    group = 'Application'
+    description = 'Generate a cohort with plausibility report enabled (shortcut for run_synthea with br.plausibility.report.enabled=true)'
+    classpath sourceSets.main.runtimeClasspath
+    mainClass = 'App'
+    args = ['-p', '10', '--br.plausibility.report.enabled=true']
+}
+
 task versionTxt() {
   group = 'Build'
   description = 'Generates a version file.'
@@ -335,8 +346,45 @@ task versionTxt() {
   }
 }
 
+task commitShaTxt() {
+  group = 'Build'
+  description = 'Generates a commit SHA file for academic traceability manifests.'
+  doLast {
+    def file = new File("$projectDir/src/main/resources/commit_sha.txt")
+    try {
+      ProcessBuilder pb = new ProcessBuilder("git", "rev-parse", "HEAD")
+      pb.redirectErrorStream(true)
+      Process p = pb.start()
+      def output = org.apache.commons.io.IOUtils.toString(
+          p.getInputStream(), java.nio.charset.StandardCharsets.UTF_8)
+      boolean finished = p.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)
+      if (!finished) {
+        p.destroyForcibly()
+        throw new GradleException("git rev-parse HEAD timed out after 30s")
+      }
+      def sha = output.trim()
+      if (p.exitValue() != 0 || sha.isEmpty()) {
+        throw new GradleException("git rev-parse HEAD failed (exit=${p.exitValue()}): ${sha}")
+      }
+      file.parentFile.mkdirs()
+      file.text = sha
+    } catch (e) {
+      logger.warn("Warning: unable to create commit_sha.txt. Manifest will use 'unknown'.")
+      logger.warn(e.getMessage())
+      try {
+        file.parentFile.mkdirs()
+        file.text = "unknown"
+      } catch (e2) {
+        logger.warn(e2.getMessage())
+      }
+    }
+  }
+}
+
 compileJava.dependsOn versionTxt
+compileJava.dependsOn commitShaTxt
 uberJar.dependsOn versionTxt
+uberJar.dependsOn commitShaTxt
 uberJar.dependsOn shadowJar
 
 task cleanOutput {
@@ -360,6 +408,17 @@ run {
   def maxHeapSizeVar = System.getenv("MAX_HEAP_SIZE")
   if (maxHeapSizeVar != null) {
     maxHeapSize = maxHeapSizeVar
+  }
+}
+
+tasks.register('runWeb', JavaExec) {
+  group = 'application'
+  description = 'Start Synthea-br web UI for cohort generation (localhost)'
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = 'App'
+  args '--web'
+  if (System.getenv("MAX_HEAP_SIZE") != null) {
+    maxHeapSize = System.getenv("MAX_HEAP_SIZE")
   }
 }
 

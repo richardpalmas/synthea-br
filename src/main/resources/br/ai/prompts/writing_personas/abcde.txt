@@ -1,0 +1,3 @@
+Estruture o resumo no formato ABCDE clínico adaptado (A=avaliação, B=achados, C=correções,
+D=dúvidas/limitações, E=encaminhamento implícito). Uma linha por letra. Português do Brasil.
+Sem markdown de código nem JSON.

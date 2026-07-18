@@ -1,0 +1,83 @@
+{
+  "_meta": {
+    "domain": "loinc_screening_scores",
+    "version": "2026-07-03",
+    "source": "Curadoria manual — scores de rastreamento GAD-7, Morse, PHQ-2, AUDIT-C"
+  },
+  "70274-6": {
+    "system": "LOINC",
+    "display_pt": "Escore total GAD-7 — autorrelato"
+  },
+  "59453-1": {
+    "system": "LOINC",
+    "display_pt": "Painel Escala de Morse (risco de queda)"
+  },
+  "59460-6": {
+    "system": "LOINC",
+    "display_pt": "Escore total de risco de queda [Escala de Morse]"
+  },
+  "59461-4": {
+    "system": "LOINC",
+    "display_pt": "Nível de risco de queda [Escala de Morse]"
+  },
+  "LA13040-3": {
+    "system": "LOINC",
+    "display_pt": "Alto risco (Escore Morse 50+)"
+  },
+  "LA13038-7": {
+    "system": "LOINC",
+    "display_pt": "Baixo risco (Escore Morse 0–24)"
+  },
+  "LA13039-5": {
+    "system": "LOINC",
+    "display_pt": "Risco moderado (Escore Morse 25–45)"
+  },
+  "55757-9": {
+    "system": "LOINC",
+    "display_pt": "Questionário PHQ-2 — autorrelato"
+  },
+  "55758-7": {
+    "system": "LOINC",
+    "display_pt": "Escore total PHQ-2 — autorrelato"
+  },
+  "72109-2": {
+    "system": "LOINC",
+    "display_pt": "Teste AUDIT-C — identificação de uso de álcool"
+  },
+  "75626-2": {
+    "system": "LOINC",
+    "display_pt": "Escore total AUDIT-C"
+  },
+  "82667-7": {
+    "system": "LOINC",
+    "display_pt": "Escore total DAST-10"
+  },
+  "762993000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Avaliação com Escala de Morse (risco de queda)"
+  },
+  "763302001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Avaliação com AUDIT-C (uso de álcool)"
+  },
+  "80583007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Ansiedade grave (pânico)"
+  },
+  "10939881000119105": {
+    "system": "SNOMED-CT",
+    "display_pt": "Comportamento de consumo prejudicial de álcool"
+  },
+  "715252007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Rastreamento de depressão com PHQ-9"
+  },
+  "44261-6": {
+    "system": "LOINC",
+    "display_pt": "Escore total PHQ-9 — autorrelato"
+  },
+  "44249-1": {
+    "system": "LOINC",
+    "display_pt": "Painel PHQ-9 — avaliação rápida de depressão"
+  }
+}

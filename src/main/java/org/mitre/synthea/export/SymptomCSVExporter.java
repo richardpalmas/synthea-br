@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.mitre.synthea.engine.ExpressedConditionRecord.ConditionWithSymptoms;
+import org.mitre.synthea.br.demographics.BrRaceMapper;
+import org.mitre.synthea.br.profile.BrProfile;
 import org.mitre.synthea.helpers.Config;
 import org.mitre.synthea.helpers.Utilities;
 import org.mitre.synthea.world.agents.Person;
@@ -143,6 +145,9 @@ public class SymptomCSVExporter {
 
     String gender = clean((String) person.attributes.getOrDefault(Person.GENDER, ""));
     String race = clean((String) person.attributes.getOrDefault(Person.RACE, ""));
+    if (BrProfile.isActive() && !race.isEmpty()) {
+      race = BrRaceMapper.toBrazilianDisplayRace(race);
+    }
     String ethnic = clean((String) person.attributes.getOrDefault(Person.ETHNICITY, ""));
     StringBuilder demoData = new StringBuilder();
     demoData.append(personID).append(',');

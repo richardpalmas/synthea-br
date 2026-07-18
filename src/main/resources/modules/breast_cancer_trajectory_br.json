@@ -1,0 +1,109 @@
+{
+  "name": "Breast Cancer Trajectory BR Episodic",
+  "remarks": [
+    "Story 9.7 — Abordagem E: marcadores de fase alinhados ao PathwayCatalog (9.2).",
+    "Story 9.8 — Delay states entre fases; distribuições substituídas por PathwayTimingLoader",
+    "  quando br.pathway.timing_priors=default (placeholders abaixo = baseline off).",
+    "Top-level path: modules/breast_cancer_trajectory_br.json",
+    "Executa em paralelo ao modulo upstream breast_cancer (nao o substitui).",
+    "phase_id mapping:",
+    "  phase_screening -> screening (order 1)",
+    "  phase_diagnosis -> diagnosis (order 2)",
+    "  phase_staging -> staging (order 3)",
+    "  phase_treatment -> treatment (order 4)",
+    "  phase_follow_up -> follow_up (order 5)",
+    "delay state naming (stable for 9.8 injection):",
+    "  delay_screening_to_diagnosis <- screening->diagnosis",
+    "  delay_diagnosis_to_staging <- diagnosis->staging",
+    "  delay_staging_to_treatment <- staging->treatment",
+    "  delay_treatment_to_follow_up <- treatment->follow_up"
+  ],
+  "gmf_version": 2,
+  "states": {
+    "Initial": {
+      "type": "Initial",
+      "direct_transition": "phase_screening"
+    },
+    "phase_screening": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "screening",
+      "direct_transition": "delay_screening_to_diagnosis"
+    },
+    "delay_screening_to_diagnosis": {
+      "type": "Delay",
+      "distribution": {
+        "kind": "UNIFORM",
+        "parameters": {
+          "low": 1,
+          "high": 7
+        }
+      },
+      "unit": "days",
+      "direct_transition": "phase_diagnosis"
+    },
+    "phase_diagnosis": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "diagnosis",
+      "direct_transition": "delay_diagnosis_to_staging"
+    },
+    "delay_diagnosis_to_staging": {
+      "type": "Delay",
+      "distribution": {
+        "kind": "UNIFORM",
+        "parameters": {
+          "low": 1,
+          "high": 7
+        }
+      },
+      "unit": "days",
+      "direct_transition": "phase_staging"
+    },
+    "phase_staging": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "staging",
+      "direct_transition": "delay_staging_to_treatment"
+    },
+    "delay_staging_to_treatment": {
+      "type": "Delay",
+      "distribution": {
+        "kind": "UNIFORM",
+        "parameters": {
+          "low": 1,
+          "high": 7
+        }
+      },
+      "unit": "days",
+      "direct_transition": "phase_treatment"
+    },
+    "phase_treatment": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "treatment",
+      "direct_transition": "delay_treatment_to_follow_up"
+    },
+    "delay_treatment_to_follow_up": {
+      "type": "Delay",
+      "distribution": {
+        "kind": "UNIFORM",
+        "parameters": {
+          "low": 1,
+          "high": 7
+        }
+      },
+      "unit": "days",
+      "direct_transition": "phase_follow_up"
+    },
+    "phase_follow_up": {
+      "type": "SetAttribute",
+      "attribute": "pathway_phase",
+      "value": "follow_up",
+      "direct_transition": "Terminal"
+    },
+    "Terminal": {
+      "type": "Terminal"
+    }
+  }
+}

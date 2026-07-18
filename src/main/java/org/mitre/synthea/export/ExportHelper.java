@@ -243,6 +243,8 @@ public abstract class ExportHelper {
       system = ICD10_URI;
     } else if (system.equals("ICD10-CM")) {
       system = ICD10_CM_URI;
+    } else if (system.equals("CID-10")) {
+      system = ICD10_URI;
     }
     return system;
   }

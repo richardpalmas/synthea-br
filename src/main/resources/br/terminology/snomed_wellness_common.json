@@ -1,0 +1,191 @@
+{
+  "_meta": {
+    "domain": "wellness_sdoh_common",
+    "version": "2026-07-02",
+    "source": "Curadoria manual — termos frequentes em wellness, SDOH e encontros de rotina"
+  },
+  "162673000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Exame geral do paciente"
+  },
+  "25656009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Exame físico completo"
+  },
+  "430193006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Reconciliação medicamentosa"
+  },
+  "314529007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Revisão medicamentosa pendente"
+  },
+  "710824005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Avaliação de necessidades de saúde e assistência social"
+  },
+  "710841007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Avaliação de ansiedade"
+  },
+  "866148006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Rastreamento de violência doméstica"
+  },
+  "171207006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Rastreamento de depressão"
+  },
+  "428211000124100": {
+    "system": "SNOMED-CT",
+    "display_pt": "Avaliação de uso de substâncias"
+  },
+  "713106006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Rastreamento de abuso de drogas"
+  },
+  "224295006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Escolaridade limitada ao ensino fundamental"
+  },
+  "160903007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Emprego em tempo integral"
+  },
+  "160904001": {
+    "system": "SNOMED-CT",
+    "display_pt": "Emprego em meio período"
+  },
+  "713458007": {
+    "system": "SNOMED-CT",
+    "display_pt": "Falta de acesso a transporte"
+  },
+  "266934004": {
+    "system": "SNOMED-CT",
+    "display_pt": "Problema de transporte"
+  },
+  "423315002": {
+    "system": "SNOMED-CT",
+    "display_pt": "Contato social limitado"
+  },
+  "73595000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Estresse"
+  },
+  "446654005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Refugiado"
+  },
+  "706893006": {
+    "system": "SNOMED-CT",
+    "display_pt": "Vítima de violência por parceiro íntimo"
+  },
+  "162864005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Índice de massa corporal 30+ — obesidade"
+  },
+  "266919005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Nunca fumou tabaco"
+  },
+  "444814009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Sinusite viral"
+  },
+  "66383009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Gengivite"
+  },
+  "109570002": {
+    "system": "SNOMED-CT",
+    "display_pt": "Cárie dentária primária"
+  },
+  "103697008": {
+    "system": "SNOMED-CT",
+    "display_pt": "Encaminhamento para atendimento odontológico"
+  },
+  "34043003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Consulta odontológica e laudo"
+  },
+  "225362009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Cuidado odontológico"
+  },
+  "1260009003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Remoção de placa e cálculo supragengival de todos os dentes"
+  },
+  "274788003": {
+    "system": "SNOMED-CT",
+    "display_pt": "Exame das gengivas"
+  },
+  "156073000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Aborto completo"
+  },
+  "161744009": {
+    "system": "SNOMED-CT",
+    "display_pt": "Histórico de aborto em gestação anterior"
+  },
+  "183996000": {
+    "system": "SNOMED-CT",
+    "display_pt": "Esterilização solicitada"
+  },
+  "267020005": {
+    "system": "SNOMED-CT",
+    "display_pt": "Histórico de laqueadura tubária"
+  },
+  "8302-2": {
+    "system": "LOINC",
+    "display_pt": "Altura corporal"
+  },
+  "29463-7": {
+    "system": "LOINC",
+    "display_pt": "Peso corporal"
+  },
+  "39156-5": {
+    "system": "LOINC",
+    "display_pt": "Índice de massa corporal (IMC)"
+  },
+  "8867-4": {
+    "system": "LOINC",
+    "display_pt": "Frequência cardíaca"
+  },
+  "9279-1": {
+    "system": "LOINC",
+    "display_pt": "Frequência respiratória"
+  },
+  "72514-3": {
+    "system": "LOINC",
+    "display_pt": "Intensidade da dor (escala 0–10)"
+  },
+  "55284-4": {
+    "system": "LOINC",
+    "display_pt": "Pressão arterial"
+  },
+  "24323-8": {
+    "system": "LOINC",
+    "display_pt": "Hemoglobina glicada"
+  },
+  "57698-3": {
+    "system": "LOINC",
+    "display_pt": "Questionário PHQ-9"
+  },
+  "69737-5": {
+    "system": "LOINC",
+    "display_pt": "Questionário GAD-7"
+  },
+  "82666-9": {
+    "system": "LOINC",
+    "display_pt": "Questionário HARK"
+  },
+  "55758-7": {
+    "system": "LOINC",
+    "display_pt": "Questionário PHQ-2"
+  },
+  "82667-7": {
+    "system": "LOINC",
+    "display_pt": "Questionário DAST-10"
+  }
+}

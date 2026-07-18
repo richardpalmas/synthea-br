@@ -16,8 +16,8 @@
       "codes": [
         {
           "system": "SNOMED-CT",
-          "code": "392023007",
-          "display": "Excision of lesion of breast (procedure)"
+          "code": "172138000",
+          "display": "Modified radical mastectomy (procedure)"
         }
       ],
       "duration": {
@@ -82,6 +82,18 @@
       "reason": "breast_cancer_condition"
     },
     "External Beam Radiation": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_radiation_modality",
+      "value": "external",
+      "direct_transition": "Set External Radiation Target"
+    },
+    "Set External Radiation Target": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_radiation_target_count",
+      "value": 25,
+      "direct_transition": "Initialize Radiation Fraction Count"
+    },
+    "External Beam Radiation Fraction": {
       "type": "Procedure",
       "codes": [
         {
@@ -102,6 +114,18 @@
       "reason": "breast_cancer_condition"
     },
     "Hypofractionated radiation therapy": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_radiation_modality",
+      "value": "hypofractionated",
+      "direct_transition": "Set Hypofractionated Radiation Target"
+    },
+    "Set Hypofractionated Radiation Target": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_radiation_target_count",
+      "value": 15,
+      "direct_transition": "Initialize Radiation Fraction Count"
+    },
+    "Hypofractionated Radiation Fraction": {
       "type": "Procedure",
       "codes": [
         {
@@ -122,6 +146,18 @@
       "reason": "breast_cancer_condition"
     },
     "Intraoperative radiation therapy (IORT)": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_radiation_modality",
+      "value": "iort",
+      "direct_transition": "Set IORT Radiation Target"
+    },
+    "Set IORT Radiation Target": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_radiation_target_count",
+      "value": 1,
+      "direct_transition": "Initialize Radiation Fraction Count"
+    },
+    "IORT Radiation Fraction": {
       "type": "Procedure",
       "codes": [
         {
@@ -685,6 +721,20 @@
         {
           "condition": {
             "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "remission"
+          },
+          "distributions": [
+            {
+              "distribution": 1,
+              "transition": "External Beam Radiation"
+            }
+          ]
+        },
+        {
+          "condition": {
+            "condition_type": "Attribute",
             "attribute": "breast_cancer_triple_negative",
             "operator": "==",
             "value": true
@@ -1000,16 +1050,91 @@
       "type": "EncounterEnd",
       "direct_transition": "Radiation_Buffer_After_Brachytherapy"
     },
+    "Initialize Radiation Fraction Count": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_radiation_fraction_count",
+      "value": 1,
+      "direct_transition": "Initialize Radiation Weekday Count"
+    },
+    "Initialize Radiation Weekday Count": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_radiation_weekday_count",
+      "value": 1,
+      "direct_transition": "Start Selected Radiation Fraction"
+    },
+    "Start Selected Radiation Fraction": {
+      "type": "Simple",
+      "conditional_transition": [
+        {
+          "transition": "External Beam Radiation Fraction",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "breast_cancer_radiation_modality",
+            "operator": "==",
+            "value": "external"
+          }
+        },
+        {
+          "transition": "Hypofractionated Radiation Fraction",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "breast_cancer_radiation_modality",
+            "operator": "==",
+            "value": "hypofractionated"
+          }
+        },
+        {
+          "transition": "IORT Radiation Fraction",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "breast_cancer_radiation_modality",
+            "operator": "==",
+            "value": "iort"
+          }
+        }
+      ]
+    },
     "End Current Radiation Visit": {
       "type": "EncounterEnd",
       "conditional_transition": [
         {
-          "transition": "Increment Radiation Treatment Count",
+          "transition": "Increment Radiation Fraction Count",
           "condition": {
-            "condition_type": "Attribute",
-            "attribute": "breast_cancer_treat_count",
-            "operator": "<",
-            "value": 33
+            "condition_type": "And",
+            "conditions": [
+              {
+                "condition_type": "Attribute",
+                "attribute": "breast_cancer_radiation_modality",
+                "operator": "==",
+                "value": "external"
+              },
+              {
+                "condition_type": "Attribute",
+                "attribute": "breast_cancer_radiation_fraction_count",
+                "operator": "<",
+                "value": 25
+              }
+            ]
+          }
+        },
+        {
+          "transition": "Increment Radiation Fraction Count",
+          "condition": {
+            "condition_type": "And",
+            "conditions": [
+              {
+                "condition_type": "Attribute",
+                "attribute": "breast_cancer_radiation_modality",
+                "operator": "==",
+                "value": "hypofractionated"
+              },
+              {
+                "condition_type": "Attribute",
+                "attribute": "breast_cancer_radiation_fraction_count",
+                "operator": "<",
+                "value": 15
+              }
+            ]
           }
         },
         {
@@ -1017,20 +1142,58 @@
         }
       ]
     },
-    "Increment Radiation Treatment Count": {
+    "Increment Radiation Fraction Count": {
       "type": "Counter",
-      "attribute": "breast_cancer_treat_count",
+      "attribute": "breast_cancer_radiation_fraction_count",
       "action": "increment",
-      "direct_transition": "Delay Until Next Cycle"
+      "direct_transition": "Increment Radiation Weekday Count"
     },
-    "Delay Until Next Cycle": {
+    "Increment Radiation Weekday Count": {
+      "type": "Counter",
+      "attribute": "breast_cancer_radiation_weekday_count",
+      "action": "increment",
+      "direct_transition": "Choose Radiation Interval"
+    },
+    "Choose Radiation Interval": {
+      "type": "Simple",
+      "conditional_transition": [
+        {
+          "transition": "Delay One Radiation Day",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "breast_cancer_radiation_weekday_count",
+            "operator": "<=",
+            "value": 5
+          }
+        },
+        {
+          "transition": "Delay Radiation Weekend"
+        }
+      ]
+    },
+    "Delay One Radiation Day": {
       "type": "Delay",
       "direct_transition": "Next Day Radiation Treatment",
       "range": {
-        "low": 24,
-        "high": 36,
-        "unit": "hours"
+        "low": 1,
+        "high": 1,
+        "unit": "days"
       }
+    },
+    "Delay Radiation Weekend": {
+      "type": "Delay",
+      "direct_transition": "Reset Radiation Weekday Count",
+      "range": {
+        "low": 3,
+        "high": 3,
+        "unit": "days"
+      }
+    },
+    "Reset Radiation Weekday Count": {
+      "type": "SetAttribute",
+      "attribute": "breast_cancer_radiation_weekday_count",
+      "value": 1,
+      "direct_transition": "Next Day Radiation Treatment"
     },
     "Next Day Radiation Treatment": {
       "type": "Encounter",
@@ -1044,24 +1207,30 @@
       ],
       "conditional_transition": [
         {
-          "transition": "External Beam Radiation",
+          "transition": "External Beam Radiation Fraction",
           "condition": {
-            "condition_type": "PriorState",
-            "name": "External Beam Radiation"
+            "condition_type": "Attribute",
+            "attribute": "breast_cancer_radiation_modality",
+            "operator": "==",
+            "value": "external"
           }
         },
         {
-          "transition": "Intraoperative radiation therapy (IORT)",
+          "transition": "Hypofractionated Radiation Fraction",
           "condition": {
-            "condition_type": "PriorState",
-            "name": "Intraoperative radiation therapy (IORT)"
+            "condition_type": "Attribute",
+            "attribute": "breast_cancer_radiation_modality",
+            "operator": "==",
+            "value": "hypofractionated"
           }
         },
         {
-          "transition": "Hypofractionated radiation therapy",
+          "transition": "IORT Radiation Fraction",
           "condition": {
-            "condition_type": "PriorState",
-            "name": "Hypofractionated radiation therapy"
+            "condition_type": "Attribute",
+            "attribute": "breast_cancer_radiation_modality",
+            "operator": "==",
+            "value": "iort"
           }
         }
       ],
@@ -1087,6 +1256,36 @@
     "Initialize Breast Surgery Treatment Counter": {
       "type": "SetAttribute",
       "attribute": "breast_cancer_treat_count",
+      "conditional_transition": [
+        {
+          "transition": "Breast-conserving surgery (BCS)",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "remission"
+          }
+        },
+        {
+          "transition": "Mastectomy",
+          "condition": {
+            "condition_type": "Attribute",
+            "attribute": "pathway_archetype",
+            "operator": "==",
+            "value": "progression"
+          }
+        },
+        {
+          "transition": "Initialize Breast Surgery Treatment Random"
+        }
+      ],
+      "remarks": [
+        "https://www.cooperhealth.org/services/radiation-oncology/questions-you-may-have-about-radiation-therapy"
+      ],
+      "value": 0
+    },
+    "Initialize Breast Surgery Treatment Random": {
+      "type": "Simple",
       "distributed_transition": [
         {
           "transition": "Breast-conserving surgery (BCS)",
@@ -1096,11 +1295,7 @@
           "transition": "Mastectomy",
           "distribution": 0.4
         }
-      ],
-      "remarks": [
-        "https://www.cooperhealth.org/services/radiation-oncology/questions-you-may-have-about-radiation-therapy"
-      ],
-      "value": 0
+      ]
     },
     "Post Surgical Recovery": {
       "type": "Delay",

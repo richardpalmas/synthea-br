@@ -202,6 +202,7 @@ public class CSVFileManager {
     OutputStreamWriter writer =
         new OutputStreamWriter(new FileOutputStream(file, appendToThisFile), charset);
     if (!append) {
+      writeUtf8BomIfNeeded(writer, !appendToThisFile);
       writer.write(CSVConstants.HEADER_LINE_MAP.get(resourceKey));
     }
 
@@ -237,10 +238,25 @@ public class CSVFileManager {
     OutputStreamWriter writer =
         new OutputStreamWriter(new FileOutputStream(file, appendToThisFile), charset);
     if (!append || resourceCount % maxLinesPerFile == 1) {
+      writeUtf8BomIfNeeded(writer, !appendToThisFile);
       writer.write(CSVConstants.HEADER_LINE_MAP.get(resourceKey));
     }
 
     return writer;
+  }
+
+  /**
+   * Writes a UTF-8 byte-order mark when creating a new CSV file so Excel on Windows
+   * detects UTF-8 instead of defaulting to a legacy code page.
+   */
+  private void writeUtf8BomIfNeeded(OutputStreamWriter writer, boolean newFile) throws IOException {
+    if (!newFile) {
+      return;
+    }
+    if (Config.getAsBoolean("exporter.csv.utf8_bom", true)
+        && "UTF-8".equalsIgnoreCase(charset.name())) {
+      writer.write('\uFEFF');
+    }
   }
 
   private int getResourceCount(String resourceKey) throws IOException {
